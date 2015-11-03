@@ -1,27 +1,31 @@
-# host-flash
+###
+#
+#	Host Flash (Junior) v1.1.0
+#
+#	Author: Lee Hodson
+#	Donate: paypal.me/vr51
+#	First Written: 18th Oct. 2015
+#	First Release: 2nd Nov. 2015
+#	This Release: 2nd Nov. 2015
+#
+#	Copyright 2015 Lee Hodson
+#	License: GPL3
+#
+#	Use of this program is at your own risk
+#
+#	TO RUN either 'sh host-flash.sh' or click the file host-flash.sh
+#
+#	Use Host Flash to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
+#	Use Host Flash to manage your hosts file
+#
+###
 
-Host Flash (Junior) v1.1.0
-Author: Lee Hodson
-Donate: paypal.me/vr51
 
-First Written: 18th Oct. 2015
-First Release: 2nd Nov. 2015
-This Release: 2nd Nov. 2015
-
-Copyright 2015 Lee Hodson
-
-License: GPL3
-
-Use of this program is at your own risk
-
-TO RUN either 'sh host-flash.sh' or click the file host-flash.sh
-
-Use Host Flash to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
-Use Host Flash to manage your hosts file
-
-
-
-# What Host Flash Does
+###
+#
+#	What Host Flash Does
+#
+###
 
 Host Flash blocks computers from accessing content served by certain web hosts. These hosts, for example, could be reported malicious websites, known ad servers, adult websites or torrent sites.
 
@@ -54,13 +58,21 @@ If you manually edit your computer's hosts file after using Host Flash, make sur
 Press Esc or Ctrl+C to stop the process at any stage.
 
 
-# Requirements
+###
+#
+#	Requirements
+#
+###
 
 This program needs either 'dialog' or 'whiptail' as well as 'wget' and 'sed' to be installed in your computer. Many Linux systems have them installed. If your computer does not have them installed you can install them using your package manager or via the command line by issuing a command similar to sudo apt-get install dialog whiptail wget sed
 
 This software is known to work on Linux systems. It may work on other Unix based systems too. It was developed on Kubuntu.
 
-# How to Use Host Flash
+###
+#
+#	How to Use Host Flash
+#
+###
 
 1) Download the program from https://github.com/VR51/host-flash/archive/master.zip
 2) Unzip master.zip
@@ -78,7 +90,11 @@ To Run Host Flash, either
 
 Note: You may need to restart your computer and clear your browser cache(s) for the new hosts file rules to be observed by your OS.
 
-# Advanced Usage
+###
+#
+#	Advanced Usage
+#
+###
 
 Whitelist
 
@@ -143,7 +159,11 @@ Blocklist
 			example-two.com/some-page
 			https://www.example-two.com/one.html
 
-# What to Expect
+###
+#
+#	What to Expect
+#
+###
 
 Your computer will no longer be able to receive data from any of the domains blocked by Host Flash.
 
@@ -156,13 +176,21 @@ Your computer will no longer be able to receive data from any of the domains blo
 	4) Many web pages will load faster because your web browser will no longer need to wait for ad content to load. This makes web pages lighter so will save bandwidth too.
 
 
-# Remember
+###
+#
+#	Remember
+#
+###
 
 If you see a Document Not Found page when you try to visit a website, and you trust the website, add the website's domain to whitelist.txt and rerun host-flash.sh
 
 If you want to block access to additional websites (like social media sites, search engines, adult sites or torrent sites etc...) add their domain names to blocklist.txt
 
-# Quick Note About the IP Address Options
+###
+#
+#	Quick Note About the IP Address Options
+#
+###
 
 Host Flash lets you choose from 4 IP address mapping options. The IP address you choose is the address your computer will call when host names in the list of bad hosts are requested. Here is more information about these options.
 
@@ -182,7 +210,13 @@ Custom
 
 	If you wish, use a custom IP address to redirect bad hosts to websites of your choosing such as Google or any other host with its own dedicated IP address.
 
-# Introduction to Host Files and Host Flash
+###
+#
+#	Introduction to Host Files and Host Flash
+#
+#		I've placed this here because most users won't want to read it but for those who do....
+#
+###
 
 Host Flash Protects Your Computer & Blocks Internet Ads.
 
@@ -222,7 +256,11 @@ Use the default IP address if in doubt over which to use.
 If you wanted to, you could use the IP address of another website so that requests to visit bad hosts redirect to something useful.
 
 
-# Thank You to...
+###
+#
+#	Thank You to...
+#
+###
 
 The lists of bad hosts used by Host Flash are compiled by, and are available from,
 
@@ -231,7 +269,11 @@ The lists of bad hosts used by Host Flash are compiled by, and are available fro
 
 The program developer Lee Hodson and all who wrote the Linux scripting guides he has read.
 
-# Stay Up to Date
+###
+#
+#	Stay Up to Date
+#
+###
 
 Updates to Host Flash can be found at either
 
@@ -239,7 +281,11 @@ Updates to Host Flash can be found at either
 	- https://journalxtra.com
 
 
-# Donations
+###
+#
+#	Donations
+#
+###
 
 Send donations to paypal.me/vr51
 
