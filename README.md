@@ -1,4 +1,4 @@
-# host-flash
+# Host Flash
 
 Host Flash (Junior) v1.1.0
 
