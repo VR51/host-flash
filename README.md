@@ -1,11 +1,15 @@
 # host-flash
 
 Host Flash (Junior) v1.1.0
+
 Author: Lee Hodson
+
 Donate: paypal.me/vr51
 
 First Written: 18th Oct. 2015
+
 First Release: 2nd Nov. 2015
+
 This Release: 2nd Nov. 2015
 
 Copyright 2015 Lee Hodson
@@ -14,12 +18,14 @@ License: GPL3
 
 Use of this program is at your own risk
 
-TO RUN either 'sh host-flash.sh' or click the file host-flash.sh
+TO RUN, use either:
+
+- command line: sh host-flash.sh
+- File browser: click host-flash.sh or click host-file.desktop
 
 Use Host Flash to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
+
 Use Host Flash to manage your hosts file
-
-
 
 # What Host Flash Does
 
@@ -63,17 +69,18 @@ This software is known to work on Linux systems. It may work on other Unix based
 # How to Use Host Flash
 
 1) Download the program from https://github.com/VR51/host-flash/archive/master.zip
-2) Unzip master.zip
-3) Enter the directory 'host-flash-master' or 'master'
+2) Unzip host-flash-master.zip
+3) Enter the directory 'host-flash-master'
 4) Run host-flash.sh
 
 Programatically, that is
 
-`wget https://github.com/VR51/host-flash/archive/master.zip ; unzip master.zip ; cd host-flash-master ; bash host-flash.sh`
+`wget https://github.com/VR51/host-flash/archive/master.zip ; unzip host-flash-master.zip ; cd host-flash-master ; sh host-flash.sh`
 
 To Run Host Flash, either
 
-	clicking host-flash.sh, or
+	click host-flash.sh, or
+	click host-flash.desktop, or
 	type 'sh host-flash.sh' at the command line.
 
 Note: You may need to restart your computer and clear your browser cache(s) for the new hosts file rules to be observed by your OS.
