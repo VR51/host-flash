@@ -1,8 +1,8 @@
-#! /bin/bash
+#!/bin/bash
 clear
 ###
 #
-#	Host Flash (Junior) v1.1.0
+#	Host Flash (Junior) v1.1.1
 #
 #	Author: Lee Hodson
 #	Donate: paypal.me/vr51
@@ -18,7 +18,7 @@ clear
 #
 #	Use of this script is at your own risk
 #
-#	TO RUN either 'sh host-flash.sh' or click the file host-flash.sh
+#	TO RUN either 'bash host-flash.sh' or click the file host-flash.sh
 #
 #	Use Host Flash to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
 #	Use Host Flash to manage your hosts file
@@ -31,8 +31,7 @@ clear
 #
 ###
 
-echo -e "HOST FLASH INITIALISED"
-echo -e "----------------------\n"
+printf "HOST FLASH INITIALISED\n----------------------\n"
 
 
 ###
@@ -53,11 +52,12 @@ filepath="$(dirname "$(readlink -f "$0")")"
 
 tty -s
 
-if [ $? -ne 0 ]; then
+if test "$?" -ne 0
+then
 
 	# This code section is released in public domain by Han Boetes <han@mijncomputer.nl>
 	# Updated by Dave Davenport <qball@gmpclient.org>
-	# Updated by Lee Hodson <https://journalxtra.com> - Added break on successful hit, added more terminals, humanized the failure message, and removed call to rofi.
+	# Updated by Lee Hodson <https://journalxtra.com> - Added break on successful hit, added more terminals, humanized the failure message and replaced call to rofi with printf.
 	#
 	# This script tries to exec a terminal emulator by trying some known terminal
 	# emulators.
@@ -70,7 +70,7 @@ if [ $? -ne 0 ]; then
 			exec $terminal -e "$0"
 			break
 		else
-			echo "Unable to automatically determine the correct terminal program to run e.g Console or Konsole. Please run this program from a terminal AKA the command line or click the host-flash.desktop file to launch Host Flash."
+			printf "Unable to automatically determine the correct terminal program to run e.g Console or Konsole. Please run this program from a terminal AKA the command line or click the host-flash.desktop file to launch Host Flash.\n"
 		fi
 	done
 
@@ -83,20 +83,20 @@ fi
 ###
 
 missing=0
-for requirement in $REQUIREMENT wget sed dialog whiptail; do
+for requirement in $REQUIREMENT wget sed dialog whiptail unzip; do
 	if command -v $requirement > /dev/null 2>&1; then
-		echo "Checking for software dependencies.. $requirement found. Success! :-)"
+		printf "Checking for software dependencies.. $requirement found. Success! :-)\n"
 	else
-		echo "Checking for software dependencies.. $requirement MISSING :-("
+		printf "Checking for software dependencies.. $requirement MISSING :-(\n"
 		case $requirement in
 
 			whiptail)
-				echo "We are still okay if 'dialog' is installed"
+				printf "We are still okay if 'dialog' is installed\n"
 				missing=$(($missing + 1))
 				;;
 
 			dialog)
-				echo "We are still okay if 'whiptail' is installed"
+				printf "We are still okay if 'whiptail' is installed\n"
 				missing=$(($missing + 2))
 				;;
 		esac
@@ -104,8 +104,9 @@ for requirement in $REQUIREMENT wget sed dialog whiptail; do
 	fi
 done
 
-if [ $missing -eq 3 ] ; then
-	echo -n "Uh oh! Host Flash needs either 'whiptail' or 'dialog' to be installed. Please install one or both of them then rerun Host Flash"
+if test "$missing" -eq 3
+then
+	printf "Uh oh! Host Flash needs either 'whiptail' or 'dialog' to be installed. Please install one or both of them then rerun Host Flash"
 	read something
 	exit
 fi
@@ -128,7 +129,7 @@ for dialogbox in $DIALOGBOX dialog whiptail; do
 		DIALOG=$dialogbox
 		break
 	else
-		echo "Unable to detect a dialog box program such as 'dialog' or 'whiptail'. Please install one."
+		printf "Unable to detect a dialog box program such as 'dialog' or 'whiptail'. Please install one.\n"
 	fi
 done
 
@@ -139,11 +140,68 @@ done
 #
 ###
 
-echo -e "\n\nAUTHORISATION"
-echo -e "-------------\n"
+printf "\n\nAUTHORISATION-------------\n"
 
-echo -e "\nPlease authorise Host Flash to backup, restore, edit or replace your computer's hosts file:\n"
+printf "\nPlease authorise Host Flash to backup, restore, edit or replace your computer's hosts file:\n"
 sudo -v
+
+
+###
+#
+#	Check for Quick Run Saved Settings. Ask to Import Quick Run Variables if Set
+#
+###
+
+if test -f "$filepath/settings/quickrun"
+then
+
+	quickrun="$($DIALOG --stdout \
+			--clear \
+			--backtitle "Host Flash" \
+			--radiolist 'Use Quick Run?' 0 0 0 \
+			Yes 'Use saved settings.' On \
+			No 'Use new settings.' Off \
+			Delete 'Delete saved settings and maybe reconfigure.' Off \
+		)"
+
+	case $quickrun in
+
+		Yes)
+
+			# Load source 'quickrun' variable file the right way
+			if source "$filepath/settings/quickrun"
+			then
+				source "$filepath/settings/quickrun"
+			else
+				. "$filepath/settings/quickrun"
+			fi
+
+			# Add newlines back into the imported hosts_listings variable. They were removed during settings export
+			#hosts_listsqr="$(echo ${hosts_listsqr} | tr '\t' '\n')"
+			;;
+
+		No)
+			continue
+			;;
+
+		Delete)
+
+			rm "$filepath/settings/quickrun"
+			$DIALOG --clear --backtitle "Host Flash" --title "Quick Run Settings Deleted" --msgbox "Quick Run can be reconfigured at the end of this program session." 0 0
+
+			;;
+
+		255)
+
+			$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\nSend donations to paypal.me/vr51" 0 0
+			exit
+			;;
+
+	esac
+
+fi
+
+
 
 ###
 #
@@ -151,7 +209,8 @@ sudo -v
 #
 ###
 
-if [ ! -f ".showonce" ] ; then
+if test ! -f "$filepath/settings/.showonce"
+then
 
 $DIALOG --clear \
 	--backtitle "Host Flash" \
@@ -195,7 +254,8 @@ If you wanted to, you could use the IP address of another website so that reques
 \n\n
 This message will not show the next time you run Host Flash. Full instructions are in the readme.txt file shipped with Host Flash." 0 0
 
-touch .showonce
+touch "$filepath/settings/.showonce"
+printf "Delete this file to re-enable the Host Flash information dialogue box that displays when Host Flash is first run." > "$filepath/settings/.showonce"
 
 fi
 
@@ -205,42 +265,46 @@ fi
 #
 ###
 
-$DIALOG --clear \
-	--backtitle "Host Flash" \
-	--title "Thank You For Using Host Flash" \
-	--msgbox "Host Flash blocks computers from accessing content served by certain web hosts. These hosts, for example, could be reported malicious websites, known ad servers, adult websites or torrent sites.
-\n\n
-Host Flash
-\n\n
-	- downloads 2 bad hosts blocklists,\n
-	- merges those lists into one large compilation of bad hosts,\n
-	- adds your custom bad hosts list into the mix (blocklist.txt),\n
-	- removes duplicate bad host entries from the compiled bad hosts list,\n
-	- comments out (unblocks) whitelisted hosts (whitelist.txt)\n
-	- copies your existing hosts file to a backup location in /etc/hosts.backup (only one backup),\n
-	- removes any previously installed bad hosts added by Host Flash from the existing hosts file,\n
-	- merges your existing hosts file with the newly compiled bad hosts file,\n
-	- replaces your existing hosts file with the new hosts file that blocks access to bad hosts.
-\n\n
-This process is run interactively so you will be asked to confirm changes before they are made to your system.
-\n\n
-You will not be able to access sites blocked by Host Flash.
-\n\n
-Run Host Flash regularly to keep your hosts file up-to-date with new bad hosts.
-\n\n
-Run Host Flash if you need to undo changes made to the hosts file by Host Flash
-\n\n
-Use Host Flash and the files whitelist.txt and blocklist.txt to manage your computer's hosts file.
-\n\n
-Rerun Host Flash to update the list of blocked sites or to activate changes to whitelist.txt and blocklist.txt.
-\n\n
-If you manually edit your computer's hosts file after using Host Flash, make sure your edits are above the content added by Host Flash or risk your manual edits being removed when Host Flash next runs.
-\n\n
-Read readme.txt for more information.
-\n\n
-Host Flash may take several minutes to complete its tasks on some systems.
-\n\n
-Use of this program is at your own risk." 0 0
+if test "$quickrun" != "On"
+then
+
+	$DIALOG --clear \
+		--backtitle "Host Flash" \
+		--title "Thank You For Using Host Flash" \
+		--msgbox "Host Flash blocks computers from accessing content served by certain web hosts. These hosts, for example, could be reported malicious websites, known ad servers, adult websites or torrent sites.
+	\n\n
+	Host Flash
+	\n\n
+		- downloads 2 bad hosts blocklists,\n
+		- merges those lists into one large compilation of bad hosts,\n
+		- adds your custom bad hosts list into the mix (blocklist.txt),\n
+		- removes duplicate bad host entries from the compiled bad hosts list,\n
+		- comments out (unblocks) whitelisted hosts (whitelist.txt)\n
+		- copies your existing hosts file to a backup location in /etc/hosts.backup (only one backup),\n
+		- removes any previously installed bad hosts added by Host Flash from the existing hosts file,\n
+		- merges your existing hosts file with the newly compiled bad hosts file,\n
+		- replaces your existing hosts file with the new hosts file that blocks access to bad hosts.
+	\n\n
+	This process is run interactively so you will be asked to confirm changes before they are made to your system.
+	\n\n
+	You will not be able to access sites blocked by Host Flash.
+	\n\n
+	Run Host Flash regularly to keep your hosts file up-to-date with new bad hosts.
+	\n\n
+	Run Host Flash if you need to undo changes made to the hosts file by Host Flash
+	\n\n
+	Use Host Flash and the files whitelist.txt and blocklist.txt to manage your computer's hosts file.
+	\n\n
+	Rerun Host Flash to update the list of blocked sites or to activate changes to whitelist.txt and blocklist.txt.
+	\n\n
+	If you manually edit your computer's hosts file after using Host Flash, make sure your edits are above the content added by Host Flash or risk your manual edits being removed when Host Flash next runs.
+	\n\n
+	Read readme.txt for more information.
+	\n\n
+	Host Flash may take several minutes to complete its tasks on some systems.
+	\n\n
+	Use of this program is at your own risk." 0 0
+fi
 
 ###
 #
@@ -248,74 +312,78 @@ Use of this program is at your own risk." 0 0
 #
 ###
 
-if [ -d "HOSTS" ] ; then
+if test -d 'HOSTS'
+then
 	rm -r HOSTS
 fi
 
 ###
 #
-#	Check for previous run
+#	Check for backup file
 #
 ###
 
-if [ -f "/etc/hosts.hf.backup" ] ; then
+# Do not run if Quick Run is On
+if test "$quickrun" != "On"
+then
 
-	$DIALOG --clear --backtitle "Host Flash" --title "Restore?" --defaultno --yesno 'There is a Host Flash backup file from a previous run. Would you like to restore this backup file?' 0 0
-	restore=$?
+	if test -f '/etc/hosts.hf.backup'
+	then
+
+		$DIALOG --clear --backtitle "Host Flash" --title "Restore?" --defaultno --yesno 'There is a Host Flash backup file from a previous run. Would you like to restore this backup file?' 0 0
+		restore=$?
+
+	fi
+
+	case $restore in
+
+		0)
+
+			sudo cp /etc/hosts /etc/hosts.hf.replaced
+			sudo mv /etc/hosts.hf.backup /etc/hosts
+
+			$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The backup hosts file has been restored. The replaced hosts file has been moved to hosts.hf.replaced. This file can be deleted when you no longer need it.\n\nSend donations to paypal.me/vr51" 0 0
+
+			exit
+			;;
+
+		1)
+
+			$DIALOG --clear --backtitle "Host Flash" --title "Deactivate?" --defaultno --yesno "Are you using Host Flash to remove an existing Host Flash blocklist from your hosts file?\n\nSelect 'Yes' if you want to deactivate Host Flash and undo the edits Host Flash made to your computer's hosts file in a previous run, otherwise select 'no'." 0 0
+			remove=$?
+
+			;;
+
+		255)
+
+			$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\nSend donations to paypal.me/vr51" 0 0
+			exit
+			;;
+
+	esac
+
+
+	case $remove in
+
+		0)
+
+			sudo mv /etc/hosts.hf.backup /etc/hosts
+			sed -i '/#### Hosts Flash Bad Hosts Block ########/,$d' /etc/hosts
+
+			$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "Hosts Flash bad hosts blocklist has been removed from your hosts file.\n\nSend donations to paypal.me/vr51" 0 0
+
+			exit
+			;;
+
+		255)
+
+			$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\nSend donations to paypal.me/vr51" 0 0
+			exit
+			;;
+
+	esac
 
 fi
-
-case $restore in
-
-	0)
-
-		sudo cp /etc/hosts /etc/hosts.hf.replaced
-		sudo mv /etc/hosts.hf.backup /etc/hosts
-
-		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The backup hosts file has been restored. The replaced hosts file has been moved to hosts.hf.replaced. This file can be deleted when you no longer need it.\n\nSend donations to paypal.me/vr51" 0 0
-
-		exit
-		;;
-
-	1)
-
-		$DIALOG --clear --backtitle "Host Flash" --title "Deactivate?" --defaultno --yesno "Are you using Host Flash to remove an existing Host Flash blocklist from your hosts file?\n\nSelect 'Yes' if you want to deactivate Host Flash and undo the edits Host Flash made to your computer's hosts file in a previous run, otherwise select 'no'." 0 0
-		remove=$?
-
-		;;
-
-	255)
-
-		$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\nSend donations to paypal.me/vr51" 0 0
-		exit
-		;;
-
-esac
-
-
-case $remove in
-
-	0)
-
-		sudo mv /etc/hosts.hf.backup /etc/hosts
-		sed -i '/#### Hosts Flash Bad Hosts Block ########/,$d' /etc/hosts
-
-		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "Hosts Flash bad hosts blocklist has been removed from your hosts file.\n\nSend donations to paypal.me/vr51" 0 0
-
-		exit
-		;;
-
-	1)
-		;;
-
-	255)
-
-		$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\nSend donations to paypal.me/vr51" 0 0
-		exit
-		;;
-
-esac
-
 
 ###
 #
@@ -323,59 +391,57 @@ esac
 #
 ###
 
-hosts_lists="$($DIALOG --stdout \
-		--clear \
-		--backtitle "Host Flash" \
-		--separate-output \
-		--checklist 'Choose the bad hosts block-lists to install' 0 0 0 \
-		hosts-file.net '' On \
-		mvps.org '' On \
-		)"
+if test "$quickrun" = "On"
+then
+	# Use saved answer if set
+	hosts_lists=$hosts_listsqr
+fi
 
-###
-#
-#	Set the IP address that blocked hosts will redirect to
-#
-###
+if test "$quickrun" != "On"
+then
 
-function set_redirect_address_func {
-
-	redirectip="$($DIALOG --stdout \
+	hosts_lists="$($DIALOG --stdout \
 			--clear \
 			--backtitle "Host Flash" \
-			--radiolist 'Set the Redirect IP Address' 0 0 0 \
-			127.0.0.1 'localhost (default)' On \
-			127.255.255.254 'localhost (non default)' Off \
-			0.0.0.0 'localhost (non-standard)' Off \
-			Custom 'Type in a Preferred IP Address' Off \
-		)"
+			--separate-output \
+			--checklist 'Choose the bad hosts block-lists to install' 0 0 0 \
+			hosts-file.net '' On \
+			mvps.org '' On \
+			)"
 
-	if [ "$redirectip" == "Custom" ] ; then
-
-		redirectip="$($DIALOG --stdout --clear --backtitle "Host Flash" --inputbox 'Enter the IP address' 0 0 '127.0.0.1')"
-
-	fi
-
-}
-
-set_redirect_address_func
+fi
 
 ##
-#	Quick check that the address is an IP address
+#
+#	Check we have a redirect IP address
+#
 ##
 
-if expr "$redirectip" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
-	for i in 1 2 3 4; do
-	if [ $(echo "$redirectip" | cut -d. -f$i) -gt 255 ]; then
-		$DIALOG --clear --backtitle "Host Flash" --msgbox "$redirectip is not a valid IP address. Try again." 0 0
+if test "$quickrun" = "On"
+then
+	# Use saved answer if set
+	redirectip=$redirectipqr
+fi
 
-		set_redirect_address_func
-	fi
-	done
-else
-	$DIALOG --clear --backtitle "Host Flash" --msgbox "$redirectip is not a valid IP address. Try again." 0 0
+if test "$quickrun" != "On"
+then
+	# Ask to set redirect IP address
+	redirectip="$($DIALOG --stdout \
+	--clear \
+	--backtitle "Host Flash" \
+	--radiolist 'Set the Redirect IP Address' 0 0 0 \
+	127.0.0.1 'localhost (default)' On \
+	127.255.255.254 'localhost (non default)' Off \
+	0.0.0.0 'localhost (non-standard)' Off \
+	Custom 'Type in a Preferred IP Address' Off \
+	)"
 
-	set_redirect_address_func
+	case $redirectip in
+
+		Custom) redirectip="$($DIALOG --stdout --clear --backtitle "Host Flash" --inputbox 'Enter the IP address' 0 0 '127.0.0.1')"
+
+	esac
+
 fi
 
 ####
@@ -384,9 +450,20 @@ fi
 #
 ###
 
-$DIALOG --clear --backtitle "Host Flash" --title 'House Cleaning' --yesno 'Remove temporary files when finished?' 0 0
-clean=$?
+if test "$quickrun" = "On"
+then # Use saved answer if quick run enabled
 
+	clean=$cleanqr
+
+fi
+
+if test "$quickrun" != "On"
+then
+
+	$DIALOG --clear --backtitle "Host Flash" --title 'House Cleaning' --yesno 'Remove temporary files when finished?' 0 0
+	clean=$?
+
+fi
 
 ###
 #
@@ -404,86 +481,64 @@ cd HOSTS
 
 for opt in $hosts_lists
 do
-	case $opt in
 
-		hosts-file.net)
+	if test "$opt" = "hosts-file.net"
+	then
 
 			wget http://hosts-file.net/download/hosts.zip
 			unzip -o hosts.zip
-			echo -e "\nPreparing files.. We could be here a while..\n"
+			printf "\nPreparing files.. We could be here a while..\n"
 			sed -i 's/#.*//' hosts.txt
 			sed -i '/.*\blocalhost\b.*/d' hosts.txt
 			sed -i "s/127\.0\.0\.1/$redirectip/" hosts.txt
 			sed -i 's/	/ /' hosts.txt
 			sed -i '/^$/d' hosts.txt
 			rm hosts.zip
+	fi
 
-		;&
-
-		mvps.org)
+	if test "$opt" = "mvps.org"
+	then
 
 			wget http://winhelp2002.mvps.org/hosts.zip
 			unzip -o hosts.zip
-			echo -e "\nPreparing files.. We could be here a while..\n"
+			printf "\nPreparing files.. We could be here a while..\n"
 			sed -i 's/#.*//' HOSTS
 			sed -i '/.*\blocalhost\b.*/d' HOSTS
 			sed -i "s/0\.0\.0\.0/$redirectip/g" HOSTS
 			sed -i 's/	/ /' HOSTS
 			sed -i '/^$/d' HOSTS
 			rm hosts.zip
+	fi
 
-		;;
-
-	esac
 done
 
 #	Remove old Host Flash blocklist, assuming it exists
 
-echo -e "\nRemoving previous blocklist from hosts..\n"
+printf "\nRemoving previous blocklist from hosts..\n"
 cp /etc/hosts hosts.copy
 sed -i '/#### Hosts Flash Bad Hosts Block ########/,$d' hosts.copy
-echo -e '#### Hosts Flash Bad Hosts Block ########\n' >> hosts.copy
+printf '\n#### Hosts Flash Bad Hosts Block ########\n' >> hosts.copy
 
 #	Format and use custom blocklist
 
 cp ../blocklist.txt blocklist.txt
 
-if [ -s "blocklist.txt" ] ; then
+if test -s 'blocklist.txt'
+then
 
-	echo -e "\nPreparing custom hosts in blocklist.txt..\n"
+	printf "\nPreparing custom hosts in blocklist.txt..\n"
 	sed -r -i "s/^(.*)/$redirectip \1/g" blocklist.txt
-	echo -e "\nAdding custom bad hosts to..\n"
-	echo -e '\n' >> blocklist.txt
+	printf "\nAdding custom bad hosts to..\n"
+	printf '\n' >> blocklist.txt
 
 fi
 
 #	Merge bad hosts lists and custom blocklist. Sort them alphabetically and remove duplicates.
-#	We test for the files instead of running tests on $hosts_lists
+#	If a file is missing, don't worry...
 
-if [ -f "hosts.txt" ] && [ -f "HOSTS" ] ; then
-
-	echo -e "\nBuilding new hosts file..\n"
+	printf "\nBuilding new hosts file..\n"
 	cat blocklist.txt hosts.txt HOSTS > hosts-temp
 	sort -u -f hosts-temp > hosts
-
-fi
-
-
-if [ -f "hosts.txt" ] && [ ! -f "HOSTS" ] ; then
-
-	echo -e "\nBuilding new hosts file..\n"
-	cat blocklist.txt hosts.txt > hosts-temp
-	sort -u -f hosts-temp > hosts
-
-fi
-
-if [ ! -f "hosts.txt" ] && [ -f "HOSTS" ] ; then
-
-	echo -e "\nBuilding new hosts file..\n"
-	cat blocklist.txt HOSTS > hosts-temp
-	sort -u -f hosts-temp > hosts
-
-fi
 
 ###
 #
@@ -491,7 +546,7 @@ fi
 #
 ###
 
-echo -e "\nRe-enabling hosts in whitelist.txt.. This may take several minutes..\n"
+printf "\nRe-enabling hosts in whitelist.txt.. This may take several minutes..\n"
 
 cp ../whitelist.txt whitelist.txt
 
@@ -499,7 +554,8 @@ cp ../whitelist.txt whitelist.txt
 
 sort -u -f whitelist.txt > whitelist
 
-if [ -s "whitelist" ] ; then
+if test -s 'whitelist'
+then
 
 	while read -r LINE
 	do
@@ -516,15 +572,17 @@ fi
 #
 ###
 
-echo -e "\nMerging bad hosts list into hosts file..\n"
+printf "\nMerging bad hosts list into hosts file..\n"
 cat hosts.copy hosts > hosts-temp #  We use hosts-temp so we don't overwrite the temp. hosts file (in case it's needed later)
 mv hosts-temp ../hosts
 
+# Back up to Host File root directory
 cd ..
 
-if [ "$clean" == "0" ] ; then
+if test "$clean" = "0"
+then
 
-	echo -e "\nRemoving temporary files..\n"
+	printf "\nRemoving temporary files..\n"
 	rm -r HOSTS
 
 fi
@@ -535,14 +593,70 @@ fi
 #
 ###
 
-$DIALOG --clear --backtitle "Host Flash" --title "Install" --yesno 'Install new hosts file?' 0 0
-install=$?
+if test "$quickrun" = "On"
+then # Use saved answer if quick run On
 
-case $install in
+	installhl=$installqr
+
+fi
+
+if test "$quickrun" != "On"
+then
+
+	$DIALOG --clear --backtitle "Host Flash" --title "Install" --yesno 'Install new hosts file?' 0 0
+	installhl=$?
+
+fi
+
+	##
+	#
+	#	A Quick Detour... Asking now so the user doesn't miss out
+	#
+	##
+
+
+	if test ! -f "$filepath/settings/quickrun"
+	then
+
+		$DIALOG --clear --backtitle "Host Flash" --title "Enable Quick Run?" --yesno "Preserve Host Flash settings to reuse them next time?" 0 0
+		quickrun=$?
+
+		case $quickrun in
+
+			0)
+
+				touch "$filepath/settings/quickrun"
+
+				printf "#!/bin/bash\n" > "$filepath/settings/quickrun"
+
+				printf "quickrun='On'\n" >> "$filepath/settings/quickrun"
+
+				hosts_listsqr="$(echo ${hosts_lists} | tr ' ' '\t')" # Newlines are added back in on settings import
+				printf "hosts_listsqr='$hosts_listsqr'\n" >> "$filepath/settings/quickrun"
+
+				printf "redirectipqr='$redirectip'\n" >> "$filepath/settings/quickrun"
+				printf "cleanqr='$clean'\n" >> "$filepath/settings/quickrun"
+				printf "installqr='$installhl'\n" >> "$filepath/settings/quickrun"
+
+				$DIALOG --clear --backtitle "Host Flash" --title "Quick Run Enabled" --msgbox "The next time you use Host Flash you will be presented with a Quick Run menu.\nRunning Quick Run will cause Host Flash to reuse the settings preserved from this session.\nQuick Run can be disabled using the Quick Run menu." 0 0
+
+				;;
+
+			1)
+
+				$DIALOG --clear --backtitle "Host Flash" --title "Quick Run Not Enabled" --msgbox "" 0 0
+
+				;;
+
+		esac
+
+	fi
+
+case $installhl in
 
 	0)
 
-		echo -e "\nInstalling new hosts file..\n"
+		printf "\nInstalling new hosts file..\n"
 		sudo cp /etc/hosts /etc/hosts.hf.backup
 		sudo mv "$filepath/hosts" /etc/hosts
 

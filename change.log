@@ -1,0 +1,17 @@
+1.1.1
+
+- Feature: Quick Run. Can now save settings for reuse.
+
+- Enhancement: Improved whitelist regex to speed up process.
+
+- Enhancement: Adjusted code for portability
+
+- Enhancement: Replaced echo with printf
+
+1.1.0
+
+
+
+1.0.1
+
+First public release

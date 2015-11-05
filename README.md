@@ -10,9 +10,9 @@ First Written: 18th Oct. 2015
 
 First Release: 2nd Nov. 2015
 
-This Release: 2nd Nov. 2015
+This Release: 5th Nov. 2015
 
-Copyright 2015 Lee Hodson
+Copyright 2015 Lee Hodson <journalxtra.com>
 
 License: GPL3
 
@@ -20,12 +20,17 @@ Use of this program is at your own risk
 
 TO RUN, use either:
 
-- command line: sh host-flash.sh
+- command line: bash host-flash.sh
 - File browser: click host-flash.sh or click host-file.desktop
 
 Use Host Flash to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
 
 Use Host Flash to manage your hosts file
+
+# New Features
+
+	- Quick Run
+	- Save options for reuse
 
 # What Host Flash Does
 
@@ -75,13 +80,13 @@ This software is known to work on Linux systems. It may work on other Unix based
 
 Programatically, that is
 
-`wget https://github.com/VR51/host-flash/archive/master.zip ; unzip host-flash-master.zip ; cd host-flash-master ; sh host-flash.sh`
+`wget https://github.com/VR51/host-flash/archive/master.zip ; unzip host-flash-master.zip ; cd host-flash-master ; bash host-flash.sh`
 
 To Run Host Flash, either
 
 	click host-flash.sh, or
 	click host-flash.desktop, or
-	type 'sh host-flash.sh' at the command line.
+	type 'bash host-flash.sh' at the command line.
 
 Note: You may need to restart your computer and clear your browser cache(s) for the new hosts file rules to be observed by your OS.
 
