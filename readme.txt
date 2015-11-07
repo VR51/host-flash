@@ -1,12 +1,13 @@
 ###
 #
-#	Host Flash (Junior) v1.1.1
+#	Host Flash (Junior) v1.2.0
 #
 #	Author: Lee Hodson
 #	Donate: paypal.me/vr51
+#	Website: https://journalxtra.com/linux/linux-hosts-file-manager-program/
 #	First Written: 18th Oct. 2015
 #	First Release: 2nd Nov. 2015
-#	This Release: 5th Nov. 2015
+#	This Release: 7th Nov. 2015
 #
 #	Copyright 2015 Lee Hodson <journalxtra.com>
 #	License: GPL3
@@ -15,7 +16,7 @@
 #
 #	TO RUN:
 #
-#	- command line: bash host-flash.sh
+#	- command line: sh host-flash.sh
 #	- File browser: click host-flash.sh or click host-file.desktop
 #
 #	Use Host Flash to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
@@ -30,7 +31,9 @@
 ###
 
 	- Quick Run
-	- Save options for repeat use
+	- Save options for reuse
+	- More block list sources
+	- Hosts file backup archive directory
 
 ###
 #
@@ -42,15 +45,15 @@ Host Flash blocks computers from accessing content served by certain web hosts. 
 
 Host Flash
 
-	- downloads 2 bad hosts blocklists,
+	- downloads up to 8 bad hosts blocklists,
 	- merges those lists into one large compilation of bad hosts,
-	- adds your custom bad hosts list into the mix (blocklist.txt)
+	- adds your custom bad hosts list into the mix (blocklist.txt),
 	- removes duplicate bad host entries from the compiled bad hosts list,
 	- comments out (unblocks) whitelisted hosts (whitelist.txt),
-	- copies your existing hosts file to a backup location in /etc/hosts.backup (only one backup),
-	- removes any previously installed bad hosts added by Host Flash from the existing hosts file,
-	- merges your existing hosts file with the newly compiled bad hosts file,
-	- replaces your existing hosts file with the new hosts file that blocks access to bad hosts.
+	- copies the hosts file that exists when Host Flash is first run to /etc/hosts.hf.original,
+	- stores replaced hosts files in archive directory 'Hosts Flash/backup/',
+	- option to remove previously installed bad hosts added by Host Flash from the existing hosts file,
+	- retains the original hosts file entries within the hosts file created by Host Flash.
 
 This process is run interactively so you will be asked to confirm changes before they are made to your system.
 
@@ -68,6 +71,15 @@ If you manually edit your computer's hosts file after using Host Flash, make sur
 
 Press Esc or Ctrl+C to stop the process at any stage.
 
+###
+#
+#	Portability
+#
+###
+
+Host Flash will run in many Debian (and probably non Debian) environments like Ubuntu, Kubuntu and Debian. It should work on rooted Androids too.
+
+Saved Quick Run settings will work independently of the host they were configured on. If you want to reuse the settings, just move the Host Flash directory to any other system and any saved settings will be mvoed migrated too.
 
 ###
 #
@@ -75,7 +87,7 @@ Press Esc or Ctrl+C to stop the process at any stage.
 #
 ###
 
-This program needs either 'dialog' or 'whiptail' as well as 'wget' and 'sed' to be installed in your computer. Many Linux systems have them installed. If your computer does not have them installed you can install them using your package manager or via the command line by issuing a command similar to sudo apt-get install dialog whiptail wget sed
+This program needs either 'dialog' or 'whiptail' as well as 'wget', 'sed', 'zip' and 'p7zip' to be installed in your computer. Host Flash will tell you if any of those programs are missing. Many Linux systems have them installed. If your computer does not have them installed you can install them using your package manager or via the command line by issuing a command similar to sudo apt-get install dialog whiptail wget sed
 
 This software is known to work on Linux systems. It may work on other Unix based systems too. It was developed on Kubuntu.
 
@@ -85,6 +97,8 @@ This software is known to work on Linux systems. It may work on other Unix based
 #
 ###
 
+Download Host Flash from GitHub, run the program, follow the on screen prompts to quickly configure the program and install your new hosts file block list then save your settings for use as the default Quick Run options for the next time you run Host Flash.
+
 1) Download the program from https://github.com/VR51/host-flash/archive/master.zip
 2) Unzip host-flash-master.zip
 3) Enter the directory 'host-flash-master'
@@ -92,13 +106,13 @@ This software is known to work on Linux systems. It may work on other Unix based
 
 Programatically, that is
 
-`wget https://github.com/VR51/host-flash/archive/master.zip ; unzip host-flash-master.zip ; cd host-flash-master ; bash host-flash.sh`
+`wget https://github.com/VR51/host-flash/archive/master.zip ; unzip host-flash-master.zip ; cd host-flash-master ; sh host-flash.sh`
 
 To Run Host Flash, either
 
 	click host-flash.sh, or
 	clicking host-flash.desktop, or
-	type 'bash host-flash.sh' at the command line.
+	type 'sh host-flash.sh' at the command line.
 
 Note: You may need to restart your computer and clear your browser cache(s) for the new hosts file rules to be observed by your OS.
 
@@ -278,6 +292,8 @@ The lists of bad hosts used by Host Flash are compiled by, and are available fro
 
 	- hosts-file.net
 	- winhelp2002.mvps.org
+	- rlwpx.free.fr
+	- hostsfile.org
 
 The program developer Lee Hodson and all who wrote the Linux scripting guides he has read.
 
@@ -290,7 +306,7 @@ The program developer Lee Hodson and all who wrote the Linux scripting guides he
 Updates to Host Flash can be found at either
 
 	- https://github.com/VR51/host-flash
-	- https://journalxtra.com
+	- https://journalxtra.com/linux/linux-hosts-file-manager-program/
 
 
 ###
@@ -301,6 +317,6 @@ Updates to Host Flash can be found at either
 
 Send donations to paypal.me/vr51
 
-Donations will be received by Lee Hodson of journalxtra.com.
+Donations will be received by Lee Hodson of journalxtra.com and VR51.
 
-A contribution of the Donations received will be split between hosts-file.net and winhelp2002.mvps.org
+A contribution of the Donations received will be split between the host file source providers.
