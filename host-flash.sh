@@ -2,13 +2,13 @@
 clear
 ###
 #
-#	Host Flash (Junior) v1.1.1
+#	Host Flash (Junior) v1.2.0
 #
 #	Author: Lee Hodson
 #	Donate: paypal.me/vr51
 #	First Written: 18th Oct. 2015
 #	First Release: 2nd Nov. 2015
-#	This Release: 2nd Nov. 2015
+#	This Release: 7th Nov. 2015
 #
 #	https://github.com/VR51/host-flash
 #	https://journalxtra.com
@@ -16,7 +16,7 @@ clear
 #	Copyright 2015 Lee Hodson
 #	License: GPL3
 #
-#	Use of this script is at your own risk
+#	Use of this program is at your own risk
 #
 #	TO RUN either 'bash host-flash.sh' or click the file host-flash.sh
 #
@@ -31,15 +31,18 @@ clear
 #
 ###
 
-printf "HOST FLASH INITIALISED\n----------------------\n"
-
+printf "HOST FLASH INITIALISED\n----------------------\n\n"
 
 ###
 #
-#	Locate Where We Are
+#	Set Variables
 #
 ###
 
+# Date
+todaytime=$(date +"%Y-%m-%d-%H:%M:%S")
+
+# Locate Where We Are
 filepath="$(dirname "$(readlink -f "$0")")"
 
 
@@ -70,7 +73,7 @@ then
 			exec $terminal -e "$0"
 			break
 		else
-			printf "Unable to automatically determine the correct terminal program to run e.g Console or Konsole. Please run this program from a terminal AKA the command line or click the host-flash.desktop file to launch Host Flash.\n"
+			printf "\nUnable to automatically determine the correct terminal program to run e.g Console or Konsole. Please run this program from a terminal AKA the command line or click the host-flash.desktop file to launch Host Flash.\n"
 		fi
 	done
 
@@ -83,33 +86,51 @@ fi
 ###
 
 missing=0
-for requirement in $REQUIREMENT wget sed dialog whiptail unzip; do
+for requirement in $REQUIREMENT wget sed dialog whiptail unzip p7zip p7zip-full; do
 	if command -v $requirement > /dev/null 2>&1; then
 		printf "Checking for software dependencies.. $requirement found. Success! :-)\n"
 	else
 		printf "Checking for software dependencies.. $requirement MISSING :-(\n"
+		printf "\n\t$requirement can be installed with, for example, sudo apt-get install $requirement\n"
 		case $requirement in
 
 			whiptail)
-				printf "We are still okay if 'dialog' is installed\n"
+				printf "\n\tWe are still okay if 'dialog' is installed\n"
 				missing=$(($missing + 1))
 				;;
 
 			dialog)
-				printf "We are still okay if 'whiptail' is installed\n"
+				printf "\n\tWe are still okay if 'whiptail' is installed\n"
 				missing=$(($missing + 2))
+				;;
+			p7zip)
+				printf "\n\tWe are still okay if 'p7zip-full' is installed\n"
+				missing=$(($missing + 4))
+				;;
+
+			p7zip-full)
+				printf "\n\tWe are still okay if 'p7zip' is installed\n"
+				missing=$(($missing + 8))
 				;;
 		esac
 
 	fi
 done
 
-if test "$missing" -eq 3
-then
-	printf "Uh oh! Host Flash needs either 'whiptail' or 'dialog' to be installed. Please install one or both of them then rerun Host Flash"
-	read something
-	exit
-fi
+case $missing in
+
+	3)
+		printf "\nUh oh! Host Flash needs either 'whiptail' or 'dialog' to be installed on this computer. Please install one or both of them then rerun Host Flash\n"
+		read something
+		exit
+		;;
+
+	12)
+		printf "\nThis is awkward.. Host Flash needs either the 'p7zip' or 'p7zip-full' file extractor to be installed on this computer to enable some features to work. Install p7zip or p7zip-full if you want to use the Airelle Lists of bad hosts. Host Flash will continue but with the Airelle Lists disabled.\n"
+		read something
+		;;
+
+esac
 
 ###
 #
@@ -129,10 +150,9 @@ for dialogbox in $DIALOGBOX dialog whiptail; do
 		DIALOG=$dialogbox
 		break
 	else
-		printf "Unable to detect a dialog box program such as 'dialog' or 'whiptail'. Please install one.\n"
+		printf "\nUnable to detect a dialog box program such as 'dialog' or 'whiptail'. Please install one.\n"
 	fi
 done
-
 
 ###
 #
@@ -140,7 +160,7 @@ done
 #
 ###
 
-printf "\n\nAUTHORISATION-------------\n"
+printf "\n\nAUTHORISATION\n-------------\n"
 
 printf "\nPlease authorise Host Flash to backup, restore, edit or replace your computer's hosts file:\n"
 sudo -v
@@ -161,7 +181,7 @@ then
 			--radiolist 'Use Quick Run?' 0 0 0 \
 			Yes 'Use saved settings.' On \
 			No 'Use new settings.' Off \
-			Delete 'Delete saved settings and maybe reconfigure.' Off \
+			Delete 'Delete saved settings. Maybe reconfigure later.' Off \
 		)"
 
 	case $quickrun in
@@ -271,23 +291,23 @@ then
 	$DIALOG --clear \
 		--backtitle "Host Flash" \
 		--title "Thank You For Using Host Flash" \
-		--msgbox "Host Flash blocks computers from accessing content served by certain web hosts. These hosts, for example, could be reported malicious websites, known ad servers, adult websites or torrent sites.
+		--msgbox "Host Flash blocks computers from accessing content served by certain web hosts. These hosts could, for example, be reported malicious websites, known ad servers, adult websites, gambling sites or torrent sites.
 	\n\n
 	Host Flash
 	\n\n
-		- downloads 2 bad hosts blocklists,\n
+		- downloads up to 8 bad hosts blocklists,\n
 		- merges those lists into one large compilation of bad hosts,\n
 		- adds your custom bad hosts list into the mix (blocklist.txt),\n
 		- removes duplicate bad host entries from the compiled bad hosts list,\n
-		- comments out (unblocks) whitelisted hosts (whitelist.txt)\n
-		- copies your existing hosts file to a backup location in /etc/hosts.backup (only one backup),\n
-		- removes any previously installed bad hosts added by Host Flash from the existing hosts file,\n
-		- merges your existing hosts file with the newly compiled bad hosts file,\n
-		- replaces your existing hosts file with the new hosts file that blocks access to bad hosts.
+		- comments out (unblocks) whitelisted hosts (whitelist.txt),\n
+		- copies the hosts file that exists when Host Flash is first run to /etc/hosts.hf.original,\n
+		- stores replaced hosts files in archive directory 'Hosts Flash/backup/',\n
+		- option to remove previously installed bad hosts added by Host Flash from the existing hosts file,\n
+		- retains the original hosts file entries within the hosts file created by Host Flash.
 	\n\n
 	This process is run interactively so you will be asked to confirm changes before they are made to your system.
 	\n\n
-	You will not be able to access sites blocked by Host Flash.
+	You will not be able to access sites blocked by Host Flash. This means blocked sites will show in your browser as Document Not Found errors or sites that incorporate blocked sites as part of their make up will load but with blocked parts missing from the rendered pages.
 	\n\n
 	Run Host Flash regularly to keep your hosts file up-to-date with new bad hosts.
 	\n\n
@@ -312,9 +332,9 @@ fi
 #
 ###
 
-if test -d 'HOSTS'
+if test -d "$filepath/TEMP"
 then
-	rm -r HOSTS
+	rm -r "$filepath/TEMP"
 fi
 
 ###
@@ -327,10 +347,10 @@ fi
 if test "$quickrun" != "On"
 then
 
-	if test -f '/etc/hosts.hf.backup'
+	if test -f '/etc/hosts.hf.original'
 	then
 
-		$DIALOG --clear --backtitle "Host Flash" --title "Restore?" --defaultno --yesno 'There is a Host Flash backup file from a previous run. Would you like to restore this backup file?' 0 0
+		$DIALOG --clear --backtitle "Host Flash" --title "Restore?" --defaultno --yesno 'Would you like to restore the original hosts file that Host Flash replaced the very first time Host Flash ran on this computer? This will overwrite the current hosts file.' 0 0
 		restore=$?
 
 	fi
@@ -339,17 +359,16 @@ then
 
 		0)
 
-			sudo cp /etc/hosts /etc/hosts.hf.replaced
-			sudo mv /etc/hosts.hf.backup /etc/hosts
+			sudo mv /etc/hosts.hf.original /etc/hosts
 
-			$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The backup hosts file has been restored. The replaced hosts file has been moved to hosts.hf.replaced. This file can be deleted when you no longer need it.\n\nSend donations to paypal.me/vr51" 0 0
+			$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The original hosts file has been restored.\n\nDonate toward the Host Flash Development Fund at paypal.me/vr51" 0 0
 
 			exit
 			;;
 
 		1)
 
-			$DIALOG --clear --backtitle "Host Flash" --title "Deactivate?" --defaultno --yesno "Are you using Host Flash to remove an existing Host Flash blocklist from your hosts file?\n\nSelect 'Yes' if you want to deactivate Host Flash and undo the edits Host Flash made to your computer's hosts file in a previous run, otherwise select 'no'." 0 0
+			$DIALOG --clear --backtitle "Host Flash" --title "Deactivate?" --defaultno --yesno "Do you want to remove the Host Flash blocklist from the existing hosts file?\n\nSelect 'Yes' if you want to deactivate Host Flash and undo the edits made to your hosts file by Host Flash, otherwise select 'no'." 0 0
 			remove=$?
 
 			;;
@@ -367,7 +386,6 @@ then
 
 		0)
 
-			sudo mv /etc/hosts.hf.backup /etc/hosts
 			sed -i '/#### Hosts Flash Bad Hosts Block ########/,$d' /etc/hosts
 
 			$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "Hosts Flash bad hosts blocklist has been removed from your hosts file.\n\nSend donations to paypal.me/vr51" 0 0
@@ -400,14 +418,38 @@ fi
 if test "$quickrun" != "On"
 then
 
-	hosts_lists="$($DIALOG --stdout \
-			--clear \
-			--backtitle "Host Flash" \
-			--separate-output \
-			--checklist 'Choose the bad hosts block-lists to install' 0 0 0 \
-			hosts-file.net '' On \
-			mvps.org '' On \
-			)"
+	if test "$missing" -ne 12
+	then
+
+		hosts_lists="$($DIALOG --stdout \
+				--clear \
+				--backtitle "Host Flash" \
+				--separate-output \
+				--checklist 'Choose the bad hosts block-lists to install. Lists that interfere least with regular web browsing are preselected.' 0 0 0 \
+				hosts-file.net 'Liberal: Blocks mostly ad servers, malware sites and trackers.' On \
+				mvps.org 'Liberal: Blocks mostly ad servers, malware sites and trackers' On \
+				free.fr-Trackers 'Moderate: Blocks tracking services and analytic services' Off \
+				free.fr-Ad-Servers 'Moderate: Blocks ad servers' On \
+				free.fr-Malware 'Moderate: Blocks reported malware sites' On \
+				free.fr-Adult 'Moderate: Blocks pornography' Off \
+				free.fr-Misc 'Moderate: Blocks miscellaneous sites that some consider undesirable' Off \
+				hostsfile.org 'Very Strict: Regular blocks + porn, gambling and gaming sites.' Off \
+				)"
+	fi
+
+	if test "$missing" = 12
+	then
+
+		hosts_lists="$($DIALOG --stdout \
+				--clear \
+				--backtitle "Host Flash" \
+				--separate-output \
+				--checklist 'Choose the bad hosts block-lists to install. Lists that interfere least with regular web browsing are preselected.' 0 0 0 \
+				hosts-file.net 'Liberal: Blocks mostly ad servers, malware sites and trackers' On \
+				mvps.org 'Liberal: Blocks mostly ad servers, malware sites and trackers' On \
+				hostsfile.org 'Very Strict: Regular blocks + porn, gambling and gaming sites.' Off \
+				)"
+	fi
 
 fi
 
@@ -468,77 +510,154 @@ fi
 ###
 #
 #	Download Host Files, Merge Host Files and Clean up
+#	We specify file paths but we're CD'ing to directories to ward off accidents....
 #
 ###
 
 clear
 
-mkdir HOSTS
-cd HOSTS
+mkdir "$filepath/TEMP"
+cd "$filepath/TEMP"
 
+
+###
+#
 #	Download Files
-#	Look at hosts_lists $DIALOG box for more info
+#	Look at hosts_lists DIALOG box for more info
+#
+##
 
+touch hosts-temp.txt
 for opt in $hosts_lists
 do
 
-	if test "$opt" = "hosts-file.net"
-	then
+	case "$opt" in
 
-			wget http://hosts-file.net/download/hosts.zip
-			unzip -o hosts.zip
-			printf "\nPreparing files.. We could be here a while..\n"
-			sed -i 's/#.*//' hosts.txt
-			sed -i '/.*\blocalhost\b.*/d' hosts.txt
-			sed -i "s/127\.0\.0\.1/$redirectip/" hosts.txt
-			sed -i 's/	/ /' hosts.txt
-			sed -i '/^$/d' hosts.txt
-			rm hosts.zip
-	fi
+		hosts-file.net)
+				download=http://hosts-file.net/download # Download URL
+				dfile=hosts.zip # Download file
+				target=hosts.txt # The file we want to use from the file
+				unzipprog='unzip' # The program to use to extract the file
+				;;
 
-	if test "$opt" = "mvps.org"
-	then
+		mvps.org)
+				download=http://winhelp2002.mvps.org
+				dfile=hosts.zip
+				target=HOSTS
+				unzipprog='unzip'
+				;;
 
-			wget http://winhelp2002.mvps.org/hosts.zip
-			unzip -o hosts.zip
-			printf "\nPreparing files.. We could be here a while..\n"
-			sed -i 's/#.*//' HOSTS
-			sed -i '/.*\blocalhost\b.*/d' HOSTS
-			sed -i "s/0\.0\.0\.0/$redirectip/g" HOSTS
-			sed -i 's/	/ /' HOSTS
-			sed -i '/^$/d' HOSTS
-			rm hosts.zip
-	fi
+		free.fr-Trackers)
+				download=http://rlwpx.free.fr/WPFF
+				dfile=htrc.7z
+				target=Hosts.trc
+				unzipprog='p7zip'
+				;;
+
+		free.fr-Ad-Servers)
+				download=http://rlwpx.free.fr/WPFF
+				dfile=hpub.7z
+				target=Hosts.pub
+				unzipprog='p7zip'
+				;;
+
+		free.fr-Malware)
+				download=http://rlwpx.free.fr/WPFF
+				dfile=hrsk.7z
+				target=Hosts.rsk
+				unzipprog='p7zip'
+				;;
+
+		free.fr-Adult)
+				download=http://rlwpx.free.fr/WPFF
+				dfile=hsex.7z
+				target=Hosts.sex
+				unzipprog='p7zip'
+				;;
+
+		free.fr-Misc)
+				download=http://rlwpx.free.fr/WPFF
+				dfile=hmis.7z
+				target=Hosts.mis
+				unzipprog='p7zip'
+				;;
+
+		hostsfile.org)
+				download=http://www.hostsfile.org/Downloads
+				dfile=hosts.txt
+				unzipprog=''
+				target=hosts.txt
+				;;
+
+	esac
+
+	wget "$download/$dfile"
+
+	if test "$unzipprog" = 'unzip'; then unzip -o "$dfile"; fi
+	if test "$unzipprog" = 'p7zip'; then 7z e -y "$dfile"; fi
+	cat "$filepath/TEMP/$target" >> "$filepath/TEMP/hosts-temp.txt"
+	if test -f "$filepath/TEMP/hosts.txt" ; then rm "$filepath/TEMP/hosts.txt" ; fi
+	if test -f "$filepath/TEMP/HOSTS" ; then rm "$filepath/TEMP/HOSTS" ; fi
+	if test "$unzipprog" = 'unzip' -o "$unzipprog" = 'p7zip' ; then rm "$filepath/TEMP/$dfile" ; fi # Delete the downloaded zip file
 
 done
 
-#	Remove old Host Flash blocklist, assuming it exists
 
+###
+#
+#	Prepare New Hosts File
+#
+##
+
+
+#	Format Data in hosts-temp.txt
+
+printf "\nPreparing new hosts file.. We could be here a while..\n"
+
+sed -i 's/#.*//' "$filepath/TEMP/hosts-temp.txt" # Remove all comments (some come after hostname <-> IP map lines)
+iconv -c -t UTF-8//TRANSLIT "$filepath/TEMP/hosts-temp.txt" > "$filepath/TEMP/hosts-utf8.txt" # Convert non UTF8 characters to fix comment fault in French lists.
+	rm "$filepath/TEMP/hosts-temp.txt"
+	mv hosts-utf8.txt "$filepath/TEMP/hosts-temp.txt"
+sed -i 's/^[^01-9].*//' "$filepath/TEMP/hosts-temp.txt" # Remove any line that does not begin with a number
+sed -i '/.*\blocalhost\b.*/d' "$filepath/TEMP/hosts-temp.txt" # Remove localhost lines - the computer's installed host file already has localhost defined the way it should be
+sed -i '/^$/d' "$filepath/TEMP/hosts-temp.txt" # Remove empty lines
+
+sed -i "s/^[01-9\.].*[ \t]/$redirectip /g" "$filepath/TEMP/hosts-temp.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab(s) or space(s) in each line
+
+#	Remove old Host Flash blocklist from existing hosts file, assuming it exists
+#	This creates file hosts.copy which is used a few lines down from here
 printf "\nRemoving previous blocklist from hosts..\n"
-cp /etc/hosts hosts.copy
-sed -i '/#### Hosts Flash Bad Hosts Block ########/,$d' hosts.copy
-printf '\n#### Hosts Flash Bad Hosts Block ########\n' >> hosts.copy
+cp /etc/hosts "$filepath/TEMP/hosts.copy"
+sed -i '/#### Hosts Flash Bad Hosts Block ########/,$d' "$filepath/TEMP/hosts.copy"
+sed -i 's/\n\n/\n/' "$filepath/TEMP/hosts.copy" # Ensuring we don't have hundreds of successive newlines
+printf '\n#### Hosts Flash Bad Hosts Block ########\n' >> "$filepath/TEMP/hosts.copy"
+
 
 #	Format and use custom blocklist
 
-cp ../blocklist.txt blocklist.txt
-
-if test -s 'blocklist.txt'
+if test -s "$filepath/blocklist.txt"
 then
 
+	cp "$filepath/blocklist.txt" "$filepath/TEMP/blocklist.txt"
+
 	printf "\nPreparing custom hosts in blocklist.txt..\n"
-	sed -r -i "s/^(.*)/$redirectip \1/g" blocklist.txt
-	printf "\nAdding custom bad hosts to..\n"
-	printf '\n' >> blocklist.txt
+	sed -r -i "s/^(.*)/$redirectip \1/g" "$filepath/TEMP/blocklist.txt"
+	printf "\nAdding custom bad hosts to the hosts list..\n"
+	printf '\n' >> "$filepath/TEMP/blocklist.txt" # Precaution
+	cat "$filepath/TEMP/blocklist.txt" >> "$filepath/TEMP/hosts-temp.txt"
 
 fi
 
-#	Merge bad hosts lists and custom blocklist. Sort them alphabetically and remove duplicates.
-#	If a file is missing, don't worry...
 
-	printf "\nBuilding new hosts file..\n"
-	cat blocklist.txt hosts.txt HOSTS > hosts-temp
-	sort -u -f hosts-temp > hosts
+###
+#
+#	Organise and remove duplicate entries from the new hosts lists and build them into the new hosts file
+#
+###
+
+
+	printf "\nBuilding the new hosts file..\n"
+	sort -u -f "$filepath/TEMP/hosts-temp.txt" > "$filepath/TEMP/hosts"
 
 ###
 #
@@ -548,21 +667,19 @@ fi
 
 printf "\nRe-enabling hosts in whitelist.txt.. This may take several minutes..\n"
 
-cp ../whitelist.txt whitelist.txt
-
 #	Sort content and remove duplicates
 
-sort -u -f whitelist.txt > whitelist
-
-if test -s 'whitelist'
+if test -s "$filepath/whitelist.txt"
 then
+
+	sort -u -f "$filepath/whitelist.txt" > "$filepath/TEMP/whitelist.txt"
 
 	while read -r LINE
 	do
-		sed -r -i "s/($redirectip $LINE(.*)?)$/# \1/g" hosts
+		sed -r -i "s/($redirectip $LINE(.*)?)$/# \1/g" "$filepath/TEMP/hosts"
 
-	done <"whitelist"
-# sed -r -i "s/([0-9].+$LINE(.*)?)$/# \1/g" hosts
+	done <"$filepath/TEMP/whitelist.txt"
+
 fi
 
 
@@ -573,8 +690,7 @@ fi
 ###
 
 printf "\nMerging bad hosts list into hosts file..\n"
-cat hosts.copy hosts > hosts-temp #  We use hosts-temp so we don't overwrite the temp. hosts file (in case it's needed later)
-mv hosts-temp ../hosts
+cat "$filepath/TEMP/hosts.copy" "$filepath/TEMP/hosts" > "$filepath/hosts" #  We use hosts-temp so we don't overwrite the temp. hosts file (in case it's needed later)
 
 # Back up to Host File root directory
 cd ..
@@ -583,7 +699,7 @@ if test "$clean" = "0"
 then
 
 	printf "\nRemoving temporary files..\n"
-	rm -r HOSTS
+	rm -r "$filepath/TEMP"
 
 fi
 
@@ -657,10 +773,23 @@ case $installhl in
 	0)
 
 		printf "\nInstalling new hosts file..\n"
-		sudo cp /etc/hosts /etc/hosts.hf.backup
+
+		# When Host Flash is first used, create backup of hosts file. Do not recreate this backup if it already exists
+		if test ! -f "/etc/hosts.hf.original"
+		then
+			sudo cp /etc/hosts /etc/hosts.hf.original
+		fi
+
+		# Backup the host file that is being replaced
+		if test ! -d "$filepath/backup"
+			then mkdir "$filepath/backup"
+		fi
+
+		zip -j9 "$filepath/backup/hosts-backup-$todaytime.zip" /etc/hosts
 		sudo mv "$filepath/hosts" /etc/hosts
 
-		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "New hosts file block list installed.\n\nThe old hosts file has been backed up to /etc/hosts.backup\n\nDonations welcome at paypal.me/vr51" 0 0
+		# Tell the user we are all done
+		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "New hosts file block list installed.\n\nThe original hosts lists that existed before Host Flash was first used can always be found at /etc/hosts.hf.original\n\nThe file replaced today has been moved to $filepath/backup/hosts-backup-$todaytime.zip\n\nDonations welcome at paypal.me/vr51" 0 0
 
 		exit
 
@@ -668,7 +797,7 @@ case $installhl in
 
 	1)
 
-		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The new hosts file can be found in the same directory as this program. Look for the file named 'hosts'\n\nYou can install the file manually by moving it to /etc/hosts\n\nContribute to the Host Flash development fund at paypal.me/vr51" 0 0
+		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The new hosts file can is ready for review at $filepath/hosts\n\nYou can install the file manually by moving it to /etc/hosts\n\nContribute to the Host Flash development fund at paypal.me/vr51" 0 0
 		exit
 		;;
 
