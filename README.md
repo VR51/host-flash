@@ -79,7 +79,7 @@ This software is known to work on Linux systems. It may work on other Unix based
 
 Host Flash will run in many Debian (and probably non Debian) environments like Ubuntu, Kubuntu and Debian. It should work on rooted Androids too.
 
-Saved Quick Run settings will work independently of the host they were configured on. If you want to reuse the settings, just move the Host Flash directory to any other system and any saved settings will be mvoed migrated too.
+Saved Quick Run settings will work independently of the host they were configured on. If you want to reuse the settings, just move the Host Flash directory to any other system and any saved settings will be migrated too.
 
 # How to Use Host Flash
 
