@@ -1,3 +1,16 @@
+1.2.0
+
+- Feature: More bad hosts lists: hostsfile.org and Airelle Lists (total lists now equal 8)
+
+- Feature: New backup archive. Replaced hosts files are now stored in an archive in zip format.
+
+- Enhancement: Rewrote hosts file download process. Now easier to work with additional source files.
+
+- Enhancement: Faster processing of source files and so shorter program runtime.
+
+- Enhancement: The hosts lists choice screen now shows useful information about each list source.
+
+
 1.1.1
 
 - Feature: Quick Run. Can now save settings for reuse.
@@ -7,6 +20,7 @@
 - Enhancement: Adjusted code for portability
 
 - Enhancement: Replaced echo with printf
+
 
 1.1.0
 
