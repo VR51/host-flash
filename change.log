@@ -1,3 +1,8 @@
+1.2.1
+
+- Feature: Added whitelist-wild.txt. This is a whiltelist for wildcard domains. Root domains added to this list will automatically be removed from the hosts blocklist along with any possible subdomains.
+- Change: Updated readme files.
+
 1.2.0
 
 - Feature: More bad hosts lists: hostsfile.org and Airelle Lists (total lists now equal 8)

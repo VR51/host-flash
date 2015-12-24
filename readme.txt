@@ -1,13 +1,13 @@
 ###
 #
-#	Host Flash (Junior) v1.2.0
+#	Host Flash (Junior) v1.2.1
 #
 #	Author: Lee Hodson
 #	Donate: paypal.me/vr51
 #	Website: https://journalxtra.com/linux/linux-hosts-file-manager-program/
 #	First Written: 18th Oct. 2015
 #	First Release: 2nd Nov. 2015
-#	This Release: 7th Nov. 2015
+#	This Release: 23rd Dec. 2015
 #
 #	Copyright 2015 Lee Hodson <journalxtra.com>
 #	License: GPL3
@@ -30,6 +30,7 @@
 #
 ###
 
+	- Wildcard Whitelist
 	- Quick Run
 	- Save options for reuse
 	- More block list sources
@@ -77,7 +78,7 @@ Press Esc or Ctrl+C to stop the process at any stage.
 #
 ###
 
-Host Flash will run in many Debian (and probably non Debian) environments like Ubuntu, Kubuntu and Debian. It should work on rooted Androids too.
+Host Flash will run in many Debian (and probably non Debian) environments like Ubuntu, Kubuntu and Debian. It should work on rooted Android devices, though full BusyBox or ToyBox needs to be installed into Android with a few additional shell scripts (it is easier to compile the hosts file on a full Linux machine then transfer it to Android).
 
 Saved Quick Run settings will work independently of the host they were configured on. If you want to reuse the settings, just move the Host Flash directory to any other system and any saved settings will be migrated too.
 
@@ -140,12 +141,15 @@ Whitelist
 
 		4) DO NOT include anything after the TLD part of the domain.
 
+		5) DO end the root domain with dot (.) if all gTLD or ccTLD versions of the domain are to be whitelisted
+
 		GOOD Examples
 
 			example.com
 			www.example.com
 			example-two.com
 			www.example-two.com
+			example.
 
 		BAD Examples
 
@@ -154,6 +158,26 @@ Whitelist
 			example-two.com/some-page
 			https://www.example-two.com/one.html
 
+Wildcard Whitelist
+
+	This applies to the file whitelist-wild.txt. Apply the same instructions as explained above for the regular Whitelist.
+
+	The difference between the regular Whitelist and the Wildcard Whitelist is that hostnames added to whitelist-wild.txt are removed from the hosts blocklist along with any subdomains. The subdomains are discovered in the blocklist automatically.
+
+		GOOD Examples
+
+			example.com
+			www.example.com
+			example-two.com
+			www.example-two.com
+			example.
+
+		BAD Examples
+
+			http://example.com
+			www.example.com/
+			example-two.com/some-page
+			https://www.example-two.com/one.html
 
 Blocklist
 

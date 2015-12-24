@@ -2,13 +2,13 @@
 clear
 ###
 #
-#	Host Flash (Junior) v1.2.0
+#	Host Flash (Junior) v1.2.1
 #
 #	Author: Lee Hodson
 #	Donate: paypal.me/vr51
 #	First Written: 18th Oct. 2015
 #	First Release: 2nd Nov. 2015
-#	This Release: 7th Nov. 2015
+#	This Release: 23rd Dec. 2015
 #
 #	https://github.com/VR51/host-flash
 #	https://journalxtra.com
@@ -431,7 +431,7 @@ then
 				free.fr-Trackers 'Moderate: Blocks tracking services and analytic services' Off \
 				free.fr-Ad-Servers 'Moderate: Blocks ad servers' On \
 				free.fr-Malware 'Moderate: Blocks reported malware sites' On \
-				free.fr-Adult 'Moderate: Blocks pornography' Off \
+				free.fr-Adult 'Moderate: Blocks pornography. Coincidentally blocks forums and some social sites.' Off \
 				free.fr-Misc 'Moderate: Blocks miscellaneous sites that some consider undesirable' Off \
 				hostsfile.org 'Very Strict: Regular blocks + porn, gambling and gaming sites.' Off \
 				)"
@@ -665,22 +665,43 @@ fi
 #
 ###
 
-printf "\nRe-enabling hosts in whitelist.txt.. This may take several minutes..\n"
-
 #	Sort content and remove duplicates
 
 if test -s "$filepath/whitelist.txt"
 then
 
+	printf "\nRe-enabling hosts in whitelist.txt.. This may take several minutes..\n"
+
 	sort -u -f "$filepath/whitelist.txt" > "$filepath/TEMP/whitelist.txt"
+
+	# Iterate through non wildcard domain list
 
 	while read -r LINE
 	do
 		sed -r -i "s/($redirectip $LINE(.*)?)$/# \1/g" "$filepath/TEMP/hosts"
+		# sed -i "s/$redirectip $LINE(.*)?//" "$filepath/TEMP/hosts"
 
 	done <"$filepath/TEMP/whitelist.txt"
 
 fi
+
+if test -s "$filepath/whitelist-wild.txt"
+then
+
+	printf "\nRe-enabling hosts in whitelist-wild.txt.. This may take several minutes..\n"
+
+	sort -u -f "$filepath/whitelist-wild.txt" > "$filepath/TEMP/whitelist-wild.txt"
+
+	# Iterate through wildcard domain list
+
+	while read -r LINE
+	do
+		sed -r -i "s/($redirectip (.*\.)$LINE(.*)?)$/# \1/g" "$filepath/TEMP/hosts"
+
+	done <"$filepath/TEMP/whitelist-wild.txt"
+
+fi
+
 
 
 ###
@@ -772,11 +793,10 @@ case $installhl in
 
 	0)
 
-		printf "\nInstalling new hosts file..\n"
-
 		# When Host Flash is first used, create backup of hosts file. Do not recreate this backup if it already exists
 		if test ! -f "/etc/hosts.hf.original"
 		then
+			printf "\nCopying original hosts file /etc/hosts.hf.original..\n"
 			sudo cp /etc/hosts /etc/hosts.hf.original
 		fi
 
@@ -785,25 +805,43 @@ case $installhl in
 			then mkdir "$filepath/backup"
 		fi
 
+		printf "\nCreating hosts file backup for the backup archive..\n"
+
 		zip -j9 "$filepath/backup/hosts-backup-$todaytime.zip" /etc/hosts
+
+		printf "\nInstalling new hosts file..\n"
+
 		sudo mv "$filepath/hosts" /etc/hosts
 
 		# Tell the user we are all done
 		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "New hosts file block list installed.\n\nThe original hosts lists that existed before Host Flash was first used can always be found at /etc/hosts.hf.original\n\nThe file replaced today has been moved to $filepath/backup/hosts-backup-$todaytime.zip\n\nDonations welcome at paypal.me/vr51" 0 0
 
-		exit
+		time
+
+		printf "Press any key to exit Host Flash"
+		read something
 
 		;;
 
 	1)
 
 		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The new hosts file can is ready for review at $filepath/hosts\n\nYou can install the file manually by moving it to /etc/hosts\n\nContribute to the Host Flash development fund at paypal.me/vr51" 0 0
+
+		time
+
+		printf "Press any key to exit Host Flash"
+		read something
 		exit
 		;;
 
 	255)
 
 		$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\nContribute to the Host Flash development fund at paypal.me/vr51" 0 0
+		printf "Press any key to exit Host Flash"
+
+		time
+
+		read something
 		exit
 		;;
 
