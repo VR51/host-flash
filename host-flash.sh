@@ -2,26 +2,30 @@
 clear
 ###
 #
-#	Host Flash (Junior) v1.2.1
+#	Host Flash™ v2.0.0
 #
-#	Author: Lee Hodson
+#	Lead Author: Lee Hodson
 #	Donate: paypal.me/vr51
+#	Website: https://host-flash.com
 #	First Written: 18th Oct. 2015
 #	First Release: 2nd Nov. 2015
-#	This Release: 23rd Dec. 2015
+#	This Release: 28th Dec. 2015
 #
-#	https://github.com/VR51/host-flash
-#	https://journalxtra.com
-#
-#	Copyright 2015 Lee Hodson
+#	Copyright 2015 Host Flash™ <https://host-flash.com>
 #	License: GPL3
+#
+#	Programmer: Lee Hodson <journalxtra.com>, <vr51.com>
 #
 #	Use of this program is at your own risk
 #
-#	TO RUN either 'bash host-flash.sh' or click the file host-flash.sh
+#	TO RUN:
 #
-#	Use Host Flash to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
-#	Use Host Flash to manage your hosts file
+#	- Ensure the script is executable.
+#	- Command line: bash host-flash.sh or ./host-flash.sh
+#	- File browser: click host-flash.sh or click host-flash.desktop, or
+#
+#	Use Host Flash™ to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
+#	Use Host Flash™ to manage your hosts file
 #
 ###
 
@@ -39,7 +43,10 @@ printf "HOST FLASH INITIALISED\n----------------------\n\n"
 #
 ###
 
-# Date
+# Establish Linux epoch time in seconds
+now=$(date +%s)
+
+# Establish both Date and Time
 todaytime=$(date +"%Y-%m-%d-%H:%M:%S")
 
 # Locate Where We Are
@@ -48,8 +55,51 @@ filepath="$(dirname "$(readlink -f "$0")")"
 
 ###
 #
+#	Register leave_program function
+#
+###
+
+
+leave_program() {
+
+	exittime=$(date +%s)
+	runtime=$(($exittime - $now))
+
+	# Add End Run time to run.log
+	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): RUN END" >> "$filepath/log/run.log"
+	# Add Run time to run.log
+	printf "\nPROGRAM RUN TIME: $runtime seconds\n" >> "$filepath/log/run.log"
+
+	printf "\nPROGRAM RUN TIME: $runtime seconds\n"
+	printf "Visit https://host-flash.com to learn more about Host Flash and hosts files.\n\n"
+	printf "\n\nSend donations to paypal.me/vr51\n\n"
+	printf "\n\nPress any key to exit Host Flash"
+	read something
+	exit
+
+}
+
+
+###
+#
+#	Add Start Time to run.log
+#
+###
+
+if test ! -d "$filepath/log"
+then
+	mkdir "$filepath/log"
+fi
+
+if test -f "$filepath/log/run.log"
+then
+	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): RUN START" >> "$filepath/log/run.log"
+fi
+
+###
+#
 #	Confirm we are running in a terminal
-#		If not, try to launch thIS program in a terminal
+#		If not, try to launch this program in a terminal
 #
 ###
 
@@ -60,7 +110,7 @@ then
 
 	# This code section is released in public domain by Han Boetes <han@mijncomputer.nl>
 	# Updated by Dave Davenport <qball@gmpclient.org>
-	# Updated by Lee Hodson <https://journalxtra.com> - Added break on successful hit, added more terminals, humanized the failure message and replaced call to rofi with printf.
+	# Updated by Lee Hodson <https://journalxtra.com> - Added break on successful hit, added more terminals, humanized the failure message, replaced call to rofi with printf and made $terminal an array for easy reuse.
 	#
 	# This script tries to exec a terminal emulator by trying some known terminal
 	# emulators.
@@ -68,12 +118,16 @@ then
 	# We welcome patches that add distribution-specific mechanisms to find the
 	# preferred terminal emulator. On Debian, there is the x-terminal-emulator
 	# symlink for example.
-	for terminal in $TERMINAL x-terminal-emulator xdg-terminal konsole gnome-terminal terminator urxvt rxvt Eterm aterm roxterm xfce4-terminal termite lxterminal xterm; do
-		if command -v $terminal > /dev/null 2>&1; then
-			exec $terminal -e "$0"
+
+	terminal=( x-terminal-emulator xdg-terminal konsole gnome-terminal terminator urxvt rxvt Eterm aterm roxterm xfce4-terminal termite lxterminal xterm )
+	for i in ${terminal[@]}; do
+		if command -v $i > /dev/null 2>&1; then
+			exec $i -e "$0"
 			break
 		else
 			printf "\nUnable to automatically determine the correct terminal program to run e.g Console or Konsole. Please run this program from a terminal AKA the command line or click the host-flash.desktop file to launch Host Flash.\n"
+			read something
+			leave_program
 		fi
 	done
 
@@ -85,52 +139,79 @@ fi
 #
 ###
 
-missing=0
-for requirement in $REQUIREMENT wget sed dialog whiptail unzip p7zip p7zip-full; do
-	if command -v $requirement > /dev/null 2>&1; then
-		printf "Checking for software dependencies.. $requirement found. Success! :-)\n"
+printf "Checking software requirements...\n\n"
+
+requirement=( dialog whiptail zip unzip p7zip p7zip-full wget sed ) # p7zip and p7zip-full. Their status flag is used near line 497 (#	Select the hosts file blocklists)
+for i in ${requirement[@]}; do
+
+	if command -v $i > /dev/null 2>&1; then
+		statusmessage+=("%4sFound:%10s$i")
+		statusflag+=('0')
 	else
-		printf "Checking for software dependencies.. $requirement MISSING :-(\n"
-		printf "\n\t$requirement can be installed with, for example, sudo apt-get install $requirement\n"
-		case $requirement in
-
-			whiptail)
-				printf "\n\tWe are still okay if 'dialog' is installed\n"
-				missing=$(($missing + 1))
-				;;
-
-			dialog)
-				printf "\n\tWe are still okay if 'whiptail' is installed\n"
-				missing=$(($missing + 2))
-				;;
-			p7zip)
-				printf "\n\tWe are still okay if 'p7zip-full' is installed\n"
-				missing=$(($missing + 4))
-				;;
-
-			p7zip-full)
-				printf "\n\tWe are still okay if 'p7zip' is installed\n"
-				missing=$(($missing + 8))
-				;;
-		esac
-
+		statusmessage+=("%4sMissing:%8s$i")
+		statusflag+=('1')
+		whattoinstall+=("$i")
+		error=1
 	fi
+
 done
 
-case $missing in
+# Display status of presence or not of each requirement
 
-	3)
-		printf "\nUh oh! Host Flash needs either 'whiptail' or 'dialog' to be installed on this computer. Please install one or both of them then rerun Host Flash\n"
-		read something
-		exit
-		;;
+for LINE in ${statusmessage[@]}; do
+	printf "$LINE\n"
+done
 
-	12)
-		printf "\nThis is awkward.. Host Flash needs either the 'p7zip' or 'p7zip-full' file extractor to be installed on this computer to enable some features to work. Install p7zip or p7zip-full if you want to use the Airelle Lists of bad hosts. Host Flash will continue but with the Airelle Lists disabled.\n"
-		read something
-		;;
+printf "\n"
+# Check for critical errors
 
-esac
+critical=0
+
+if test ${statusflag[0]} = 1 && test ${statusflag[1]} = 1; then
+		printf "%4sCritical:%6s dialog and whiptail are not installed. Program cannot run\n"
+		critical=1
+fi
+
+if test ${statusflag[2]} = 1; then
+		printf "%4sCritical:%6s zip is not installed. Program cannot run\n"
+		critical=1
+fi
+
+if test ${statusflag[3]} = 1 && test ${statusflag[4]} = 1 && test ${statusflag[5]} = 1; then
+		printf "%4sCritical:%6s unzip p7zip and p7zip-full are not installed. Program cannot run\n"
+		critical=1
+fi
+
+if test "${statusflag[4]}" = 1 && test "${statusflag[5]}" = 1; then
+		printf "%4sWarning:%6s p7zip and p7zip-full are not installed. Program will run with fewer blacklist download options\n"
+fi
+
+if test ${statusflag[6]} = 1; then
+		printf "%4sCritical:%6s wget is not installed. Program cannot run\n"
+		critical=1
+fi
+
+if test ${statusflag[7]} = 1; then
+		printf "%4sCritical:%6s sed is not installed. Program cannot run\n"
+		critical=1
+fi
+
+# Display appropriate status messages
+
+if test "$error" == 0 && test "$critical" == 0; then
+	printf "The software environment is optimal for this program.\n\n"
+fi
+
+if test "$error" == 1 && test "$critical" == 0; then
+	printf "Missing non essential software. If the program fails to run, consider to install with, for example,\n\n%6ssudo apt-get install ${whattoinstall[*]}\n\n"
+fi
+
+if test "$critical" == 1; then
+	printf "Missing critical software. The program will not run. Install missing software with, for example,\n\n%6ssudo apt-get install ${whattoinstall[*]}\n\n"
+	read something
+	leave_program
+fi
+
 
 ###
 #
@@ -143,11 +224,10 @@ esac
 
 DIALOGRC="$filepath/settings/dialogrc"
 
-# DIALOG=${DIALOG=dialog}
-
-for dialogbox in $DIALOGBOX dialog whiptail; do
-	if command -v $dialogbox > /dev/null 2>&1; then
-		DIALOG=$dialogbox
+dialoguesystem=( dialog whiptail )
+for i in ${dialoguesystem[@]} ; do
+	if command -v $i > /dev/null 2>&1; then
+		DIALOG=$i
 		break
 	else
 		printf "\nUnable to detect a dialog box program such as 'dialog' or 'whiptail'. Please install one.\n"
@@ -160,9 +240,12 @@ done
 #
 ###
 
+# Add event to run.log
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): ASKED FOR AUTHORISATION" >> "$filepath/log/run.log"
+
 printf "\n\nAUTHORISATION\n-------------\n"
 
-printf "\nPlease authorise Host Flash to backup, restore, edit or replace your computer's hosts file:\n"
+printf "\nAuthorise Host Flash to backup, restore, edit and replace the hosts file:\n"
 sudo -v
 
 
@@ -174,6 +257,9 @@ sudo -v
 
 if test -f "$filepath/settings/quickrun"
 then
+
+	# Add event to run.log
+	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): CHECKED FOR QUICKRUN" >> "$filepath/log/run.log"
 
 	quickrun="$($DIALOG --stdout \
 			--clear \
@@ -196,8 +282,6 @@ then
 				. "$filepath/settings/quickrun"
 			fi
 
-			# Add newlines back into the imported hosts_listings variable. They were removed during settings export
-			#hosts_listsqr="$(echo ${hosts_listsqr} | tr '\t' '\n')"
 			;;
 
 		No)
@@ -213,8 +297,8 @@ then
 
 		255)
 
-			$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\nSend donations to paypal.me/vr51" 0 0
-			exit
+			$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\n" 0 0
+			leave_program
 			;;
 
 	esac
@@ -232,6 +316,9 @@ fi
 if test ! -f "$filepath/settings/.showonce"
 then
 
+# Add event to run.log
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): SHOWED INTRODUCTION TEXT" >> "$filepath/log/run.log"
+
 $DIALOG --clear \
 	--backtitle "Host Flash" \
 	--title "Host Flash Protects Your Computer & Blocks Internet Ads" \
@@ -243,25 +330,17 @@ This list of 'bad host' domains is installed into your computer's hosts file.
 \n\n
 The hosts file is typically stored in /etc/hosts and is read by your Linux computer when a request is made to view a domain.
 \n\n
-As you probably know, DNS servers tell computers the IP address of a server where a website (host) is located. DNS servers are usually managed by ISPs and are only connected to your computer through the incredibly long cables that connect it to the Internet. What you might not know is that your computer's hosts file overrules the remotely managed DNS servers.
+DNS servers tell computers the IP address of a server where a website (host) is located. DNS servers are usually managed by ISPs and are only connected to your computer through the long cables that connect it to the Internet. Information stored in a computer's locally stored hosts file overrules the remote DNS server's index.
 \n\n
-Domain names listed in your computer's hosts file are placed next to an IP address. This IP address is the address of the host (or web server) that your computer will attempt to contact when it needs to reach the domain listed alongside it.
+Only those hosts that need their DNS server IP address(es) to be overriden need to be listed in the local hosts file of your computer.
 \n\n
-IP address to host name maps in a hosts file look like this one:
-\n\n
-		127.0.0.1 example.com\n
-		127.0.0.1 example-two.com\n
-		...
-\n\n
-Not all domain names (hosts) are listed in a computer's hosts file. In fact, most domain names are not listed in it. Only those hosts that need their server IP address(es) to be overriden need to be listed in the local hosts file of your computer.
-\n\n
-Your computer will not be able to access, send requests to, or recieve content from the domains that are added by Host Flash to your computer's local hosts file.
+Your computer will not be able to access or send requests to domains that are added to your computer's hosts file by Host Flash.
 \n\n
 The domains Host Flash adds to your hosts file are mapped to either the local IP address (i.e. loopback address) of your computer or to an IP address you specify when Host Flash is run. Requests to visit the hosts listed in the hosts file will never get any further than your computer's own IP address.
 \n\n
-With the bad hosts blocklist installed you will see (usually) a Document Not Found error message issued by your web browser when you try to view content hosted at a blocked address. This is the normal and expeted behaviour.
+With the bad hosts blocklist installed you will see (usually) a Document Not Found error message issued by your web browser when a request for data is made to a blocked address. This is the normal and expeted behaviour.
 \n\n
-Host Flash offers you 4 IP address mapping options:
+Host Flash offers 4 IP address mapping options:
 \n\n
 	a) 127.0.0.1 (default)\n
 	b) 127.255.255.254 (non default)\n
@@ -272,7 +351,7 @@ Use the default IP address if in doubt over which to use.
 \n\n
 If you wanted to, you could use the IP address of another website so that requests to visit bad hosts redirect to something useful.
 \n\n
-This message will not show the next time you run Host Flash. Full instructions are in the readme.txt file shipped with Host Flash." 0 0
+This message will not show the next time you run Host Flash. Full instructions are in the readme.txt file shipped with Host Flash. More information can be found at https://host-flash.com" 0 0
 
 touch "$filepath/settings/.showonce"
 printf "Delete this file to re-enable the Host Flash information dialogue box that displays when Host Flash is first run." > "$filepath/settings/.showonce"
@@ -287,6 +366,9 @@ fi
 
 if test "$quickrun" != "On"
 then
+
+	# Add event to run.log
+	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): ASKED CONFIG QUESTIONS" >> "$filepath/log/run.log"
 
 	$DIALOG --clear \
 		--backtitle "Host Flash" \
@@ -309,17 +391,17 @@ then
 	\n\n
 	You will not be able to access sites blocked by Host Flash. This means blocked sites will show in your browser as Document Not Found errors or sites that incorporate blocked sites as part of their make up will load but with blocked parts missing from the rendered pages.
 	\n\n
-	Run Host Flash regularly to keep your hosts file up-to-date with new bad hosts.
+	Run Host Flash regularly to keep your hosts file blocklist up-to-date.
 	\n\n
 	Run Host Flash if you need to undo changes made to the hosts file by Host Flash
 	\n\n
-	Use Host Flash and the files whitelist.txt and blocklist.txt to manage your computer's hosts file.
+	Use Host Flash and the files whitelist.txt, whitelist-wild.txt and blocklist.txt to manage your computer's hosts file.
 	\n\n
-	Rerun Host Flash to update the list of blocked sites or to activate changes to whitelist.txt and blocklist.txt.
+	Rerun Host Flash to update the list of blocked sites or to activate changes to whitelist.txt, whitelist-wild.txt or blocklist.txt.
 	\n\n
-	If you manually edit your computer's hosts file after using Host Flash, make sure your edits are above the content added by Host Flash or risk your manual edits being removed when Host Flash next runs.
+	If you manually edit the hosts file after using Host Flash, make sure any manual edits are above the content added by Host Flash otherwise they will be removed when Host Flash next runs.
 	\n\n
-	Read readme.txt for more information.
+	Visit https://host-flash.com or read readme.txt for more information.
 	\n\n
 	Host Flash may take several minutes to complete its tasks on some systems.
 	\n\n
@@ -334,6 +416,10 @@ fi
 
 if test -d "$filepath/TEMP"
 then
+
+	# Add event to run.log
+	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): DELETED OLD TEMP DIRECTORY" >> "$filepath/log/run.log"
+
 	rm -r "$filepath/TEMP"
 fi
 
@@ -361,9 +447,12 @@ then
 
 			sudo mv /etc/hosts.hf.original /etc/hosts
 
-			$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The original hosts file has been restored.\n\nDonate toward the Host Flash Development Fund at paypal.me/vr51" 0 0
+			$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The original hosts file has been restored." 0 0
 
-			exit
+			# Add event to run.log
+			printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): RESTORED HOSTS FILE" >> "$filepath/log/run.log"
+			printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): RUN END" >> "$filepath/log/run.log"
+			leave_program
 			;;
 
 		1)
@@ -375,8 +464,8 @@ then
 
 		255)
 
-			$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\nSend donations to paypal.me/vr51" 0 0
-			exit
+			$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed." 0 0
+			leave_program
 			;;
 
 	esac
@@ -388,15 +477,19 @@ then
 
 			sed -i '/#### Hosts Flash Bad Hosts Block ########/,$d' /etc/hosts
 
-			$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "Hosts Flash bad hosts blocklist has been removed from your hosts file.\n\nSend donations to paypal.me/vr51" 0 0
+			$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "Hosts Flash bad hosts blocklist has been removed from your hosts file." 0 0
 
-			exit
+			# Add event to run.log
+			printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): REMOVED BLOCK LIST" >> "$filepath/log/run.log"
+			printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): RUN END" >> "$filepath/log/run.log"
+
+			leave_program
 			;;
 
 		255)
 
-			$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\nSend donations to paypal.me/vr51" 0 0
-			exit
+			$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed." 0 0
+			leave_program
 			;;
 
 	esac
@@ -418,7 +511,7 @@ fi
 if test "$quickrun" != "On"
 then
 
-	if test "$missing" -ne 12
+	if test "${statusflag[4]}" = 0 || test "${statusflag[5]}" = 0
 	then
 
 		hosts_lists="$($DIALOG --stdout \
@@ -437,7 +530,7 @@ then
 				)"
 	fi
 
-	if test "$missing" = 12
+	if test "${statusflag[4]}" = 1 && test "${statusflag[5]}" = 1
 	then
 
 		hosts_lists="$($DIALOG --stdout \
@@ -516,6 +609,9 @@ fi
 
 clear
 
+# Add event to run.log
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): CREATED TEMP DIRECTORY" >> "$filepath/log/run.log"
+
 mkdir "$filepath/TEMP"
 cd "$filepath/TEMP"
 
@@ -526,6 +622,9 @@ cd "$filepath/TEMP"
 #	Look at hosts_lists DIALOG box for more info
 #
 ##
+
+# Add event to run.log
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): DOWNLOADED HOST FILES" >> "$filepath/log/run.log"
 
 touch hosts-temp.txt
 for opt in $hosts_lists
@@ -612,6 +711,9 @@ done
 
 #	Format Data in hosts-temp.txt
 
+# Add event to run.log
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): PREPARED NEW HOSTS" >> "$filepath/log/run.log"
+
 printf "\nPreparing new hosts file.. We could be here a while..\n"
 
 sed -i 's/#.*//' "$filepath/TEMP/hosts-temp.txt" # Remove all comments (some come after hostname <-> IP map lines)
@@ -637,6 +739,9 @@ printf '\n#### Hosts Flash Bad Hosts Block ########\n' >> "$filepath/TEMP/hosts.
 
 if test -s "$filepath/blocklist.txt"
 then
+
+	# Add event to run.log
+	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): ADDED BLOCKLIST.TXT HOSTS" >> "$filepath/log/run.log"
 
 	cp "$filepath/blocklist.txt" "$filepath/TEMP/blocklist.txt"
 
@@ -670,6 +775,9 @@ fi
 if test -s "$filepath/whitelist.txt"
 then
 
+	# Add event to run.log
+	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): REMOVED WHITELIST.TXT HOSTS" >> "$filepath/log/run.log"
+
 	printf "\nRe-enabling hosts in whitelist.txt.. This may take several minutes..\n"
 
 	sort -u -f "$filepath/whitelist.txt" > "$filepath/TEMP/whitelist.txt"
@@ -678,8 +786,8 @@ then
 
 	while read -r LINE
 	do
-		sed -r -i "s/($redirectip $LINE(.*)?)$/# \1/g" "$filepath/TEMP/hosts"
-		# sed -i "s/$redirectip $LINE(.*)?//" "$filepath/TEMP/hosts"
+		# sed -r -i "s/($redirectip $LINE(.*)?)$/# \1/g" "$filepath/TEMP/hosts" # This method comments out whitelisted hostnames
+		sed -r -i "s/$redirectip $LINE.*?$//g" "$filepath/TEMP/hosts" # This method removes whitelisted hostnames
 
 	done <"$filepath/TEMP/whitelist.txt"
 
@@ -687,6 +795,9 @@ fi
 
 if test -s "$filepath/whitelist-wild.txt"
 then
+
+	# Add event to run.log
+	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): REMOVED WHITELIST-WILD.TXT HOSTS" >> "$filepath/log/run.log"
 
 	printf "\nRe-enabling hosts in whitelist-wild.txt.. This may take several minutes..\n"
 
@@ -696,19 +807,30 @@ then
 
 	while read -r LINE
 	do
-		sed -r -i "s/($redirectip (.*\.)$LINE(.*)?)$/# \1/g" "$filepath/TEMP/hosts"
+		# sed -r -i "s/($redirectip (.*\.)$LINE(.*)?)$/# \1/g" "$filepath/TEMP/hosts" # This method comments out whitelisted hostnames
+		sed -r -i "s/$redirectip .*\.$LINE.*?$//g" "$filepath/TEMP/hosts" # This method removes whitelisted hostnames
 
 	done <"$filepath/TEMP/whitelist-wild.txt"
 
 fi
 
+###
+#
+#	Remove null lines left behind when whitelisted hostnames were removed
+#
+###
 
+
+sed -i '/^$/d' "$filepath/TEMP/hosts"
 
 ###
 #
 #	Restore Default hosts file's head (restore anything above the line #### Hosts Flash Bad Hosts Block ######## of the existing hosts file)
 #
 ###
+
+# Add event to run.log
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): UPDATED STAGING HOSTS FILE WITH BLOCKLIST" >> "$filepath/log/run.log"
 
 printf "\nMerging bad hosts list into hosts file..\n"
 cat "$filepath/TEMP/hosts.copy" "$filepath/TEMP/hosts" > "$filepath/hosts" #  We use hosts-temp so we don't overwrite the temp. hosts file (in case it's needed later)
@@ -718,6 +840,9 @@ cd ..
 
 if test "$clean" = "0"
 then
+
+	# Add event to run.log
+	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): REMOVED TEMP DIRECTORY" >> "$filepath/log/run.log"
 
 	printf "\nRemoving temporary files..\n"
 	rm -r "$filepath/TEMP"
@@ -762,6 +887,9 @@ fi
 
 			0)
 
+				# Add event to run.log
+				printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): CREATED QUICKRUN CONFIG FILE" >> "$filepath/log/run.log"
+
 				touch "$filepath/settings/quickrun"
 
 				printf "#!/bin/bash\n" > "$filepath/settings/quickrun"
@@ -796,53 +924,56 @@ case $installhl in
 		# When Host Flash is first used, create backup of hosts file. Do not recreate this backup if it already exists
 		if test ! -f "/etc/hosts.hf.original"
 		then
+
+			# Add event to run.log
+			printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): CREATED BACKUP OF /ETC/HOSTS" >> "$filepath/log/run.log"
+
 			printf "\nCopying original hosts file /etc/hosts.hf.original..\n"
 			sudo cp /etc/hosts /etc/hosts.hf.original
 		fi
 
 		# Backup the host file that is being replaced
 		if test ! -d "$filepath/backup"
-			then mkdir "$filepath/backup"
+		then
+
+			# Add event to run.log
+			printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): CREATED BACKUP DIRECTORY" >> "$filepath/log/run.log"
+
+			mkdir "$filepath/backup"
 		fi
+
+		# Add event to run.log
+		printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): CREATED ZIPPED HOSTS BACKUP" >> "$filepath/log/run.log"
 
 		printf "\nCreating hosts file backup for the backup archive..\n"
 
 		zip -j9 "$filepath/backup/hosts-backup-$todaytime.zip" /etc/hosts
+
+		# Add event to run.log
+		printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): INSTALLED NEW HOSTS FILE" >> "$filepath/log/run.log"
 
 		printf "\nInstalling new hosts file..\n"
 
 		sudo mv "$filepath/hosts" /etc/hosts
 
 		# Tell the user we are all done
-		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "New hosts file block list installed.\n\nThe original hosts lists that existed before Host Flash was first used can always be found at /etc/hosts.hf.original\n\nThe file replaced today has been moved to $filepath/backup/hosts-backup-$todaytime.zip\n\nDonations welcome at paypal.me/vr51" 0 0
+		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "New hosts file block list installed.\n\nThe original hosts lists that existed before Host Flash was first used can always be found at /etc/hosts.hf.original\n\nThe file replaced today has been moved to $filepath/backup/hosts-backup-$todaytime.zip\n\nCheck https://host-flash.com for updates." 0 0
 
-		time
-
-		printf "Press any key to exit Host Flash"
-		read something
-
+		leave_program
 		;;
 
 	1)
 
-		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The new hosts file can is ready for review at $filepath/hosts\n\nYou can install the file manually by moving it to /etc/hosts\n\nContribute to the Host Flash development fund at paypal.me/vr51" 0 0
+		$DIALOG --clear --backtitle "Host Flash" --title "Finished" --msgbox "The new hosts file can is ready for review at $filepath/hosts\n\nYou can install the file manually by moving it to /etc/hosts\n\nCheck https://host-flash.com for updates." 0 0
 
-		time
-
-		printf "Press any key to exit Host Flash"
-		read something
-		exit
+		leave_program
 		;;
 
 	255)
 
-		$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed.\n\nContribute to the Host Flash development fund at paypal.me/vr51" 0 0
-		printf "Press any key to exit Host Flash"
+		$DIALOG --clear --backtitle "Host Flash" --title "Cancelled" --msgbox "Esc pressed." 0 0
 
-		time
-
-		read something
-		exit
+		leave_program
 		;;
 
 esac
