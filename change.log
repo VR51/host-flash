@@ -1,4 +1,4 @@
-2.0.1
+2.5.0
 
     - Feature: Host Flash program updater. Now you can download and install program updates automagically.
     - Feature: The whitelist files compiled by the community of Host Flash users (the Community Whitelists) can now be installed automatically. These are merged with any existing whitelists. Duplicates are removed.
@@ -6,6 +6,7 @@
     - Minor: Adjusted error messages to make them easier to understand.
     - Minor: Made information dialogs shorter to improve userfriendliness. Users are now directed to the readme.txt file and hosts-flash.com.
     - Bugfix: Host Flash checked for 7z archive package by testing for p7zip and p7zip-full. This test caused Host Flash to sometimes wrongly report a missing dependency error. Test changed to look for 7z directly.
+    - Notice: The current sample whitelists and blocklist will be removed in version 3. The Community Whitelist Installer will provide sample files if needed.
     
 2.0.0
 
