@@ -1,13 +1,13 @@
 ###
 #
-#	Host Flash™ v2.0.0
+#	Host Flash™ v2.5.0
 #
 #	Lead Author: Lee Hodson
 #	Donate: paypal.me/vr51
 #	Website: https://host-flash.com
 #	First Written: 18th Oct. 2015
 #	First Release: 2nd Nov. 2015
-#	This Release: 28th Dec. 2015
+#	This Release: 23rd Jan. 2016
 #
 #	Copyright 2015 Host Flash™ <https://host-flash.com>
 #	License: GPL3
@@ -33,6 +33,8 @@
 #
 ###
 
+        - Automatic Program Updates
+        - Community Whitelist Installer
 	- Event log file
 	- Wildcard Whitelist
 	- Quick Run

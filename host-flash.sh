@@ -2,14 +2,14 @@
 clear
 ###
 #
-#	Host Flash™ v2.0.0
+#	Host Flash™ v2.5.0
 #
 #	Lead Author: Lee Hodson
 #	Donate: paypal.me/vr51
 #	Website: https://host-flash.com
 #	First Written: 18th Oct. 2015
 #	First Release: 2nd Nov. 2015
-#	This Release: 28th Dec. 2015
+#	This Release: 23rd Jan. 2016
 #
 #	Copyright 2015 Host Flash™ <https://host-flash.com>
 #	License: GPL3
@@ -43,6 +43,8 @@ printf "HOST FLASH INITIALISED\n----------------------\n\n"
 #
 ###
 
+version="v2.0.1"
+
 # Establish Linux epoch time in seconds
 now=$(date +%s)
 
@@ -64,14 +66,15 @@ leave_program() {
 
 	exittime=$(date +%s)
 	runtime=$(($exittime - $now))
-
+	
 	# Add End Run time to run.log
 	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): RUN END" >> "$filepath/log/run.log"
-	# Add Run time to run.log
+	# Add Run elapsed time to run.log
 	printf "\nPROGRAM RUN TIME: $runtime seconds\n" >> "$filepath/log/run.log"
 
+        clear
 	printf "\nPROGRAM RUN TIME: $runtime seconds\n"
-	printf "Visit https://host-flash.com to learn more about Host Flash and hosts files.\n\n"
+	printf "\n\nVisit https://host-flash.com to learn more about Host Flash and hosts files.\n\n"
 	printf "\n\nSend donations to paypal.me/vr51\n\n"
 	printf "\n\nPress any key to exit Host Flash"
 	read something
@@ -103,6 +106,8 @@ fi
 #
 ###
 
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): CHECKED FOR TERMINAL PROGRAM" >> "$filepath/log/run.log"
+
 tty -s
 
 if test "$?" -ne 0
@@ -119,7 +124,7 @@ then
 	# preferred terminal emulator. On Debian, there is the x-terminal-emulator
 	# symlink for example.
 
-	terminal=( x-terminal-emulator xdg-terminal konsole gnome-terminal terminator urxvt rxvt Eterm aterm roxterm xfce4-terminal termite lxterminal xterm )
+	terminal=( konsole gnome-terminal x-terminal-emulator xdg-terminal terminator urxvt rxvt Eterm aterm roxterm xfce4-terminal termite lxterminal xterm )
 	for i in ${terminal[@]}; do
 		if command -v $i > /dev/null 2>&1; then
 			exec $i -e "$0"
@@ -139,9 +144,11 @@ fi
 #
 ###
 
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): CHECKED SOFTWARE DEPENDENCIES" >> "$filepath/log/run.log"
+
 printf "Checking software requirements...\n\n"
 
-requirement=( dialog whiptail zip unzip p7zip p7zip-full wget sed ) # p7zip and p7zip-full. Their status flag is used near line 497 (#	Select the hosts file blocklists)
+requirement=( dialog whiptail zip unzip 7z wget sed ) # p7zip and p7zip-full. Their status flag is used near line 510 (# Select the hosts file blocklists)
 for i in ${requirement[@]}; do
 
 	if command -v $i > /dev/null 2>&1; then
@@ -163,36 +170,31 @@ for LINE in ${statusmessage[@]}; do
 done
 
 printf "\n"
-# Check for critical errors
+# Check for critical errors and warning errors. Set critical flag if appropriate.
 
 critical=0
 
 if test ${statusflag[0]} = 1 && test ${statusflag[1]} = 1; then
-		printf "%4sCritical:%6s dialog and whiptail are not installed. Program cannot run\n"
+		printf "%4sCritical:%6s Neither dialog nor whiptail is installed. Host Flash cannot run without at least one of them\n"
 		critical=1
 fi
 
 if test ${statusflag[2]} = 1; then
-		printf "%4sCritical:%6s zip is not installed. Program cannot run\n"
+		printf "%4sCritical:%6s zip is not installed. Program cannot run without zip\n"
 		critical=1
 fi
 
-if test ${statusflag[3]} = 1 && test ${statusflag[4]} = 1 && test ${statusflag[5]} = 1; then
-		printf "%4sCritical:%6s unzip p7zip and p7zip-full are not installed. Program cannot run\n"
-		critical=1
+if test "${statusflag[4]}" = 1; then
+		printf "%4sWarning:%6s Neither p7zip nor p7zip-full is installed. Program will run with reduced choice of blacklist download sources\n"
 fi
 
-if test "${statusflag[4]}" = 1 && test "${statusflag[5]}" = 1; then
-		printf "%4sWarning:%6s p7zip and p7zip-full are not installed. Program will run with fewer blacklist download options\n"
+if test ${statusflag[5]} = 1; then
+		printf "%4sCritical:%6s wget is not installed. Program cannot run without wget\n"
+		critical=1
 fi
 
 if test ${statusflag[6]} = 1; then
-		printf "%4sCritical:%6s wget is not installed. Program cannot run\n"
-		critical=1
-fi
-
-if test ${statusflag[7]} = 1; then
-		printf "%4sCritical:%6s sed is not installed. Program cannot run\n"
+		printf "%4sCritical:%6s sed is not installed. Program cannot run without sed\n"
 		critical=1
 fi
 
@@ -203,11 +205,11 @@ if test "$error" == 0 && test "$critical" == 0; then
 fi
 
 if test "$error" == 1 && test "$critical" == 0; then
-	printf "Missing non essential software. If the program fails to run, consider to install with, for example,\n\n%6ssudo apt-get install ${whattoinstall[*]}\n\n"
+	printf "Non essential software required by Host Flash is missing from this system. If the program fails to run, consider to install with, for example,\n\n%6ssudo apt-get install ${whattoinstall[*]}\n\n"
 fi
 
 if test "$critical" == 1; then
-	printf "Missing critical software. The program will not run. Install missing software with, for example,\n\n%6ssudo apt-get install ${whattoinstall[*]}\n\n"
+	printf "Critical Error: essential software dependencies are missing from this system. Host Flash will stop here. Install missing software with, for example,\n\n%6ssudo apt-get install ${whattoinstall[*]}\n\n"
 	read something
 	leave_program
 fi
@@ -222,6 +224,8 @@ fi
 #
 ###
 
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): SET DIALOGUE PROGRAM" >> "$filepath/log/run.log"
+
 DIALOGRC="$filepath/settings/dialogrc"
 
 dialoguesystem=( dialog whiptail )
@@ -229,8 +233,6 @@ for i in ${dialoguesystem[@]} ; do
 	if command -v $i > /dev/null 2>&1; then
 		DIALOG=$i
 		break
-	else
-		printf "\nUnable to detect a dialog box program such as 'dialog' or 'whiptail'. Please install one.\n"
 	fi
 done
 
@@ -251,6 +253,83 @@ sudo -v
 
 ###
 #
+#	Display Update Message and Run Post Update Actions
+#
+###
+
+if test ! -d "$filepath/log/updates"
+then
+        mkdir "$filepath/log/updates"
+fi
+
+if test ! -f "$filepath/log/updates/version-$version" # 
+then
+
+# Add event to run.log
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): SHOWED UPDATE NOTICE" >> "$filepath/log/run.log"
+
+$DIALOG --clear \
+	--backtitle "Host Flash" \
+	--title "Update Notice" \
+	--msgbox "Host Flash Updated to Version $version.
+\n\n
+Host Flash now includes a program update feature.
+\n\n
+Important: The custom whitelists and the custom blocklist now reside in the 'custom' directory.
+Your existing custom whitelists and custom blocklist will be moved for you automatically when you click 'OK'.
+\n\n
+Important: Host Flash now has an update feature.
+\n\n
+Read change.log to see brief list of changes in this version.
+\n\n
+Visit host-flash.com to read more about changes in $version and stay up-to-date with Host Flash developments.
+" 0 0
+
+touch "$filepath/log/updates/version-$version"
+printf "Delete this file to re-enable the Host Flash version update information dialogue box that displayed when Host Flash updated to version $version." > "$filepath/log/updates/version-$version"
+
+#
+# Run post update actions
+#
+
+# Add event to run.log
+printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): RAN POST UPDATE ACTIONS" >> "$filepath/log/run.log"
+
+    # Added in version 2.0.1. Create custom directory and move whitelist & blocklist files into it. Remove in version 3.0.0
+    
+    if test ! -d "$filepath/custom"
+    then
+        mkdir "$filepath/custom"
+    fi
+
+    if test -f "$filepath/whitelist.txt"
+    then
+        mv "$filepath/whitelist.txt" "$filepath/custom/whitelist.txt"   
+    fi
+    
+    if test -f "$filepath/whitelist-wild.txt"
+    then
+        mv "$filepath/whitelist-wild.txt" "$filepath/custom/whitelist-wild.txt"   
+    fi
+
+    if test -f "$filepath/blocklist.txt"
+    then
+        mv "$filepath/blocklist.txt" "$filepath/custom/blocklist.txt"   
+    fi
+    
+    # Added in version 2.0.1. Remove .showonce. Remove in version 3.0.0
+    
+    if test -f "$filepath/settings/.showonce"
+    then
+        rm "$filepath/settings/.showonce"
+    fi
+
+fi
+
+
+
+###
+#
 #	Check for Quick Run Saved Settings. Ask to Import Quick Run Variables if Set
 #
 ###
@@ -266,7 +345,7 @@ then
 			--backtitle "Host Flash" \
 			--radiolist 'Use Quick Run?' 0 0 0 \
 			Yes 'Use saved settings.' On \
-			No 'Use new settings.' Off \
+			No 'Use manual settings.' Off \
 			Delete 'Delete saved settings. Maybe reconfigure later.' Off \
 		)"
 
@@ -306,6 +385,65 @@ then
 fi
 
 
+####
+#
+#	Update Host Flash
+#
+###
+
+if test "$quickrun" = "On"
+then # Use saved answer if quick run enabled
+
+	updatehf=$updatehfqr
+
+fi
+
+if test "$quickrun" != "On"
+then
+
+	$DIALOG --clear --backtitle "Host Flash" --title 'Update Host Flash' --yesno 'Download and install Host Flash program update?' 0 0
+	updatehf=$?
+
+fi
+
+case $updatehf in
+
+                0)
+                
+                        # Add event to run.log
+                        printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): UPDATED HOST FLASH PROGRAM FILES" >> "$filepath/log/run.log"
+
+                
+                        # Update Host Flash
+                        
+                        wget -q https://raw.githubusercontent.com/VR51/host-flash/master/LICENSE -O "$filepath/LICENSE"
+                        wget -q https://raw.githubusercontent.com/VR51/host-flash/master/change.log -O "$filepath/change.log"
+                        wget -q https://raw.githubusercontent.com/VR51/host-flash/master/README.md -O "$filepath/README.md"
+                        wget -q https://raw.githubusercontent.com/VR51/host-flash/master/readme.txt -O "$filepath/readme.txt"
+                        wget -q https://raw.githubusercontent.com/VR51/host-flash/master/host-flash.desktop -O "$filepath/host-flash.desktop"
+                        wget -q https://raw.githubusercontent.com/VR51/host-flash/master/host-flash.sh -O "$filepath/host-flash.sh"
+                        
+                        printf "\nHost Flash updated. Program will restart when you press a key."
+                        read something
+                        
+                        exec bash "$filepath/host-flash.sh"
+                        
+                        ;;
+                        
+                1)
+                
+                        continue
+                        
+                        ;;
+                        
+                255)
+                
+                        leave_program
+                        
+                        ;;
+                        
+esac
+
 
 ###
 #
@@ -313,7 +451,7 @@ fi
 #
 ###
 
-if test ! -f "$filepath/settings/.showonce"
+if test "$quickrun" != "On"
 then
 
 # Add event to run.log
@@ -321,92 +459,20 @@ printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): SHOWED INTRODUCTION TEXT" >> "$filepath/
 
 $DIALOG --clear \
 	--backtitle "Host Flash" \
-	--title "Host Flash Protects Your Computer & Blocks Internet Ads" \
+	--title "Host Flash Protects Computers & Blocks Internet Ads" \
 	--msgbox "General Information.
 \n\n
-Host Flash installs a list of Internet host domain names that are known to serve ads, malware or other undesirable to view content.
+Host Flash installs a list of Internet host domain names that are known to serve ads, malware, undesirable, inapropriate or questionable content.
 \n\n
-This list of 'bad host' domains is installed into your computer's hosts file.
+Full instructions are in the readme.txt file that shipped with Host Flash.
 \n\n
-The hosts file is typically stored in /etc/hosts and is read by your Linux computer when a request is made to view a domain.
+More information about Host Flash and hosts files can be found at https://host-flash.com.
 \n\n
-DNS servers tell computers the IP address of a server where a website (host) is located. DNS servers are usually managed by ISPs and are only connected to your computer through the long cables that connect it to the Internet. Information stored in a computer's locally stored hosts file overrules the remote DNS server's index.
-\n\n
-Only those hosts that need their DNS server IP address(es) to be overriden need to be listed in the local hosts file of your computer.
-\n\n
-Your computer will not be able to access or send requests to domains that are added to your computer's hosts file by Host Flash.
-\n\n
-The domains Host Flash adds to your hosts file are mapped to either the local IP address (i.e. loopback address) of your computer or to an IP address you specify when Host Flash is run. Requests to visit the hosts listed in the hosts file will never get any further than your computer's own IP address.
-\n\n
-With the bad hosts blocklist installed you will see (usually) a Document Not Found error message issued by your web browser when a request for data is made to a blocked address. This is the normal and expeted behaviour.
-\n\n
-Host Flash offers 4 IP address mapping options:
-\n\n
-	a) 127.0.0.1 (default)\n
-	b) 127.255.255.254 (non default)\n
-	c) 0.0.0.0 (standard), and\n
-	d) Custom\n
-\n\n
-Use the default IP address if in doubt over which to use.
-\n\n
-If you wanted to, you could use the IP address of another website so that requests to visit bad hosts redirect to something useful.
-\n\n
-This message will not show the next time you run Host Flash. Full instructions are in the readme.txt file shipped with Host Flash. More information can be found at https://host-flash.com" 0 0
-
-touch "$filepath/settings/.showonce"
-printf "Delete this file to re-enable the Host Flash information dialogue box that displays when Host Flash is first run." > "$filepath/settings/.showonce"
+Run Host Flash frequently to keep your blocklist up-to-date and your computer safe." 0 0
 
 fi
 
-###
-#
-#	Warning Message
-#
-###
 
-if test "$quickrun" != "On"
-then
-
-	# Add event to run.log
-	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): ASKED CONFIG QUESTIONS" >> "$filepath/log/run.log"
-
-	$DIALOG --clear \
-		--backtitle "Host Flash" \
-		--title "Thank You For Using Host Flash" \
-		--msgbox "Host Flash blocks computers from accessing content served by certain web hosts. These hosts could, for example, be reported malicious websites, known ad servers, adult websites, gambling sites or torrent sites.
-	\n\n
-	Host Flash
-	\n\n
-		- downloads up to 8 bad hosts blocklists,\n
-		- merges those lists into one large compilation of bad hosts,\n
-		- adds your custom bad hosts list into the mix (blocklist.txt),\n
-		- removes duplicate bad host entries from the compiled bad hosts list,\n
-		- comments out (unblocks) whitelisted hosts (whitelist.txt),\n
-		- copies the hosts file that exists when Host Flash is first run to /etc/hosts.hf.original,\n
-		- stores replaced hosts files in archive directory 'Hosts Flash/backup/',\n
-		- option to remove previously installed bad hosts added by Host Flash from the existing hosts file,\n
-		- retains the original hosts file entries within the hosts file created by Host Flash.
-	\n\n
-	This process is run interactively so you will be asked to confirm changes before they are made to your system.
-	\n\n
-	You will not be able to access sites blocked by Host Flash. This means blocked sites will show in your browser as Document Not Found errors or sites that incorporate blocked sites as part of their make up will load but with blocked parts missing from the rendered pages.
-	\n\n
-	Run Host Flash regularly to keep your hosts file blocklist up-to-date.
-	\n\n
-	Run Host Flash if you need to undo changes made to the hosts file by Host Flash
-	\n\n
-	Use Host Flash and the files whitelist.txt, whitelist-wild.txt and blocklist.txt to manage your computer's hosts file.
-	\n\n
-	Rerun Host Flash to update the list of blocked sites or to activate changes to whitelist.txt, whitelist-wild.txt or blocklist.txt.
-	\n\n
-	If you manually edit the hosts file after using Host Flash, make sure any manual edits are above the content added by Host Flash otherwise they will be removed when Host Flash next runs.
-	\n\n
-	Visit https://host-flash.com or read readme.txt for more information.
-	\n\n
-	Host Flash may take several minutes to complete its tasks on some systems.
-	\n\n
-	Use of this program is at your own risk." 0 0
-fi
 
 ###
 #
@@ -511,7 +577,7 @@ fi
 if test "$quickrun" != "On"
 then
 
-	if test "${statusflag[4]}" = 0 || test "${statusflag[5]}" = 0
+	if test "${statusflag[4]}" = 0
 	then
 
 		hosts_lists="$($DIALOG --stdout \
@@ -530,7 +596,7 @@ then
 				)"
 	fi
 
-	if test "${statusflag[4]}" = 1 && test "${statusflag[5]}" = 1
+	if test "${statusflag[4]}" = 1
 	then
 
 		hosts_lists="$($DIALOG --stdout \
@@ -579,6 +645,29 @@ then
 
 fi
 
+
+####
+#
+#	Install Community Whitelists
+#
+###
+
+if test "$quickrun" = "On"
+then # Use saved answer if quick run enabled
+
+	whitelists=$whitelistsqr
+
+fi
+
+if test "$quickrun" != "On"
+then
+
+	$DIALOG --clear --backtitle "Host Flash" --title 'Community Whitelists' --yesno 'Download and install the Community Whitelists?' 0 0
+	whitelists=$?
+
+fi
+
+
 ####
 #
 #	House Cleaning
@@ -609,10 +698,12 @@ fi
 
 clear
 
-# Add event to run.log
-printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): CREATED TEMP DIRECTORY" >> "$filepath/log/run.log"
-
-mkdir "$filepath/TEMP"
+if test ! -d "$filepath/TEMP"
+    then
+    # Add event to run.log
+    printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): CREATED TEMP DIRECTORY" >> "$filepath/log/run.log"
+    mkdir "$filepath/TEMP"
+fi
 cd "$filepath/TEMP"
 
 
@@ -737,13 +828,13 @@ printf '\n#### Hosts Flash Bad Hosts Block ########\n' >> "$filepath/TEMP/hosts.
 
 #	Format and use custom blocklist
 
-if test -s "$filepath/blocklist.txt"
+if test -s "$filepath/custom/blocklist.txt"
 then
 
 	# Add event to run.log
 	printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): ADDED BLOCKLIST.TXT HOSTS" >> "$filepath/log/run.log"
 
-	cp "$filepath/blocklist.txt" "$filepath/TEMP/blocklist.txt"
+	cp "$filepath/custom/blocklist.txt" "$filepath/TEMP/blocklist.txt"
 
 	printf "\nPreparing custom hosts in blocklist.txt..\n"
 	sed -r -i "s/^(.*)/$redirectip \1/g" "$filepath/TEMP/blocklist.txt"
@@ -764,15 +855,56 @@ fi
 	printf "\nBuilding the new hosts file..\n"
 	sort -u -f "$filepath/TEMP/hosts-temp.txt" > "$filepath/TEMP/hosts"
 
+	
 ###
 #
-#	Comment out any whitelisted hosts
+#	Install community whitelist
+#
+###
+
+if test "$whitelists" = "0" ; then
+
+    # Add event to run.log
+    printf "\n$(date +"%Y-%m-%d-%H:%M:%S"): INSTALLED COMMUNITY WHITELISTS" >> "$filepath/log/run.log"
+
+    printf "\nInstalling Community Whitelists..\n"
+
+    # Download community whitelist.txt and mix it with the existing custom whitelist
+
+    wget -q https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw/ad90168c61e926d462895b190ad84e37f4e5c99e/whitelist.txt -O "$filepath/TEMP/whitelist.txt"
+
+    if test -s "$filepath/custom/whitelist.txt" ; then
+        printf "\n" >> "$filepath/custom/whitelist.txt"
+        cat "$filepath/custom/whitelist.txt" "$filepath/TEMP/whitelist.txt" > "$filepath/TEMP/whitelist-merged.txt"
+        rm "$filepath/custom/whitelist.txt"
+    fi
+
+    sort -u -f "$filepath/TEMP/whitelist-merged.txt" > "$filepath/custom/whitelist.txt"
+
+    # Download community whitelist-wild.txt and mix it with the existing custom whitelist-wild
+
+    wget -q https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/2bd44e16c624650d5022815a13a9b0873738900d/whitelist-wild.txt -O "$filepath/TEMP/whitelist-wild.txt"
+
+    if test -s "$filepath/custom/whitelist-wild.txt" ; then
+        printf "\n" >> "$filepath/custom/whitelist-wild.txt"
+        cat "$filepath/custom/whitelist-wild.txt" "$filepath/TEMP/whitelist-wild.txt" > "$filepath/TEMP/whitelist-wild-merged.txt"
+        rm "$filepath/custom/whitelist-wild.txt"
+    fi
+
+    sort -u -f "$filepath/TEMP/whitelist-wild-merged.txt" > "$filepath/custom/whitelist-wild.txt"
+
+fi	
+	
+	
+###
+#
+#	Remove any whitelisted hosts
 #
 ###
 
 #	Sort content and remove duplicates
 
-if test -s "$filepath/whitelist.txt"
+if test -s "$filepath/custom/whitelist.txt"
 then
 
 	# Add event to run.log
@@ -780,7 +912,7 @@ then
 
 	printf "\nRe-enabling hosts in whitelist.txt.. This may take several minutes..\n"
 
-	sort -u -f "$filepath/whitelist.txt" > "$filepath/TEMP/whitelist.txt"
+	sort -u -f "$filepath/custom/whitelist.txt" > "$filepath/TEMP/whitelist.txt"
 
 	# Iterate through non wildcard domain list
 
@@ -793,7 +925,7 @@ then
 
 fi
 
-if test -s "$filepath/whitelist-wild.txt"
+if test -s "$filepath/custom/whitelist-wild.txt"
 then
 
 	# Add event to run.log
@@ -801,7 +933,7 @@ then
 
 	printf "\nRe-enabling hosts in whitelist-wild.txt.. This may take several minutes..\n"
 
-	sort -u -f "$filepath/whitelist-wild.txt" > "$filepath/TEMP/whitelist-wild.txt"
+	sort -u -f "$filepath/custom/whitelist-wild.txt" > "$filepath/TEMP/whitelist-wild.txt"
 
 	# Iterate through wildcard domain list
 
@@ -880,7 +1012,7 @@ fi
 	if test ! -f "$filepath/settings/quickrun"
 	then
 
-		$DIALOG --clear --backtitle "Host Flash" --title "Enable Quick Run?" --yesno "Preserve Host Flash settings to reuse them next time?" 0 0
+		$DIALOG --clear --backtitle "Host Flash" --title "Enable Quick Run?" --yesno "Save Host Flash settings to reuse the next time Host Flash runs?" 0 0
 		quickrun=$?
 
 		case $quickrun in
@@ -895,15 +1027,20 @@ fi
 				printf "#!/bin/bash\n" > "$filepath/settings/quickrun"
 
 				printf "quickrun='On'\n" >> "$filepath/settings/quickrun"
+				
+				printf "updatehfqr='$updatehf'\n" >> "$filepath/settings/quickrun"
 
 				hosts_listsqr="$(echo ${hosts_lists} | tr ' ' '\t')" # Newlines are added back in on settings import
 				printf "hosts_listsqr='$hosts_listsqr'\n" >> "$filepath/settings/quickrun"
 
 				printf "redirectipqr='$redirectip'\n" >> "$filepath/settings/quickrun"
+				
+				printf "whitelistsqr='$whitelists'\n" >> "$filepath/settings/quickrun"
 				printf "cleanqr='$clean'\n" >> "$filepath/settings/quickrun"
+				
 				printf "installqr='$installhl'\n" >> "$filepath/settings/quickrun"
 
-				$DIALOG --clear --backtitle "Host Flash" --title "Quick Run Enabled" --msgbox "The next time you use Host Flash you will be presented with a Quick Run menu.\nRunning Quick Run will cause Host Flash to reuse the settings preserved from this session.\nQuick Run can be disabled using the Quick Run menu." 0 0
+				$DIALOG --clear --backtitle "Host Flash" --title "Quick Run Enabled" --msgbox "The next time you use Host Flash you will be presented with a Quick Run menu.\n\nRunning Quick Run will cause Host Flash to reuse the settings saved from this session.\n\nQuick Run can be disabled using the Quick Run menu." 0 0
 
 				;;
 

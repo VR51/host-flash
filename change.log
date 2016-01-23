@@ -1,43 +1,44 @@
+2.0.1
+
+    - Feature: Host Flash program updater. Now you can download and install program updates automagically.
+    - Feature: The whitelist files compiled by the community of Host Flash users (the Community Whitelists) can now be installed automatically. These are merged with any existing whitelists. Duplicates are removed.
+    - Organisation: Moved whitelist.txt, whitelist-wild.txt and blocklist.txt to their own direcety. They are now in Host Flash/custom/. Move made to produce a human friendly file structure.
+    - Minor: Adjusted error messages to make them easier to understand.
+    - Minor: Made information dialogs shorter to improve userfriendliness. Users are now directed to the readme.txt file and hosts-flash.com.
+    - Bugfix: Host Flash checked for 7z archive package by testing for p7zip and p7zip-full. This test caused Host Flash to sometimes wrongly report a missing dependency error. Test changed to look for 7z directly.
+    
 2.0.0
 
-- Version: Updated to version 2.0.0 to reflect launch of website https://host-flash.com.
-- Enhancement: Rewrote software environment test. New method provides greater scope to display more useful error messages.
-- Dropped: Compatibility with Dash dropped. Now requires Bash and similarly capable shells.
-- Updated: Edited readme files to increase legibility.
-- Updated: Various dialog text amendements.
+    - Version: Updated to version 2.0.0 to reflect launch of website https://host-flash.com.
+    - Enhancement: Rewrote software environment test. New method provides greater scope to display more useful error messages.
+    - Dropped: Compatibility with Dash dropped. Now requires Bash and similarly capable shells.
+    - Updated: Edited readme files to increase legibility.
+    - Updated: Various dialog text amendements.
 
 1.2.2
 
-- Feature: Added event log file. Events are time-logged in log/run.log
-- Enhancement: Added leave_program function to allow easier managment of exit message. Instances of 'exit' command replaced with leave_program
+    - Feature: Added event log file. Events are time-logged in log/run.log
+    - Enhancement: Added leave_program function to allow easier managment of exit message. Instances of 'exit' command replaced with leave_program
 
 1.2.1
 
-- Feature: Added whitelist-wild.txt. This is a whiltelist for wildcard domains. Root domains added to this list will automatically be removed from the hosts blocklist along with any possible subdomains.
-- Change: Updated readme files.
+    - Feature: Added whitelist-wild.txt. This is a whiltelist for wildcard domains. Root domains added to this list will automatically be removed from the hosts blocklist along with any possible subdomains.
+    - Change: Updated readme files.
 
 1.2.0
 
-- Feature: More bad hosts lists: hostsfile.org and Airelle Lists (total lists now equal 8)
-
-- Feature: New backup archive. Replaced hosts files are now stored in an archive in zip format.
-
-- Enhancement: Rewrote hosts file download process. Now easier to work with additional source files.
-
-- Enhancement: Faster processing of source files and so shorter program runtime.
-
-- Enhancement: The hosts lists choice screen now shows useful information about each list source.
-
+    - Feature: More bad hosts lists: hostsfile.org and Airelle Lists (total lists now equal 8)
+    - Feature: New backup archive. Replaced hosts files are now stored in an archive in zip format.
+    - Enhancement: Rewrote hosts file download process. Now easier to work with additional source files.
+    - Enhancement: Faster processing of source files and so shorter program runtime.
+    - Enhancement: The hosts lists choice screen now shows useful information about each list source.
 
 1.1.1
 
-- Feature: Quick Run. Can now save settings for reuse.
-
-- Enhancement: Improved whitelist regex to speed up process.
-
-- Enhancement: Adjusted code for portability
-
-- Enhancement: Replaced echo with printf
+    - Feature: Quick Run. Can now save settings for reuse.
+    - Enhancement: Improved whitelist regex to speed up process.
+    - Enhancement: Adjusted code for portability
+    - Enhancement: Replaced echo with printf
 
 
 1.1.0
