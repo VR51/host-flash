@@ -1,3 +1,15 @@
+2.6.0
+
+	- New: 3 New host blacklist providers. Hosts files can now be downloaded from someonewhocares.org (Dan Pollock's List), adaway.org, malwaredomainlist.com
+	- Enhancement: Refactored code. Improved for readability. Condensed code. Increased use of loops and arrays for directory and file creation.
+	- Enhancement: Condensed required download package to 1 script file. The full package builds itself when host-flash.sh is first executed. Automatically creates directories and downloads needed files.
+	- Enhancement: Improved the add_to_log function. Now adds log messages to the log file and displays messages to the screen (hidden behind dialogue boxes in some cases - scroll up if you need to or just read the log file).
+	- New: New debug option. Program contains debug='' variable setting. Set to debug='true' to enable debug feature. This option acts on the add_to_log function. When enabled program execution halts after each log message pending user key press to step forward.
+	- Enhancement: Changed leave_program function to use a dialogue box. Function now accepts input string to display in exit message.
+	- Organisation: moved files around in the Host Flash directory. Existing custom whitelists and blacklists will be moved, not deleted, when then program update routine runs.
+	- Minor: Set Host Flash to print source hosts file download credits at the top of Host Flash compiled hosts blacklist.
+	- Minor: Removed option to preserve the temp directory. Use Debug option instead. The option to preserve the temp directory was only present for debug purposes anyway.
+
 2.5.0
 
     - Feature: Host Flash program updater. Now you can download and install program updates automagically.

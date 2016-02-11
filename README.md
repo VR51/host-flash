@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v2.5.0
+Host Flash™ v2.6.0
 
 Lead Author: Lee Hodson
 
@@ -12,13 +12,13 @@ First Written: 18th Oct. 2015
 
 First Release: 2nd Nov. 2015
 
-This Release: 23rd Jan. 2015
+This Release: 11th Feb. 2016
 
 Copyright 2015 Host Flash™ <https://host-flash.com>
 
 License: GPL3
 
-Programmer: Lee Hodson <journalxtra.com>, <vr51.com>
+Programmer: Lee Hodson <journalxtra.com>, VR51 <vr51.com>
 
 Use of this program is at your own risk
 
@@ -26,7 +26,7 @@ TO RUN:
 
 - Ensure the script is executable.
 - Command line: bash host-flash.sh or ./host-flash.sh
-- File browser: click host-flash.sh or click host-flash.desktop, or
+- File browser: click host-flash.sh
 
 Use Host Flash™ to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
 
@@ -34,8 +34,9 @@ Use Host Flash™ to manage the Linux hosts file
 
 # New Features
 
-        - Automatic Program Updates
-        - Community Whitelist Installer
+	- New host list providers added
+	- Automatic Program Updates
+    - Community Whitelist Installer
 	- Event log file
 	- Wildcard Whitelist
 	- Quick Run
@@ -49,7 +50,7 @@ Host Flash™ blocks computers from accessing content served by certain web host
 
 Host Flash™
 
-	- downloads up to 8 bad hosts blocklists,
+	- downloads host name blacklists from any one or more of 11 host blacklist providers,
 	- merges those lists into one large compilation of bad hosts,
 	- adds your custom bad hosts list into the mix (blocklist.txt),
 	- removes duplicate bad host entries from the compiled bad hosts list,
@@ -57,7 +58,7 @@ Host Flash™
 	- copies the hosts file that exists when Host Flash™ is first run to /etc/hosts.hf.original,
 	- stores replaced hosts files in archive directory 'Hosts Flash/backup/',
 	- option to remove previously installed bad hosts added by Host Flash™ from the existing hosts file,
-	- retains the original hosts file entries within the hosts file created by Host Flash™.
+	- retains the original hosts file entries of the original hosts file so that the hosts file created by Host Flash™ does not remove your own custom hosts file edits.
 
 Host Flash™ is interactive.
 
@@ -105,7 +106,6 @@ Programatically, that is
 To Run Host Flash™, either
 
 	click host-flash.sh, or
-	click host-flash.desktop, or
 	type 'bash host-flash.sh' or './host-flash.sh' at the command line.
 
 Note: You may need to restart your computer and clear your browser cache(s) for the new hosts file rules to be observed by your OS.
@@ -227,7 +227,7 @@ Host Flash™ lets you choose from 4 IP address mapping options. The IP address 
 
 0.0.0.0
 
-	This IP address is mapped to hosts in bad host lists provided by some sources. I think, not sure, this is occasionally used to resolve a bug in some versions of Windows. Linux is not affected by this bug (obviously - ** insert smug smile here **). This IP address is included ...just in case...
+	This IP address is mapped to hosts in some blacklists provided by some sources. Can be quicker to use 0.0.0.0 instead of other IP addresses because 0.0.0.0 doesn't requqire the system to wait for a request timeout. This is occasionally also used to resolve a bug in some versions of Windows. This IP address is included for those who might prefer to use it.
 
 127.255.255.254
 
@@ -300,5 +300,3 @@ Updates to Host Flash™ can be found at either
 Give donations to paypal.me/vr51
 
 VR51 is the main fiscal sponsor of Host Flash™.
-
-A percentage of donations received will be split between the host file source providers in show of gratitude for their services.
