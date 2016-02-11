@@ -43,6 +43,9 @@ Use Host Flash™ to manage the Linux hosts file
 	- Save options for reuse
 	- More block list sources
 	- Hosts file backup archive directory
+	- Host file providers used are credited in the compiled hosts file
+	
+Read docs/change.log to view version change brief.
 
 # What Host Flash™ Does
 
@@ -58,7 +61,7 @@ Host Flash™
 	- copies the hosts file that exists when Host Flash™ is first run to /etc/hosts.hf.original,
 	- stores replaced hosts files in archive directory 'Hosts Flash/backup/',
 	- option to remove previously installed bad hosts added by Host Flash™ from the existing hosts file,
-	- retains the original hosts file entries of the original hosts file so that the hosts file created by Host Flash™ does not remove your own custom hosts file edits.
+	- retains the hosts file entries that already exist in the original hosts file so that the hosts file created by Host Flash™ does not remove your own custom hosts file edits (provided they are placed above the Host Flash header).
 
 Host Flash™ is interactive.
 
@@ -285,6 +288,9 @@ The lists of bad hosts used by Host Flash™ are compiled by, and are available 
 	- winhelp2002.mvps.org
 	- rlwpx.free.fr
 	- hostsfile.org
+	- malwaredomainlist.com
+	- adaway.org
+	- someonewhocares.org
 
 The program developer Lee Hodson and all who wrote the Linux scripting guides he has read.
 
