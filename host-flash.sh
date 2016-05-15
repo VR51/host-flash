@@ -2,14 +2,14 @@
 clear
 ###
 #
-#	Host Flash™ v2.6.0
+#	Host Flash™ v2.7.0
 #
 #	Lead Author: Lee Hodson
 #	Donate: paypal.me/vr51
 #	Website: https://host-flash.com
 #	First Written: 18th Oct. 2015
 #	First Release: 2nd Nov. 2015
-#	This Release: 11th Feb. 2016
+#	This Release: 14th May. 2016
 #
 #	Copyright 2015 Host Flash™ <https://host-flash.com>
 #	License: GPL3
@@ -43,7 +43,7 @@ printf "HOST FLASH INITIALISED\n----------------------\n\n"
 #
 ###
 
-version="v2.6.0"
+version="v2.7.0"
 title="Host Flash"
 debugMode="false" # Set to "true" to force the program to pause after each significant step
 
@@ -58,48 +58,6 @@ filepath="$(dirname "$(readlink -f "$0")")"
 
 # A Little precaution
 cd "$filepath"
-
-
-###
-#
-#	Register leave_program function
-#		Use as leave_program "EXIT STATUS TO LOG" "MESSAGE TO USER"
-#
-###
-
-leave_program() {
-
-	exittime=$(date +%s)
-	runtime=$(($exittime - $now))
-
-	add_to_log "RUN END: $1"
-	add_to_log "PROGRAM RUN TIME: $runtime seconds"
-
-	# Convert $1 & $2 to all lowercase then capitalise initial letter of each.
-	x=$1
-	x=${x,,}
-	x=${x^}
-
-	y=$2
-	y=${y,,}
-	y=${y^}
-	
-	$DIALOG --clear \
-		--backtitle "$title" \
-		--title "$x" \
-		--msgbox "\n\n$y
-		\n\n
-		Visit https://host-flash.com to learn more about $title, hosts files and to grab program updates.
-		\n\n
-		Sponsor program development. Send donations to paypal.me/vr51
-		\n\n
-		Thank You for using $title.
-		\n\n
-		Program Run Time: $runtime seconds" 0 0
-
-	exit
-
-}
 
 
 ###
@@ -152,6 +110,189 @@ for i in "${programdirectories[@]}"; do
 	fi
 
 done
+
+
+###
+#
+#	Set Dialogue Program
+#		In this case we use first try to use 'dialog' then, if dialog is not installed, we try to use 'whiptail'. We could add or use any other dialog compatible program to the list.
+#		The colour palette used by whiptail is controlled by newt. It can be configured with 'sudo update-alternatives --config newt-palette'
+#		The colour palette used by dialog can be set by issuing command 'dialog --create-rc ~/.dialogrc'. The file .dialogrc can be edited as needed.
+#
+###
+
+if test ! -f "$filepath/settings/dialogrc"
+then
+	DIALOGRC="$filepath/settings/dialogrc"
+fi
+
+dialoguesystem=( dialog whiptail kdialog zenity xdialog )
+for i in ${dialoguesystem[@]} ; do
+	if command -v $i > /dev/null 2>&1; then
+		DIALOG=$i
+		break
+	else
+		DIALOG='textMode'
+	fi
+done
+
+# Ignore -- for testing
+#DIALOG=dialog
+#DIALOG=whiptail
+#DIALOG=textMode
+
+add_to_log "SET DIALOGUE PROGRAM TO $DIALOG"
+
+
+###
+#
+#	Dialogue Abstraction Layer
+#
+###
+
+sayMessage() {
+
+	# 1 = Backtitle
+	# 2 = Title
+	# 3 = Type (--msgbox)
+	# 4 = Message
+	
+	# sayMessage "$backtitle" "$title" "$type" "$message"
+	
+	# Example:
+	#
+	# message="Tell me what to say." // Set the message to be displayed
+	# sayMessage "$title" "Update Notice" "--msgbox" "$message" // Call the function sayMessage, set parameters, feed $message into it.
+
+	case $DIALOG in
+	
+		dialog)
+			lb="\n\n\n"
+			$DIALOG --clear --backtitle "$1" --title "$2" "$3" "$4" 0 0
+			;;
+		whiptail)
+			$DIALOG --clear --backtitle "$1" --title "$2" "$3" "$4" 0 0
+			;;
+		textMode)
+			printf "$4\n"
+			read something
+			;;
+			
+	esac
+
+}
+
+
+sayQuestion() {
+
+	# 1 = Backtitle
+	# 2 = Title
+	# 3 = Default Answer (--defaultno, --defaultyes)
+	# 4 = Type (--yesno)
+	# 5 = Question
+
+	# sayQuestion "$backtitle" "$title" "$default" "$type" "$question"
+	# hookVariable=$sayQuestion
+	# Do something with $hookVariable
+	
+	# Example:
+	#
+	# question="What can I echo back to you?" // Set the question text
+	# sayQuestion "$title" "Restore?" "--defaultno" "--yesno" "$question" // Call the sayQuestion function, set the parameters, feed $question into it.
+	# answer=$sayQuestion // Push the output of sayQuestion into a variable
+	# echo $answer // Do something with the variable
+	
+	case $DIALOG in
+	
+		dialog)
+			lb="\n\n\n"
+			$DIALOG --clear --backtitle "$1" --title "$2" "$3" "$4" "$5" 0 0
+			printf "$?"
+			;;
+		whiptail)
+			$DIALOG --clear --backtitle "$1" --title "$2" "$3" "$4" "$5" 0 0
+			printf "$?"
+			;;
+		textMode)
+			lb="\n"
+			prompt_confirm() {
+			while true; do
+				printf "$1 [y/n] "
+				read REPLY
+				case $REPLY in
+				[yY])
+					printf "$REPLY"
+					return 0
+					;;
+
+				[nN])
+					printf "$REPLY"
+					return 1
+					;;
+				255)
+					exit
+					;;
+				*)
+					printf " \033[31m %s \n\033[0m" "Invalid answer. "
+				esac
+			done
+			}
+			prompt_confirm "$5"
+			;;
+			
+	esac
+
+}
+
+
+###
+#
+#	Register leave_program function
+#		Use as leave_program "EXIT STATUS TO LOG" "MESSAGE TO USER"
+#
+###
+
+leave_program() {
+
+	exittime=$(date +%s)
+	runtime=$(($exittime - $now))
+	
+	add_to_log "RUN END: $1"
+	add_to_log "PROGRAM RUN TIME: $runtime seconds"
+
+	# Convert $1 & $2 to all lowercase then capitalise initial letter of each.
+	x=$1
+	x=${x,,}
+	x=${x^}
+
+	y=$2
+	y=${y,,}
+	y=${y^}
+	
+	message="$y
+	$lb
+	Visit https://host-flash.com to learn more about $title, hosts files and to grab program updates.
+	$lb
+	Sponsor program development. Send donations to paypal.me/vr51
+	$lb
+	Thank You for using $title.
+	$lb
+	Program Run Time: $runtime seconds"
+		
+	sayMessage "$title" "$x" "--msgbox" "$message"
+
+	exit
+
+}
+
+
+###
+#
+#	Capture interrupt signals
+#
+###
+
+trap "leave_program 'Program stopped prematurely.'" SIGHUP SIGINT SIGTERM
 
 
 ###
@@ -258,31 +399,6 @@ fi
 
 ###
 #
-#	Set Dialog Program to use.
-#		In this case we use first try to use 'dialog' then, if dialog is not installed, we try to use 'whiptail'. We could add or use any other dialog compatible program to the list.
-#		The colour palette used by whiptail is controlled by newt. It can be configured with 'sudo update-alternatives --config newt-palette'
-#		The colour palette used by dialog can be set by issuing command 'dialog --create-rc ~/.dialogrc'. The file .dialogrc can be edited as needed.
-#
-###
-
-if test ! -f "$filepath/settings/dialogrc"
-then
-	DIALOGRC="$filepath/settings/dialogrc"
-fi
-
-dialoguesystem=( dialog whiptail )
-for i in ${dialoguesystem[@]} ; do
-	if command -v $i > /dev/null 2>&1; then
-		DIALOG=$i
-		break
-	fi
-done
-
-add_to_log "SET DIALOGUE PROGRAM TO $DIALOG"
-
-
-###
-#
 #	Obtain Authorisation to Install Hosts
 #
 ###
@@ -297,6 +413,17 @@ add_to_log "ASKED FOR AUTHORISATION"
 
 ##
 #
+#	Create Backup of Existing Hosts File
+#
+##
+
+zip -j9 "$filepath/backup/hosts-backup-$todaytime.zip" /etc/hosts
+
+add_to_log "CREATED ZIPPED BACKUP COPY OF EXISTING HOSTS FILE AS $filepath/backup/hosts-backup-$todaytime.zip"
+
+
+##
+#
 #	Run Setup and Confirm Default Dirctories and Files Exist (Recreate as necessary), Run Upgrade Routines If This is an Upgrade
 #
 ##
@@ -307,27 +434,21 @@ add_to_log "ASKED FOR AUTHORISATION"
 if test ! -f "$filepath/log/updates/version-$version"
 then
 
-$DIALOG --clear \
-	--backtitle "$title" \
-	--title "Update Notice" \
-	--msgbox "$title $version Installed.
-\n\n
-$title now includes a program update feature.
-\n\n
-Important: The custom whitelists and the custom blocklist now reside in the 'custom' directory.
-Your existing custom whitelists and custom blocklist will be moved for you automatically when you click 'OK'.
-\n\n
-Important: $title now has an update feature.
-\n\n
-Read $filepath/docs/change.log to see brief list of changes brought in by this version of $title.
-\n\n
-Visit host-flash.com to read more about changes in $title $version and to stay up-to-date with program developments.
-" 0 0
+	message="$title $version Installed.$lb
+	$title now includes a program update feature.$lb
+	Important:$lb
+	The custom whitelists and the custom blocklist now reside in directory 'Host Flash/custom'.$lb
+	The existing files will be moved automatically when you click 'OK'.$lb
+	Important: $title now has an update feature.$lb
+	Read $filepath/docs/change.log to see brief list of changes brought in by this version of $title.$lb
+	Visit host-flash.com/blog to read more about changes in $title $version and to stay up-to-date with program developments."
 
-touch "$filepath/log/updates/version-$version"
-printf "Delete this file to re-enable the version update information prompt and to rerun the upgrade process that displayed when $title updated to version $version." > "$filepath/log/updates/version-$version"
+	sayMessage "$title" "Update Notice" "--msgbox" "$message"
 
-add_to_log "DISPLAYED UPDATE NOTICE"
+	touch "$filepath/log/updates/version-$version"
+	printf "Delete this file to re-enable the version update information prompt and to rerun the upgrade process that displayed when $title updated to version $version." > "$filepath/log/updates/version-$version"
+
+	add_to_log "DISPLAYED UPDATE NOTICE"
 
 	##
 	#
@@ -339,20 +460,22 @@ add_to_log "DISPLAYED UPDATE NOTICE"
 
 	# Move Files
 
-    upgradeMoveFiles=( 'whitelist.txt' 'whitelist-wild.txt' 'blocklist.txt' 'LICENSE' 'change.log' )
-    upgradeMoveFilesDirectory=( 'custom' 'custom' 'custom' 'docs' 'docs' )
+    upgradeMoveFiles=( "whitelist.txt" "whitelist-wild.txt" "blocklist.txt" "LICENSE" "change.log" )
+    upgradeMoveFilesFrom=( "$filepath" "$filepath" "$filepath" "$filepath" "$filepath" )
+    upgradeMoveFilesTo=( "$filepath/custom" "$filepath/custom" "$filepath/custom" "$filepath/docs" "$filepath/docs" )
 	for i in "${upgradeMoveFiles[@]}"; do
 
-		if test -f "$filepath/$i"
+		if test -f "${upgradeMoveFilesFrom[0]}/$i"
 		then
 			# Include subdirectory directory
-			mv "$filepath/$i" "$filepath/${upgradeMoveFilesDirectory[0]}/$i"
-			add_to_log "MOVED FILE '$i' in $filepath/$i to $filepath/${upgradeMoveFilesDirectory[0]}/$i"
+			mv "${upgradeMoveFilesFrom[0]}/$i" "${upgradeMoveFilesTo[0]}/$i"
+			add_to_log "MOVED FILE '$i' in ${upgradeMoveFilesFrom[0]}/$i to ${upgradeMoveFilesTo[0]}/$i"
 		fi
-		upgradeMoveFilesDirectory=("${upgradeMoveFilesDirectory[@]:0:0}" "${upgradeMoveFilesDirectory[@]:1}")
+		upgradeMoveFilesFrom=("${upgradeMoveFilesFrom[@]:0:0}" "${upgradeMoveFilesFrom[@]:1}")
+		upgradeMoveFilesTo=("${upgradeMoveFilesTo[@]:0:0}" "${upgradeMoveFilesTo[@]:1}")
 
 	done
-
+	
 	# Add Files
 	
 	upgradeAddNewFiles=( 'custom/whitelist.txt' 'custom/whitelist-wild.txt' 'custom/blocklist.txt' 'temp/hosts-temp.txt' )
@@ -407,10 +530,10 @@ add_to_log "DISPLAYED UPDATE NOTICE"
 	done
 
     # Wondering why program directories are not added here? They are created earlier in the program.
+    
+    add_to_log "RAN POST UPDATE ACTIONS"
 	
 fi
-
-add_to_log "RAN POST UPDATE ACTIONS"
 
 
 ###
@@ -450,13 +573,16 @@ then
 
 		No)
 			add_to_log "QUICKRUN SETTINGS NOT USED"
-			continue
 			;;
 
 		Delete)
 
 			rm "$filepath/settings/quickrun"
-			$DIALOG --clear --backtitle "$title" --title "Quick Run Settings Deleted" --msgbox "Quick Run can be reconfigured at the end of this program session." 0 0
+			
+			message="Quick Run can be reconfigured at the end of this program session."
+			
+			sayMessage "$title" "Quick Run Settings Deleted" "--msgbox" "$message"
+			
 			add_to_log "QUICKRUN SETTINGS DELETED"
 			;;
 
@@ -486,8 +612,11 @@ fi
 if test "$quickrun" != "On"
 then
 
-	$DIALOG --clear --backtitle "$title" --title "Update Host Flash?" --yesno "Download and install $title program update?\n\nUse this option to download the latest version of $title or to (re)install $title documentation files." 0 0
-	updatehf=$?
+	question="Download and install $title program update?$lb
+	Use this option to download the latest version of $title or to (re)install $title documentation files."
+	
+	sayQuestion "$title" "Update Host Flash" "--defaultno" "--yesno" "$question"
+	updatehf=$sayQuestion
 
 fi
 
@@ -512,15 +641,12 @@ case $updatehf in
                         ;;
                         
                 1)
-                
-                        continue
                         
                         ;;
                         
                 255)
                 
                         leave_program "CANCELLED" "PROGRAM STOPPED BY USER."
-                        
                         ;;
                         
 esac
@@ -535,20 +661,19 @@ esac
 if test "$quickrun" != "On"
 then
 
-$DIALOG --clear \
-	--backtitle "$title" \
-	--title "$title Protects Computers & Blocks Internet Ads" \
-	--msgbox "General Information.
-\n\n
-$title installs a blacklist of web hosts (AKA website domain names) that are known to serve ads, malware, undesirable, inapropriate or questionable content.
-\n\n
-Read the documentation that came with $title to learn more about this program.
-\n\n
-More information about this program, hosts files and Linux computer security can be read at https://host-flash.com.
-\n\n
-Run $title daily or weekly to keep your blacklist up-to-date and your computer safe." 0 0
+	message="General Information.
+	$lb
+	$title installs a blacklist of web hosts (AKA website domain names) that are known to serve ads, malware, undesirable, inapropriate or questionable content.
+	$lb
+	Read the documentation that came with $title to learn more about this program.
+	$lb
+	More information about this program, hosts files and Linux computer security can be read at https://host-flash.com.
+	$lb
+	Run $title daily or weekly to keep your blacklist up-to-date and your computer safe."
 
-add_to_log "SHOWED INTRODUCTION TEXT"
+	sayMessage "$title" "$title Protects Computers & Blocks Internet Ads" "--msgbox" "$message"
+
+	add_to_log "SHOWED INTRODUCTION TEXT"
 
 fi
 
@@ -566,8 +691,11 @@ then
 	if test -f '/etc/hosts.hf.original'
 	then
 
-		$DIALOG --clear --backtitle "$title" --title "Restore?" --defaultno --yesno 'Would you like to restore the original hosts file that Host Flash replaced the very first time Host Flash ran on this computer? This will overwrite the current hosts file.' 0 0
-		restore=$?
+		question="Would you like to restore the original hosts file that $title replaced the very first time $title ran on this computer? This will overwrite the current hosts file."
+		
+		sayQuestion "$title" "Restore Original Hosts File?" "--defaultno" "--yesno" "$question"		
+		restore=$sayQuestion
+		
 
 	fi
 
@@ -577,16 +705,22 @@ then
 
 			sudo mv /etc/hosts.hf.original /etc/hosts
 
-			$DIALOG --clear --backtitle "$title" --title "Finished" --msgbox "The original hosts file has been restored." 0 0
-
+			message="The original hosts file has been restored."
+			
+			sayMessage "$title" "Finished" "--msgbox" "$message"
+			
 			leave_program "HOSTS FILE RESTORED" "THE ORIGINAL HOSTS FILE HAS BEEN RESTORED."
 			;;
 
 		1)
 
-			$DIALOG --clear --backtitle "$title" --title "Deactivate?" --defaultno --yesno "Do you want to remove the Host Flash blocklist from the existing hosts file?\n\nSelect 'Yes' if you want to deactivate Host Flash and undo the edits made to your hosts file by Host Flash, otherwise select 'no'." 0 0
-			remove=$?
-
+			question="Do you want to remove the blocklist installed by $title from the existing hosts file?
+			$lb
+			Select 'Yes' if you want to deactivate $title and undo the edits made to your hosts file by $title, otherwise select 'no'."
+			
+			sayQuestion "$title" "Deactivate Hosts Blocklist?" "--defaultno" "--yesno" "$question"			
+			remove=$sayQuestion
+			
 			;;
 
 		255)
@@ -601,9 +735,11 @@ then
 
 		0)
 
-			sed -i '/#### Hosts Flash Bad Hosts Block ########/,$d' /etc/hosts
+			sudo sed -i '/#### Hosts Flash Bad Hosts Block ########/,$d' /etc/hosts
 
-			$DIALOG --clear --backtitle "$title" --title "Finished" --msgbox "Hosts Flash bad hosts blocklist has been removed from your hosts file." 0 0
+			message="$title bad hosts blocklist has been removed from your hosts file."
+			
+			sayMessage "$title" "Finished" "--msgbox" "$message"
 
 			leave_program "BLACKLIST UNINSTALLED" "THE HOSTS BLACKLIST HAS BEEN REMOVED FROM THE SYSTEM'S HOSTS FILE"
 			;;
@@ -693,9 +829,9 @@ then
 	--clear \
 	--backtitle "$title" \
 	--radiolist 'Set the Redirect IP Address' 0 0 0 \
-	127.0.0.1 'localhost (default)' On \
-	127.255.255.254 'localhost (non default)' Off \
-	0.0.0.0 'localhost (non-standard)' Off \
+	0.0.0.0 'localhost (default)' On \
+	127.0.0.1 'localhost' Off \
+	127.255.255.254 'localhost' Off \
 	Custom 'Type in a Preferred IP Address' Off \
 	)"
 
@@ -724,8 +860,10 @@ fi
 if test "$quickrun" != "On"
 then
 
-	$DIALOG --clear --backtitle "$title" --title 'Community Whitelists' --yesno 'Download and install the Community Whitelists?' 0 0
-	whitelists=$?
+	question="Download and install the Community Whitelists?"
+	
+	sayQuestion "$title" "Install Community Whitelists?" "--defaultno" "--yesno" "$question"	
+	whitelists=$sayQuestion
 
 fi
 
@@ -746,8 +884,10 @@ fi
 if test "$quickrun" != "On"
 then
 
-	$DIALOG --clear --backtitle "$title" --title 'Community Blacklist' --yesno 'Download and install the Community Blacklist?' 0 0
-	blacklist=$?
+	question="Download and install the Community Blocklist?"
+	
+	sayQuestion "$title" "Install Community Blocklist?" "--defaultno" "--yesno" "$question"	
+	blacklist=$sayQuestion
 
 fi
 
@@ -765,12 +905,21 @@ for opt in $hosts_lists
 do
 
 	case "$opt" in
+	
+		###
+		#
+		#	download=Download URL
+		#	dfile=Download file
+		#	target=The file we want to use from the download file (handy for zip files)
+		#	unzipprog=The program to use to extract the target file from dfile
+		#
+		###
 
 		hosts-file.net)
-				download=http://hosts-file.net/download # Download URL
-				dfile=hosts.zip # Download file
-				target=hosts.txt # The file we want to use from the file
-				unzipprog='unzip' # The program to use to extract the file
+				download=http://hosts-file.net/download
+				dfile=hosts.zip
+				target=hosts.txt
+				unzipprog='unzip'
 				;;
 
 		mvps.org)
@@ -818,29 +967,30 @@ do
 		someonewhocares.org)
 				download=http://someonewhocares.org/hosts
 				dfile=hosts
-				unzipprog=''
 				target=hosts
+				unzipprog=''
 				;;
 				
 		adaway.org)
-				download=https://adaway.org
+				# download=https://adaway.org ## File fails to download from here. Using GitHub version instead.
+				download=https://github.com/Free-Software-for-Android/AdAway/blob/master/hosts
 				dfile=hosts.txt
-				unzipprog=''
 				target=hosts.txt
+				unzipprog=''
 				;;
 				
 		malwaredomainlist.com)
 				download=http://www.malwaredomainlist.com/hostslist
 				dfile=hosts.txt
-				unzipprog=''
 				target=hosts.txt
+				unzipprog=''
 				;;
 
 		hostsfile.org)
 				download=http://www.hostsfile.org/Downloads
 				dfile=hosts.txt
-				unzipprog=''
 				target=hosts.txt
+				unzipprog=''
 				;;
 				
 	esac
@@ -877,7 +1027,7 @@ cd "$filepath"
 
 #	Format Data in hosts-temp.txt
 
-add_to_log "PREPARING NEW HOSTS FILE. WE COULD BE HERE A FEW MINUTES..."
+add_to_log "PREPARING NEW HOSTS FILE.."
 
 sed -i 's/#.*//' "$filepath/temp/hosts-temp.txt" # Remove all comments (some come after hostname <-> IP map lines)
 iconv -c -t UTF-8//TRANSLIT "$filepath/temp/hosts-temp.txt" > "$filepath/temp/hosts-utf8.txt" # Convert non UTF8 characters to fix comment fault in French lists.
@@ -1102,8 +1252,11 @@ fi
 if test "$quickrun" != "On"
 then
 
-	$DIALOG --clear --backtitle "$title" --title "Install" --yesno 'Install new hosts file?' 0 0
-	installhl=$?
+	question="Install the new hosts file?"
+	
+	sayQuestion "$title" "Install Hosts File?" "--defaultno" "--yesno" "$question"
+	
+	installhl=$sayQuestion
 
 fi
 
@@ -1117,8 +1270,10 @@ fi
 	if test ! -f "$filepath/settings/quickrun"
 	then
 
-		$DIALOG --clear --backtitle "$title" --title "Enable Quick Run?" --yesno "Save Host Flash settings to reuse the next time Host Flash runs?" 0 0
-		quickrun=$?
+		question="Save $title settings to reuse the next time Host Flash runs?"
+
+		sayQuestion "$title" "Enable Quick Run?" "--defaultno" "--yesno" "$question"
+		quickrun=$sayQuestion
 
 		case $quickrun in
 
@@ -1142,7 +1297,11 @@ fi
 				
 				printf "installqr='$installhl'\n" >> "$filepath/settings/quickrun"
 
-				$DIALOG --clear --backtitle "$title" --title "Quick Run Enabled" --msgbox "The next time you use Host Flash you will be presented with a Quick Run menu.\n\nRunning Quick Run will cause Host Flash to reuse the settings saved from this session.\n\nQuick Run can be disabled using the Quick Run menu." 0 0
+				message="The next time you use Host Flash you will be presented with a Quick Run menu.$lb
+				Running Quick Run will cause Host Flash to reuse the settings saved from this session.$lb
+				Quick Run can be disabled using the Quick Run menu."
+				
+				sayMessage "$title" "Quick Run Enabled" "--msgbox" "$message"
 				
 				add_to_log "CREATED QUICKRUN CONFIG FILE"
 
@@ -1150,8 +1309,15 @@ fi
 
 			1)
 
-				$DIALOG --clear --backtitle "$title" --title "Quick Run Not Enabled" --msgbox "" 0 0
+				message="Quick run can be enabled the next time $title is run."
+				
+				sayMessage "$title" "Quick Run Not Enabled" "--msgbox" "$message"
 
+				;;
+				
+			255)
+
+				leave_program "CANCELLED" "PROGRAM STOPPED BY USER."
 				;;
 
 		esac
@@ -1172,10 +1338,6 @@ case $installhl in
 			
 		fi
 
-		zip -j9 "$filepath/backup/hosts-backup-$todaytime.zip" /etc/hosts
-
-		add_to_log "ZIPPED BACKUP COPY OF EXISTING HOSTS FILE CREATED AS $filepath/backup/hosts-backup-$todaytime.zip"
-		
 		sudo mv "$filepath/hosts" /etc/hosts
 		
 		add_to_log "INSTALLED NEW HOSTS FILE TO /etc/hosts"

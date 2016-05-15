@@ -1,3 +1,10 @@
+2.7.0
+
+	- Fix: Added missing sudo command to the sed line used for blocklist removal. Only affected cases where users answere 'Yes' to the 'Remove blocklist' question.
+	- Enhancement (alpha): New dialogue method abstraction layer. This will (eventually) allow use of a desktop GUI and text only legacy mode and improve adaptability of the program to more OS environments. This release contains little of the new library. Version 3.0.0 will contain the full 'Salli' library.
+	- Minor: Changed default redirect IP address to 0.0.0.0. Requests to 0.0.0.0 resolve quicker than those to 127.0.0.1.
+	- Minor: Rearranged some code blocks to match program execution order of new features.
+	
 2.6.0
 
 	- New: 3 New host blacklist providers. Hosts files can now be downloaded from someonewhocares.org (Dan Pollock's List), adaway.org, malwaredomainlist.com

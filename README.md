@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v2.6.0
+Host Flash™ v2.7.0
 
 Lead Author: Lee Hodson
 
@@ -12,9 +12,9 @@ First Written: 18th Oct. 2015
 
 First Release: 2nd Nov. 2015
 
-This Release: 11th Feb. 2016
+This Release: 14th May. 2016
 
-Copyright 2015 Host Flash™ <https://host-flash.com>
+Copyright Host Flash™ <https://host-flash.com>
 
 License: GPL3
 
@@ -33,35 +33,33 @@ Use Host Flash™ to block access to websites (hosts), ad servers, malicious web
 Use Host Flash™ to manage the Linux hosts file
 
 # New Features
-
-	- New host list providers added
-	- Automatic Program Updates
-    - Community Whitelist Installer
-	- Event log file
-	- Wildcard Whitelist
-	- Quick Run
-	- Save options for reuse
-	- More block list sources
-	- Hosts file backup archive directory
-	- Host file providers used are credited in the compiled hosts file
+- New host list providers added
+- Automatic Program Updates
+- Community Whitelist Installer
+- Event log file
+- Wildcard Whitelist
+- Quick Run
+- Save options for reuse
+- More block list sources
+- Hosts file backup archive directory
+- Host file providers used are credited in the compiled hosts file
 	
 Read docs/change.log to view version change brief.
 
 # What Host Flash™ Does
-
 Host Flash™ blocks computers from accessing content served by certain web hosts. These hosts, for example, could be reported malicious websites, known ad servers, adult websites or torrent sites.
 
 Host Flash™
 
-	- downloads host name blacklists from any one or more of 11 host blacklist providers,
-	- merges those lists into one large compilation of bad hosts,
-	- adds your custom bad hosts list into the mix (blocklist.txt),
-	- removes duplicate bad host entries from the compiled bad hosts list,
-	- comments out (unblocks) whitelisted hosts (whitelist.txt),
-	- copies the hosts file that exists when Host Flash™ is first run to /etc/hosts.hf.original,
-	- stores replaced hosts files in archive directory 'Hosts Flash/backup/',
-	- option to remove previously installed bad hosts added by Host Flash™ from the existing hosts file,
-	- retains the hosts file entries that already exist in the original hosts file so that the hosts file created by Host Flash™ does not remove your own custom hosts file edits (provided they are placed above the Host Flash header).
+- downloads host name blacklists from any one or more of 11 host blacklist providers,
+- merges those lists into one large compilation of bad hosts,
+- adds your custom bad hosts list into the mix (blocklist.txt),
+- removes duplicate bad host entries from the compiled bad hosts list,
+- comments out (unblocks) whitelisted hosts (whitelist.txt),
+- copies the hosts file that exists when Host Flash™ is first run to /etc/hosts.hf.original,
+- stores replaced hosts files in archive directory 'Hosts Flash/backup/',
+- option to remove previously installed bad hosts added by Host Flash™ from the existing hosts file,
+- retains the hosts file entries that already exist in the original hosts file so that the hosts file created by Host Flash™ does not remove your own custom hosts file edits (provided they are placed above the Host Flash header).
 
 Host Flash™ is interactive.
 
@@ -82,25 +80,22 @@ Make sure manual edits to the hosts file are above the content added by Host Fla
 Press Esc or Ctrl+C to stop the process at any stage.
 
 # Requirements
-
 This program needs either 'dialog' or 'whiptail' as well as 'wget', 'sed', 'zip', 'unzip' and 'p7zip' to be installed in the OS environment. Host Flash™ will display an alert if any of those programs is not installed. In Ubuntu, they can be installed with sudo apt-get install dialog whiptail wget sed sed zip unzip p7zip
 
 This software is known to work on Debian Linux systems. It may or may not work on other Unix based systems.
 
 # Portability
-
 Host Flash™ will run in many Debian (and probably non Debian) environments like Ubuntu, Kubuntu and Debian. It might work on rooted Android devices, though full BusyBox needs to be installed into Android with a few additional shell scripts (it is easier to compile the hosts file on a full Linux machine then transfer it to Android).
 
 Saved Quick Run settings will work independently of the host they were configured on. If you want to reuse the settings, just move the Host Flash™ directory to any other system and any saved settings will be migrated too.
 
 # How to Use Host Flash™
-
 Download Host Flash™ from GitHub, run the program, follow the on screen prompts to quickly configure the program and install your new hosts file block list then save your settings for use as the default Quick Run options for the next time you run Host Flash™.
 
-- 1) Download the program from https://github.com/VR51/host-flash/archive/master.zip
-- 2) Unzip host-flash-master.zip
-- 3) Enter the directory 'host-flash-master'
-- 4) Run host-flash.sh
+- Download the program from https://github.com/VR51/host-flash/archive/master.zip
+- Unzip host-flash-master.zip
+- Enter the directory 'host-flash-master'
+- Run host-flash.sh
 
 Programatically, that is
 
@@ -108,13 +103,12 @@ Programatically, that is
 
 To Run Host Flash™, either
 
-	click host-flash.sh, or
-	type 'bash host-flash.sh' or './host-flash.sh' at the command line.
+* click host-flash.sh, or
+* type 'bash host-flash.sh' or './host-flash.sh' at the command line.
 
 Note: You may need to restart your computer and clear your browser cache(s) for the new hosts file rules to be observed by your OS.
 
 # Advanced Usage
-
 Whitelist
 
 	The web hosts blocked by the downloaded blocklists may deny you access to a small number of websites that you enjoy visiting.
@@ -202,7 +196,6 @@ Blocklist
 			https://www.example-two.com/one.html
 
 # What to Expect
-
 Your computer will no longer be able to receive data from any of the domains blocked by Host Flash™.
 
 	1) When you try to access a page of a blocked domain you will be greeted by a 'Document Not Found' error message that will be served by your computer. This is normal and is what is supposed to happen.
@@ -213,9 +206,10 @@ Your computer will no longer be able to receive data from any of the domains blo
 
 	4) Many web pages will load faster because your web browser will no longer need to wait for ad content to load. This makes web pages lighter so will save bandwidth too.
 
+# Linux Virtual Machine Hosts and Hypervisor Hosts that Host Windows Guests
+If the environment that Host Flash is being used within is a Virtual Machine host or is a Hypervisor Type 1 (bare-metal) host system then be aware that some source host name blacklists that can be used by Host Flash do block or might at times block Microsoft host names (domains). This may prevent or interfere with the proper functioning of Windows Updates. Remove the Microsoft host names from the blocklist if Windows updates fail or halt unexpectredly.
 
 # Remember
-
 If you see a Document Not Found page when you try to visit a website, and you trust the website, add the website's domain to whitelist.txt and rerun host-flash.sh
 
 If you want to block access to additional websites (like social media sites, search engines, adult sites or torrent sites etc...) add their domain names to blocklist.txt
@@ -241,8 +235,7 @@ Custom
 	If you wish, use a custom IP address to redirect bad hosts to websites of your choosing such as Google or any other host with its own dedicated IP address.
 
 # Introduction to Host Files and Host Flash™
-
-Host Flash™ Protects Your Computer & Blocks Internet Ads.
+Host Flash™ Protects Computers from Malware, Phishing Sites, Undesirable Content and Adservers.
 
 Host Flash™ installs a list of Internet host domain names that are known to serve ads, malware or other undesirable to view content.
 
@@ -281,7 +274,6 @@ If you wanted to, you could use the IP address of another website so that reques
 
 
 # Thank You to...
-
 The lists of bad hosts used by Host Flash™ are compiled by, and are available from,
 
 	- hosts-file.net
@@ -295,14 +287,12 @@ The lists of bad hosts used by Host Flash™ are compiled by, and are available 
 The program developer Lee Hodson and all who wrote the Linux scripting guides he has read.
 
 # Stay Up to Date
-
 Updates to Host Flash™ can be found at either
 
 	- https://github.com/VR51/host-flash
 	- https://host-flash.com
 
 # Donations
-
 Give donations to paypal.me/vr51
 
 VR51 is the main fiscal sponsor of Host Flash™.
