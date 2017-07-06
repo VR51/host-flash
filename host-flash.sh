@@ -2,14 +2,14 @@
 clear
 ###
 #
-#	Host Flash™ v2.7.0
+#	Host Flash™ v2.7.1
 #
 #	Lead Author: Lee Hodson
 #	Donate: paypal.me/vr51
 #	Website: https://host-flash.com
 #	First Written: 18th Oct. 2015
 #	First Release: 2nd Nov. 2015
-#	This Release: 14th May. 2016
+#	This Release: 6th July. 2017
 #
 #	Copyright 2015 Host Flash™ <https://host-flash.com>
 #	License: GPL3
@@ -21,6 +21,7 @@ clear
 #	TO RUN:
 #
 #	- Ensure the script is executable.
+#	- Run script from its installation directory
 #	- Command line: bash host-flash.sh or ./host-flash.sh
 #	- File browser: click host-flash.sh
 #
@@ -43,7 +44,7 @@ printf "HOST FLASH INITIALISED\n----------------------\n\n"
 #
 ###
 
-version="v2.7.0"
+version="v2.7.1"
 title="Host Flash"
 debugMode="false" # Set to "true" to force the program to pause after each significant step
 
@@ -1203,7 +1204,7 @@ fi
 
 	add_to_log "FINALISING THE NEW HOSTS BLACKLIST"
 	
-	sort -u -f "$filepath/temp/hosts-temp.txt" > "$filepath/temp/hosts"
+	sort -u -f -b "$filepath/temp/hosts-temp.txt" > "$filepath/temp/hosts"
 	
 	sed -i '/^$/d' "$filepath/temp/hosts"
 
