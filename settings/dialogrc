@@ -18,7 +18,7 @@ aspect = 0
 separate_widget = ""
 
 # Set tab-length (for textbox tab-conversion).
-tab_len = 2
+tab_len = 4
 
 # Make tab-traversal for checklist, etc., include the list.
 visit_items = OFF

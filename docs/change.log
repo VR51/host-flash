@@ -1,3 +1,8 @@
+2.7.1
+
+	- Fix: Removed AdAway. No longer required.
+	-	Fix: Changed hosts-file.net file download from .zip to .txt format. Changed due to download errors with .zip.
+	
 2.7.0
 
 	- Fix: Added missing sudo command to the sed line used for blocklist removal. Only affected cases where users answere 'Yes' to the 'Remove blocklist' question.

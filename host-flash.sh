@@ -7,9 +7,9 @@ clear
 #	Lead Author: Lee Hodson
 #	Donate: paypal.me/vr51
 #	Website: https://host-flash.com
+#	This Release: 10th Jan. 2018
 #	First Written: 18th Oct. 2015
 #	First Release: 2nd Nov. 2015
-#	This Release: 6th July. 2017
 #
 #	Copyright 2015 Host Flash™ <https://host-flash.com>
 #	License: GPL3
@@ -21,7 +21,6 @@ clear
 #	TO RUN:
 #
 #	- Ensure the script is executable.
-#	- Run script from its installation directory
 #	- Command line: bash host-flash.sh or ./host-flash.sh
 #	- File browser: click host-flash.sh
 #
@@ -780,7 +779,6 @@ then
 				hosts-file.net 'Liberal: Blocks mostly adware, spyware, malware and trackers. Big list.' On \
 				mvps.org 'Liberal: Blocks mostly adware, spyware, malware and trackers. Big list.' On \
 				someonewhocares.org 'Liberal: Blocks mostly adware, spyware, malware and trackers. This is the Dan Pollock list. Small list.' On \
-				adaway.org 'Liberal: Blocks adware. Small list.' On \
 				malwaredomainlist.com 'Liberal: Blocks mostly malware. Small list.' On \
 				free.fr-Ad-Servers 'Moderate: Blocks ad servers.' On \
 				free.fr-Malware 'Moderate: Blocks reported malware sites.' On \
@@ -802,7 +800,6 @@ then
 				hosts-file.net 'Liberal: Blocks mostly ad servers, malware sites and trackers' On \
 				mvps.org 'Liberal: Blocks mostly ad servers, malware sites and trackers' On \
 				someonewhocares.org 'Liberal: Blocks mostly adware, spyware, malware and trackers. This is the Dan Pollock list. Small list.' On \
-				adaway.org 'Liberal: Blocks adware. Small list.' On \
 				malwaredomainlist.com 'Liberal: Blocks mostly malware. Small list.' On \
 				hostsfile.org 'Very Strict: Regular blocks + porn, gambling and gaming sites.' Off \
 				)"
@@ -918,9 +915,11 @@ do
 
 		hosts-file.net)
 				download=http://hosts-file.net/download
-				dfile=hosts.zip
+				# dfile=hosts.zip # Changed to hosts.txt due to zip file download errors
+				dfile=hosts.txt
 				target=hosts.txt
-				unzipprog='unzip'
+				# unzipprog='unzip'
+				unzipprog=''
 				;;
 
 		mvps.org)
@@ -969,14 +968,6 @@ do
 				download=http://someonewhocares.org/hosts
 				dfile=hosts
 				target=hosts
-				unzipprog=''
-				;;
-				
-		adaway.org)
-				# download=https://adaway.org ## File fails to download from here. Using GitHub version instead.
-				download=https://github.com/Free-Software-for-Android/AdAway/blob/master/hosts
-				dfile=hosts.txt
-				target=hosts.txt
 				unzipprog=''
 				;;
 				
@@ -1030,11 +1021,11 @@ cd "$filepath"
 
 add_to_log "PREPARING NEW HOSTS FILE.."
 
-sed -i 's/#.*//' "$filepath/temp/hosts-temp.txt" # Remove all comments (some come after hostname <-> IP map lines)
+sed -i 's/#.*//g' "$filepath/temp/hosts-temp.txt" # Remove all comments (some come after hostname <-> IP map lines)
 iconv -c -t UTF-8//TRANSLIT "$filepath/temp/hosts-temp.txt" > "$filepath/temp/hosts-utf8.txt" # Convert non UTF8 characters to fix comment fault in French lists.
 	rm "$filepath/temp/hosts-temp.txt"
 	mv "$filepath/temp/hosts-utf8.txt" "$filepath/temp/hosts-temp.txt"
-sed -i 's/^[^01-9].*//' "$filepath/temp/hosts-temp.txt" # Remove any line that does not begin with a number
+sed -i 's/^[^01-9].*//g' "$filepath/temp/hosts-temp.txt" # Remove any line that does not begin with a number
 sed -i '/.*\blocalhost\b.*/d' "$filepath/temp/hosts-temp.txt" # Remove localhost lines - the computer's installed host file already has localhost defined the way it should be
 sed -i '/^$/d' "$filepath/temp/hosts-temp.txt" # Remove empty lines
 
@@ -1053,7 +1044,7 @@ sed -i "s/^[01-9\.].*[ \t]/$redirectip /g" "$filepath/temp/hosts-temp.txt" # Rep
 
 cp /etc/hosts "$filepath/temp/hosts.copy"
 sed -i '/#### Hosts Flash Bad Hosts Block ########/,$d' "$filepath/temp/hosts.copy"
-sed -i 's/\n\n/\n/' "$filepath/temp/hosts.copy" # First Pass: Ensuring we don't have hundreds of successive newlines
+sed -i 's/\n\n/\n/g' "$filepath/temp/hosts.copy" # First Pass: Ensuring we don't have hundreds of successive newlines
 sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' "$filepath/temp/hosts.copy" # Second Pass: Ensuring we don't have hundreds of successive newlines
 printf '\n\n#### Hosts Flash Bad Hosts Block ########\n\n# Credits\n\n' >> "$filepath/temp/hosts.copy"
 
@@ -1086,7 +1077,7 @@ if test "$blacklist" = "0" ; then
         rm "$filepath/custom/blocklist.txt"
     fi
 
-    sort -u -f "$filepath/temp/blocklist-merged.txt" > "$filepath/custom/blocklist.txt"
+    sort -f -u "$filepath/temp/blocklist-merged.txt" > "$filepath/custom/blocklist.txt"
 
 fi
 
@@ -1128,7 +1119,7 @@ if test "$whitelists" = "0" ; then
         rm "$filepath/custom/whitelist.txt"
     fi
 
-    sort -u -f "$filepath/temp/whitelist-merged.txt" > "$filepath/custom/whitelist.txt"
+    sort -f -u "$filepath/temp/whitelist-merged.txt" > "$filepath/custom/whitelist.txt"
 
     # Download community whitelist-wild.txt and mix it with the existing custom whitelist-wild
 
@@ -1140,7 +1131,7 @@ if test "$whitelists" = "0" ; then
         rm "$filepath/custom/whitelist-wild.txt"
     fi
 
-    sort -u -f "$filepath/temp/whitelist-wild-merged.txt" > "$filepath/custom/whitelist-wild.txt"
+    sort -f -u "$filepath/temp/whitelist-wild-merged.txt" > "$filepath/custom/whitelist-wild.txt"
 
     add_to_log "DOWNLOADED COMMUNITY WHITELISTS AND MERGED WITH (ANY) EXISTING CUSTOM WHITELISTS"
     
@@ -1160,7 +1151,7 @@ then
 
 	add_to_log "RE-ENABLING HOSTS WHITELISTED IN 'whitelist.txt'. THIS MAY TAKE SEVERAL MINUTES..."
 
-	sort -u -f "$filepath/custom/whitelist.txt" > "$filepath/temp/whitelist.txt"
+	sort -f -u "$filepath/custom/whitelist.txt" > "$filepath/temp/whitelist.txt"
 
 	# Iterate through non wildcard domain list
 
@@ -1180,7 +1171,7 @@ then
 
 	add_to_log "RE-ENABLING HOSTS WHITELISTED IN 'whitelist-wild.txt'. THIS MAY TAKE SEVERAL MINUTES..."
 
-	sort -u -f "$filepath/custom/whitelist-wild.txt" > "$filepath/temp/whitelist-wild.txt"
+	sort -f -u "$filepath/custom/whitelist-wild.txt" > "$filepath/temp/whitelist-wild.txt"
 
 	# Iterate through wildcard domain list
 
@@ -1204,9 +1195,10 @@ fi
 
 	add_to_log "FINALISING THE NEW HOSTS BLACKLIST"
 	
-	sort -u -f -b "$filepath/temp/hosts-temp.txt" > "$filepath/temp/hosts"
+	sort -f -u -b "$filepath/temp/hosts-temp.txt" > "$filepath/temp/hosts"
 	
 	sed -i '/^$/d' "$filepath/temp/hosts"
+	sed -i '/^0\.0\.0\.0 $/d' "$filepath/temp/hosts"
 
 	add_to_log "NEW HOSTS BLACKLIST READY FOR INSTALLATION"
 

@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v2.7.0
+Host Flash™ v2.7.1
 
 Lead Author: Lee Hodson
 
@@ -8,11 +8,11 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
+This Release: 10th June 2018
+
 First Written: 18th Oct. 2015
 
 First Release: 2nd Nov. 2015
-
-This Release: 14th May. 2016
 
 Copyright Host Flash™ <https://host-flash.com>
 
