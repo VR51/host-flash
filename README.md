@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 10th June 2018
+This Release: 10th Jan. 2018
 
 First Written: 18th Oct. 2015
 
