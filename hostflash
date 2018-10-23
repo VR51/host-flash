@@ -426,6 +426,7 @@ function __disable() {
 
 	if test -f "/etc/hosts.hf.head"
 	then # Restore the backup head from the original hosts file
+		cp /etc/hosts "$dirsrctmp/hosts.copy"
 		sudo mv "/etc/hosts.hf.head" "/etc/hosts"
 	else # Delete Host Flash™ data from /etc/hosts, if it exists
 		cp /etc/hosts "$dirsrctmp/hosts.copy"
