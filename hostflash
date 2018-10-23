@@ -53,20 +53,15 @@ clear
 #	TO DO / DEV NOTES
 #
 ##
-# versions: add installer
+# versions: add deb installer
 #		installed has desktop icon (like ServUp)
 #
-# Questions: Preset sets
-# Custom Lists: Edit Custom Whitelist, Edit custom Whitelist-wild, Edit Custom Blacklist
-# Info: Last file update time, Latest Host Flash™ version, Installed version
 #	 	En/disable Automatic list update
 # 	En/disable Automatic script update
 #
 # CLI: disable HF, enable HF, add rule, remove rule, update lists, set options
 #
-#	Move actions into functions.
-# 	Run action functions from __prompt.
-#	Mode build & install not yet fully implemented.
+#	Move more actions into functions.
 #
 #	Some configs/variables/options are yet to be re-implemented
 #
