@@ -1,8 +1,0 @@
-#!/bin/bash
-quickrun='On'
-updatehfqr='1'
-hosts_listsqr='hosts-file.net	mvps.org	someonewhocares.org	malwaredomainlist.com	free.fr-Ad-Servers	free.fr-Malware	free.fr-Trackers'
-redirectipqr='0.0.0.0'
-whitelistsqr='0'
-blacklistqr='0'
-installqr='0'

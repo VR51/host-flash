@@ -1,0 +1,828 @@
+#!/bin/bash
+clear
+# set -x
+###
+#
+#	Host Flash™ 3.0.0 beta
+#
+#	Downloads hosts file rules from various sources.
+#	Installs hosts file rules into /etc/hosts
+#	Integrates Host Flash™ hosts file rules with rules that already exist in /etc/hosts
+#
+#	For OS: Linux (Debian)
+#	Tested With: Ubuntu flavours
+#
+#	Lead Author: Lee Hodson
+#	Donate: https://paypal.me/vr51
+#	Website: https://host-flash.com<https://host-flash.com>
+#	This Release: 10th Jan. 2018
+#	First Written: 18th Oct. 2015
+#	First Release: 2nd Nov. 2015
+#
+#	Copyright Host Flash™ https://host-flash.com<https://host-flash.com>
+#	License: GPL3
+#
+#	Programmer: Lee Hodson<journalxtra.com>, VR51<vr51.com>
+#
+#	Use of this program is at your own risk
+#
+#	INSTALLS OR UPDATES
+#
+#	Use Host Flash™ to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
+#	Use Host Flash™ to manage your hosts file
+#
+#	TO RUN:
+#
+#	Ensure the script is executable:
+#
+#		Right-click > properties > Executable
+#
+#		OR
+#
+#		chmod u+x hostflash
+#
+#	Launch by clicking the script file or by typing `bash hostflash` at the command line.
+#
+#	Host Flash™ will attempt to preserve existing host rules.
+#
+#
+###
+
+##
+#
+#	TO DO / DEV NOTES
+#
+##
+# versions: add installer
+#		installed has desktop icon (like ServUp)
+#
+# Questions: Preset sets
+# Custom Lists: Edit Custom Whitelist, Edit custom Whitelist-wild, Edit Custom Blacklist
+# Info: Last file update time, Latest Host Flash™ version, Installed version
+#	 	En/disable Automatic list update
+# 	En/disable Automatic script update
+#
+# CLI: disable HF, enable HF, add rule, remove rule, update lists, set options
+#
+#	Move actions into functions.
+# 	Run action functions from __prompt.
+#	Mode build & install not yet fully implemented.
+#
+#	Some configs/variables/options are yet to be re-implemented
+#
+###
+
+##
+#	CONFIGS - should be no reason to manually change these
+##
+
+# Do not Use trailing slashes in URLs, URIs or directory paths
+
+package='Host Flash™' # Name of software installed by this installer
+version='3.0.0 beta'
+
+repoloc='https://github.com/VR51/host-flash' # Github master URL for this package.
+srcloc='https://github.com/VR51/host-flash.git' # Software source package git address
+dirsrc="$HOME/src/hostflash" # Directory where the source code will be stored locally
+dirsrctmp="$HOME/src/hostflash/tmp" # Directory where the source code will be stored locally
+
+diricon="$HOME/src/hostflash/data" # Directory where the application icon will be located.
+icon="hostflash.svg" # Icon name
+docs="$HOME/src/hostflash/DOC" # Location of program documents.
+configloc="$HOME/.hfrc" # Location of user's custom settings for Host Flash™.
+configwlloc="$HOME/.hfwlrc" # Location of the user's custom whitelist.
+configwlwloc="$HOME/.hfwlrc" # Location of the user's custom whitelist-wild.
+configblloc="$HOME/.hfblrc" # Location of the user's custom blacklist.
+
+binary="hostflash" # Name of the binary file that is this program.
+
+# Launcher Settings
+
+type='Application' # 
+cats='Utilities' # Application launcher categories
+
+install='/usr/bin' # Binary installation path. Where should the compiled binary be installed to? Exact path. # Not required for this installer.
+
+user=$(whoami) # Current User
+group=$(id -g -n $user) # Current user's primary group
+
+###
+# INTERNAL SETTINGS
+###
+
+declare -a list1 list2 list3 list4 list5 list6 list7 list8 list9 list10 list11 list12 list13 list14 list15 list16
+declare -a conf
+declare -a menu # Menu options are set within __prompt()
+declare -a select # Menu options count
+declare -a message # Index indicates related conf, mode or menu item
+declare -a mode # Used for notices
+declare -a essentialpackages # Packages to install to help the build process
+declare -a credits # Hosts file credits
+
+##
+#	LISTS
+##
+
+# These are...
+#
+# list[0]='Enabled / Disabled' # * or 0 for TRUE or FALSE
+# list[1]='List Domain' # The name of the list
+# list[2]='Download URL' # Where the package is downloaded from
+# list[3]='Download Package' # Name of package downloaded
+# list[4]='Package Target' # Name of usable file in the downloaded package
+# list[5]='Flags: E.g Package Type' # unzip, p7zip, empty if raw txt, or whitelist.
+#
+# Changes are stored in .hfrc
+
+list1[0]='+'
+list1[1]='hosts-file.net (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
+list1[2]='http://hosts-file.net/download'
+list1[3]='hosts.txt'
+list1[4]='hosts.txt'
+list1[5]=''
+
+list2[0]='+'
+list2[1]='mvps.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
+list2[2]='http://winhelp2002.mvps.org'
+list2[3]='hosts.zip'
+list2[4]='HOSTS'
+list2[5]='unzip'
+
+list3[0]='+'
+list3[1]='free.fr-Trackers (Moderate: Blocks trackers)'
+list3[2]='http://rlwpx.free.fr/WPFF'
+list3[3]='htrc.7z'
+list3[4]='Hosts.trc'
+list3[5]='p7zip'
+
+list4[0]='+'
+list4[1]='free.fr-Ad-Servers (Moderate: Blocks ad servers)'
+list4[2]='http://rlwpx.free.fr/WPFF'
+list4[3]='hpub.7z'
+list4[4]='Hosts.pub'
+list4[5]='p7zip'
+
+list5[0]='+'
+list5[1]='free.fr-Malware (Moderate: Blocks malware domains)'
+list5[2]='http://rlwpx.free.fr/WPFF'
+list5[3]='hrsk.7z'
+list5[4]='Hosts.rsk'
+list5[5]='p7zip'
+
+list6[0]='+'
+list6[1]='free.fr-Adult (Moderate: Blocks adult domains. Coincidentally blocks forums and some social sites)'
+list6[2]='http://rlwpx.free.fr/WPFF'
+list6[3]='hsex.7z'
+list6[4]='Hosts.sex'
+list6[5]='p7zip'
+
+list7[0]='+'
+list7[1]='free.fr-Misc (Moderate: Blocks miscellaneous domains)'
+list7[2]='http://rlwpx.free.fr/WPFF'
+list7[3]='hmis.7z'
+list7[4]='Hosts.mis'
+list7[5]='p7zip'
+
+list8[0]='+'
+list8[1]='someonewhocares.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Small list)'
+list8[2]='http://someonewhocares.org/hosts'
+list8[3]='hosts'
+list8[4]='hosts'
+list8[5]=''
+
+list9[0]='+'
+list9[1]='malwaredomainlist.com (Liberal: Blocks mostly malware. Small list)'
+list9[2]='http://www.malwaredomainlist.com/hostslist'
+list9[3]='hosts.txt'
+list9[4]='hosts.txt'
+list9[5]=''
+
+list10[0]='+'
+list10[1]='hostsfile.org (Very Strict: Regular blocks + porn, gambling and gaming sites)'
+list10[2]='http://www.hostsfile.org/Downloads'
+list10[3]='hosts.txt'
+list10[4]='hosts.txt'
+list10[5]=''
+
+# Others
+
+list11[0]='+'
+list11[1]='Community Whitelist (Host Flash™ whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
+list11[2]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw/ad90168c61e926d462895b190ad84e37f4e5c99e'
+list11[3]='whitelist.txt'
+list11[4]='whitelist.txt'
+list11[5]='whitelist'
+
+list12[0]='+'
+list12[1]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
+list12[2]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/4555b9a820386e5d25cf09a85e440d1008bc8240'
+list12[3]='whitelist-wild.txt'
+list12[4]='whitelist-wild.txt'
+list12[5]='whitelist-wild'
+
+list13[0]='+'
+list13[1]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
+list13[2]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/a31adff448fb854c81009493b74fd2c4466ee3ef'
+list13[3]='blocklist.txt'
+list13[4]='blocklist.txt'
+list13[5]=''
+
+list14[0]='+'
+list14[1]='Local Whitelist (Your own custom whitelist)'
+list14[2]='localhost'
+list14[3]='.hfwlrc'
+list14[4]='.hfwlrc'
+list14[5]='whitelist'
+
+list15[0]='+'
+list15[1]='Local Whitelist Wild (Your own custom wild whitelist)'
+list15[2]='localhost'
+list15[3]='.hfwlwrc'
+list15[4]='.hfwlwrc'
+list15[5]='whitelist-wild'
+
+list16[0]='+'
+list16[1]='Local blacklist (Your own custom blacklist)'
+list16[2]='localhost'
+list16[3]='.hfblrc'
+list16[4]='.hfblrc'
+list16[5]=''
+
+# GENERAL
+
+essentialpackages=( zip unzip 7z curl sed git )
+	
+conf[0]=0 # Essentials # Install build essential software. 0 = Not done, 1 = Done
+conf[1]=0 # Update Host Flash™ program.
+#conf[2]=$($binary -v) # Installed package version
+conf[2]="$version"
+conf[3]=$(curl -v --silent "$repoloc/commit/master" --stderr - | grep '<relative-time datetime' | sed -E 's#<relative-time datetime="(.+)">.+$#\1#g' | tr -d '[:space:]' | tr '[:alpha:]' ' ')
+conf[4]=$(if test -f "$configloc" ; then echo "1"; fi)
+
+conf[5]='127.0.0.1' # Redirect IP address
+conf[6]='0' # Build Only or Build and Install 0 or 1
+
+## END SETTINGS
+
+## BEGIN 
+
+# Other settings
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+# Locate where we are
+filepath="$( echo $PWD )"
+
+# A Little precaution
+cd "$filepath"
+
+# Make SRC directory if it does not already exist
+
+if test ! -d "$HOME/src"; then
+	mkdir "$HOME/src"
+fi
+
+if test ! -d "$dirsrc"; then
+	mkdir "$dirsrc"
+fi
+
+if test ! -d "$dirsrctmp"; then
+	mkdir "$dirsrctmp"
+else
+	rm -r "$dirsrctmp"
+	mkdir "$dirsrctmp"
+fi
+
+# Make User Config files if they do not already exist
+
+if test ! -f "$HOME/.hfrc"; then
+	touch "$HOME/.hfrc"
+fi
+
+if test ! -f "$HOME/.hfwlrc"; then
+	touch "$HOME/.hfwlrc"
+fi
+
+if test ! -f "$HOME/.hfwlwrc"; then
+	touch "$HOME/.hfwlwrc"
+fi
+
+if test ! -f "$HOME/.hfblrc"; then
+	touch "$HOME/.hfblrc"
+fi
+	
+# INSTALL RC SETTINGS
+
+function __repaint() {
+
+	if source "$HOME/.hfrc"
+	then
+			source "$HOME/.hfrc"
+	else
+			. "$HOME/.hfrc"
+	fi
+
+	clear
+
+}
+
+__repaint
+
+# Functions
+
+function __run() {
+	# Check for terminal then run else just run program
+	tty -s
+	if test "$?" -ne 0 ; then
+		__launch
+	else
+		__prompt "$1"
+	fi
+
+}
+
+function __prompt() {
+
+	# $1 = instruction
+
+	while true; do
+	
+		if test "$?" -eq 0
+		then
+
+			case "${conf[6]}" in
+
+					0)
+						mode[0]='MODE: Build Only\n'
+
+					;;
+
+					1)
+						mode[0]='MODE: Build and Install\n'
+
+					;;
+
+			esac
+
+			# Set Menu Options
+
+			case "${conf[0]}" in
+
+				0)
+					menu[1000]='Install missing software packages needed by Host Flash™\n'
+
+				;;
+
+			esac
+
+			menu[1]="[${list1[0]}] - ${list1[1]}"
+			menu[2]="[${list2[0]}] - ${list2[1]}"
+			menu[3]="[${list3[0]}] - ${list3[1]}"
+			menu[4]="[${list4[0]}] - ${list4[1]}"
+			menu[5]="[${list5[0]}] - ${list5[1]}"
+			menu[6]="[${list6[0]}] - ${list6[1]}"
+			menu[7]="[${list7[0]}] - ${list7[1]}"
+			menu[8]="[${list8[0]}] - ${list8[1]}"
+			menu[9]="[${list9[0]}] - ${list9[1]}"
+			menu[10]="[${list10[0]}] - ${list10[1]}"
+			menu[11]=''
+			menu[12]="[${list11[0]}] - ${list11[1]}"
+			menu[13]="[${list12[0]}] - ${list12[1]}"
+			menu[14]="[${list13[0]}] - ${list13[1]}"
+			menu[15]="[${list14[0]}] - ${list14[1]}"
+			menu[16]="[${list15[0]}] - ${list15[1]}"
+			menu[17]="[${list16[0]}] - ${list16[1]}"
+
+			menu[100]=''
+
+			menu[101]="[${conf[5]}] - Change redirect IP address"
+
+			menu[200]=''
+
+			menu[201]='Change Build/Install Mode'
+			menu[202]=''
+			case "${conf[6]}" in
+
+				0)
+					menu[203]='Build Host Flash™ list.'
+
+				;;
+
+				1)
+					menu[203]='Build and Install Host Flash™ list.'
+
+				;;
+
+			esac
+
+			menu[300]=''
+
+			menu[301]='Enable Host Flash™ list.'
+			menu[302]='Disable Host Flash™ list.'
+			menu[303]='Restore original hosts file.'
+
+			menu[400]=''
+
+			menu[401]="Reset to default $package configuration?"
+
+			printf $bold
+			printf "${mode[0]}\n"
+			printf $normal
+
+			printf "MENU\n\n"
+			printf "INSTRUCTIONS: a) Select lists to install, b) optionally set the redirect IP address then c) build the hosts file firewall before you d) Enable the built Host Flash™ hosts firewall i.e. options 1 to 16, then 17 (optional), 19 and 20. In this beta version The MODE selector does not affect these steps.\n\n"
+
+			n=1
+			for i in "${menu[@]}"; do
+				if [ "$i" == '' ]; then
+					printf "\n"
+				else
+					printf "$n) $i\n"
+					select[$n]=$n
+					let n=n+1
+				fi
+			done
+
+
+			printf "\n0) Exit\n\n"
+
+			# Notices
+
+			printf $bold
+
+			printf "\nGENERAL INFO\n"
+				
+			printf $normal
+
+			printf "\n System $package: ${conf[2]}"
+			printf "\n Latest git commit: ${conf[3]}\n"
+
+			printf "\nIf the computer crashes during installation lower the number of lists processed or cool your computer then try again.\n"
+
+			printf $bold
+				printf "\nChoose Wisely: "
+			printf $normal
+			read REPLY
+		
+		else
+			REPLY=$1
+		fi
+
+		case $REPLY in
+
+		1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16) # Choose lists to download
+
+			if grep "list$REPLY\[0]='-'" "$configloc"
+			then
+				sed -i "s/list$REPLY\[0]='-'/list$REPLY\[0]='\+'/g" "$configloc"
+			elif grep "list$REPLY\[0]='\+'" "$configloc"
+			then
+				sed -i "s/list$REPLY\[0]='\+'/list$REPLY\[0]='-'/g" "$configloc"
+			else
+				echo -e "list$REPLY""[0]='-'" >> "$configloc"
+			fi
+
+			__repaint
+			
+		;;
+
+		17) # Change redirect IP address
+
+			printf "Current Redirect IP: ${conf[5]}"
+			printf "\nEnter new Redirect IP then press Enter:\n"
+			read ip
+
+			if grep "conf\[5]=" "$configloc"
+			then
+				sed -i "s/conf\[5]='.*'/conf\[5]='$ip'/g" "$configloc"
+			else
+				echo -e "conf""[5]='$ip'" >> "$configloc"
+			fi
+
+			__repaint
+
+		;;
+
+		18) # Set Mode
+
+			if grep "conf\[6]='0'" "$configloc"
+			then
+				sed -i "s/conf\[6]='0'/conf\[6]='1'/g" "$configloc"
+				
+			elif grep "conf\[6]='1'" "$configloc"
+			then
+				sed -i "s/conf\[6]='1'/conf\[6]='0'/g" "$configloc"
+				
+			else
+				echo -e "conf""[6]='1'" >> "$configloc"
+			fi
+
+			__repaint
+			
+		;;
+
+		19) # Build or Build and Install the Host Flash™ hosts file
+
+			# Download lists. Merge them into new hosts file
+			n=1
+			while [ $n -le 14 ]; do
+
+				list[0]=$( eval echo "\${list$n[0]}" )
+				list[1]=$( eval echo "\${list$n[1]}" )
+				list[2]=$( eval echo "\${list$n[2]}" )
+				list[3]=$( eval echo "\${list$n[3]}" )
+				list[4]=$( eval echo "\${list$n[4]}" )
+				list[5]=$( eval echo "\${list$n[5]}" )
+
+				if test "${list[0]}" = '+'
+				then
+					if test "${list[2]}" != 'localhost'
+					then
+						curl -e "${list[2]}" "${list[2]}/${list[3]}" -o "$dirsrctmp/${list[3]}"
+						if test "${list[5]}" = 'unzip'; then unzip -o "$dirsrctmp/${list[3]}" -d "$dirsrctmp"; fi
+						if test "${list[5]}" = 'p7zip'; then 7z e -y "$dirsrctmp/${list[3]}" -o"$dirsrctmp" ; fi
+						
+						if test "${list[5]}" = 'whitelist'
+						then
+							cat "$dirsrctmp/${list[4]}" >> "$dirsrctmp/whitelist-temp.txt"
+						elif test "${list[5]}" = 'whitelist-wild'
+						then
+							cat "$dirsrctmp/${list[4]}" >> "$dirsrctmp/whitelist-wild-temp.txt"
+						else
+							cat "$dirsrctmp/${list[4]}" >> "$dirsrctmp/hosts-temp.txt"
+						fi
+						
+					else # It's local host
+						if test "${list[5]}" = 'whitelist'
+						then
+							cat "$HOME/${list[4]}" >> "$dirsrctmp/whitelist-temp.txt"
+						elif test "${list[5]}" = 'whitelist-wild'
+						then
+							cat "$HOME/${list[4]}" >> "$dirsrctmp/whitelist-wild-temp.txt"
+						else
+							cat "$HOME/${list[4]}" >> "$dirsrctmp/hosts-temp.txt"
+						fi
+					fi
+
+					credits+=("# Includes hosts blacklist from ${list[1]}\n")
+				fi
+				
+				let n=n+1
+
+			done
+			
+			__repaint
+			
+			printf "This next part could take some time.\nLook in $dirsrctmp to view activity in realtime.\n\nProcessing..."
+			
+			#	Format raw list data in hosts-temp.txt
+
+			sed -i 's/#.*//g' "$dirsrctmp/hosts-temp.txt" # Remove all comments (some come after hostname <-> IP map lines)
+			iconv -c -t UTF-8//TRANSLIT "$dirsrctmp/hosts-temp.txt" > "$dirsrctmp/hosts-utf8.txt" # Convert non UTF8 characters to fix character faults in French lists.
+			mv "$dirsrctmp/hosts-utf8.txt" "$dirsrctmp/hosts-temp.txt"
+			sed -i 's/^[^01-9].*//g' "$dirsrctmp/hosts-temp.txt" # Remove any line that does not begin with a number
+			sed -i '/^$/d' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 1
+			sed -i '/^[[:blank:]]*$/d' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 2
+			sed -i 's/\n\n/\n/g' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 3
+			sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 4
+			sed -i '/.*\blocalhost\b.*/d' "$dirsrctmp/hosts-temp.txt" # Remove localhost lines - the computer's installed host file already has localhost defined the way it should be
+			sed -i "s/^[01-9\.].*[ \t]/${conf[5]} /g" "$dirsrctmp/hosts-temp.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab(s) or space(s) in each line
+
+			# Sort the lists
+			if test -f "$dirsrctmp/hosts-temp.txt"
+			then
+				sort -f -u "$dirsrctmp/hosts-temp.txt" > "$dirsrctmp/hosts-temp2.txt"
+				rm "$dirsrctmp/hosts-temp.txt"
+				mv "$dirsrctmp/hosts-temp2.txt" "$dirsrctmp/hosts-temp.txt"
+			fi
+
+			if test -f "$dirsrctmp/whitelist-temp.txt"
+			then
+				sort -f -u "$dirsrctmp/whitelist-temp.txt" > "$dirsrctmp/whitelist.txt"
+				rm "$dirsrctmp/whitelist-temp.txt"
+			fi
+			
+			if test -f "$dirsrctmp/whitelist-wild-temp.txt"
+			then
+				sort -f -u "$dirsrctmp/whitelist-wild-temp.txt" > "$dirsrctmp/whitelist-wild.txt"
+				rm "$dirsrctmp/whitelist-wild-temp.txt"
+			fi
+
+			# Process whitelist -- remove whitelisted domains from hosts-temp2.txt
+			
+			# Standard
+			# Iterate through non wildcard domain list
+			while read -r LINE
+			do
+				# sed -r -i "s/(${conf[5]} $LINE(.*)?)$/# \1/g" "$dirsrctmp/hosts-temp.txt" # This method comments out whitelisted hostnames
+				sed -r -i "s/${conf[5]}[[:blank:]]$LINE.*?$//g" "$dirsrctmp/hosts-temp.txt" # This method removes whitelisted hostnames
+
+			done <"$dirsrctmp/whitelist.txt"
+			
+			# Wild
+			# Iterate through wildcard domain list
+			while read -r LINE
+			do
+				# sed -r -i "s/(${conf[5]} (.*\.)$LINE(.*)?)$/# \1/g" "$dirsrctmp/hosts-temp.txt" # This method comments out whitelisted hostnames
+				sed -r -i "s/${conf[5]}[[:blank:]].*\.$LINE.*?$//g" "$dirsrctmp/hosts-temp.txt" # This method removes whitelisted hostnames
+
+			done <"$dirsrctmp/whitelist-wild.txt"
+			
+			#	Get head of the existing hosts file stored at /etc/hosts
+			#	Remove old Host Flash™ blacklist from existing hosts file, assuming blacklist exists
+			#	Remove empty lines from the end of the header
+			#	This creates file hosts.copy which is used a few lines down from here
+
+			cp /etc/hosts "$dirsrctmp/hosts.copy"
+			sed -r -i '/#### Host.+? Flash.+? Bad Hosts Block ########/,$d' "$dirsrctmp/hosts.copy" # Delete old Host Flash data from /etc/hosts
+			sed -i 's/\n\n/\n/g' "$dirsrctmp/hosts.copy" # First Pass: Ensuring we don't have hundreds of successive newlines
+			sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' "$dirsrctmp/hosts.copy" # Second Pass: Ensuring we don't have hundreds of successive newlines
+			printf '\n\n#### Host Flash™ Bad Hosts Block ########\n\n# Credits\n\n' >> "$dirsrctmp/hosts.copy"
+
+			for i in "${credits[@]}" ; do
+				printf "$i" >> "$dirsrctmp/hosts.copy"
+			done
+
+			printf "\n\n# Installed with $package\n\n# Visit host-flash.com to learn more\n\n" >> "$dirsrctmp/hosts.copy"
+			
+			
+			# Merge the old head with the new hosts blacklist
+			
+			cat "$dirsrctmp/hosts.copy" "$dirsrctmp/hosts-temp.txt" > "$dirsrctmp/hosts.txt"
+			
+			case "${conf[6]}" in
+			
+				1)
+			
+					__run "20"
+					
+				;;
+				
+			esac
+			
+			__repaint
+
+		;;
+
+		20) # Enable Host Flash™ hosts list
+
+			if test ! -f "/etc/hosts.hf.original"
+			then
+				sudo cp "/etc/hosts" "/etc/hosts.hf.original" # The original hosts file before Host Flash™ first ever use in this system.
+			fi
+			
+			if test -f "$dirsrctmp/hosts.txt"
+			then
+				sudo cp "/etc/hosts" "/etc/hosts.hf.backup" # General restore file
+				sudo mv "$dirsrctmp/hosts.txt" "/etc/hosts"
+				sudo mv "$dirsrctmp/hosts.copy" "/etc/hosts.hf.head" # This is the raw head of the hosts file.
+			else
+				printf "$package hosts file not found. Have you built it yet?"
+			fi
+
+			__repaint
+
+		;;
+
+		21) # Disable Host Flash™ hosts list
+
+			if test -f "/etc/hosts.hf.head"
+			then # Restore the backup head from the original hosts file
+				sudo mv "/etc/hosts.hf.head" "/etc/hosts"
+			else # Delete Host Flash™ data from /etc/hosts, if it exists
+				cp /etc/hosts "$dirsrctmp/hosts.copy"
+				sed -i '/#### Host Flash™ Bad Hosts Block ########/,$d' "$dirsrctmp/hosts.copy"
+				sudo mv "$dirsrctmp/hosts.copy" "/etc/hosts"
+			fi
+
+			__repaint
+
+		;;
+
+		22) # Restore Host Flash™ hosts list
+
+			if test -f "/etc/hosts.hf.original"
+			then # Restore the backup head from the original hosts file
+				sudo mv "/etc/hosts.hf.original" "/etc/hosts"
+			fi
+
+			__repaint
+
+		;;
+
+		23) # Reset Custom Configs
+
+			if test -f "$configloc"; then
+				rm "$configloc"
+				printf "$package configuration reset.\n"
+				printf "\nPress any key to continue\n"
+				read something
+			else
+				printf "$package configuration file not found. Nothing to do. Nothing done.\n"
+				printf "\nPress any key to continue\n"
+				read something
+			fi
+			
+			__repaint
+
+		;;
+
+		24) # Install software packages necessary to build the package
+
+			case "${conf[0]}" in
+			
+				0)
+
+					printf "\nThis will attempt to install the following packages:\n"
+
+					for i in "${essentialpackages[@]}"; do
+						printf "$i "
+					done
+
+					printf "\nContinue to install them: Yn:\n"
+					read a
+					
+					let n=1
+					while true; do
+						case $a in
+
+						y|Y)
+						
+							case $n in
+							1)
+								echo -e "conf""[0]='1'" >> "$configloc"
+								sudo apt-get update
+								let n=n+1
+							;;
+							esac
+							
+							for i in "${essentialpackages[@]}"; do
+								sudo apt-get build-dep -y -q $i
+								sudo apt-get install -y -q --install-suggests $i
+							done
+
+							printf "\nPress any key to continue\n"
+							read something
+							__repaint
+
+						;;
+
+						n|N)
+
+							__repaint
+
+						;;
+						
+						*)
+
+						esac
+						
+					done
+					
+				;;
+				
+			esac
+
+		;;
+
+		0) # Exit
+
+			exit 0
+
+		;;
+
+		*)
+
+		esac
+
+	done
+
+}
+
+
+## launch terminal
+
+function __launch() {
+
+	terminal=( konsole gnome-terminal x-terminal-emulator xdg-terminal terminator urxvt rxvt Eterm aterm roxterm xfce4-terminal termite lxterminal xterm )
+	for i in ${terminal[@]}; do
+		if command -v $i > /dev/null 2>&1; then
+			exec $i -e "$0"
+			# break
+		else
+			printf "\nUnable to automatically determine the correct terminal program to run e.g Console or Konsole. Please run this $package from the command line.\n"
+			read something
+			exit 1
+		fi
+	done
+}
+
+## Boot
+
+__run "$@" # Loops back to the start. The script is read by BASH then __run is run. This ensures all functions are read into memory before anything happens.
+
+# Exit is at end of __run()
+
+# FOR DEBUGGING
+
+# declare -p
