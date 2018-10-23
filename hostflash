@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-#	Host Flash™ 3.0.0 beta
+#	Host Flash™ 3.0.1 beta
 #
 #	Downloads hosts file rules from various sources.
 #	Installs hosts file rules into /etc/hosts
@@ -79,7 +79,7 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.0.0 beta'
+version='3.0.1 beta'
 
 repoloc='https://github.com/VR51/host-flash' # Github master URL for this package.
 srcloc='https://github.com/VR51/host-flash.git' # Software source package git address
@@ -341,6 +341,223 @@ function __run() {
 
 }
 
+# Read the file of hosts and remove any line listed in the input whitelist file
+function __white() {
+
+	# @1 = type: norm or wild
+	# @2 = file to remove data from
+	# @3 = file containing lines of data to remove from @2
+
+	case $1 in
+		norm)
+			while read -r LINE
+			do
+
+				# sed -r -i "s/(${conf[5]} $LINE(.*)?)$/# \1/g" "$2" # This method comments out whitelisted hostnames
+				sed -r -i "s/${conf[5]}[[:blank:]]$LINE.*?$//g" "$2" # This method removes whitelisted hostnames
+
+			done <"$3"
+		;;
+
+		wild)
+			while read -r LINE
+			do
+
+				# sed -r -i "s/(${conf[5]} (.*\.)$LINE(.*)?)$/# \1/g" "$2" # This method comments out whitelisted hostnames
+				sed -r -i "s/${conf[5]}[[:blank:]].*\.$LINE.*?$//g" "$2" # This method removes whitelisted hostnames
+
+			done <"$3"
+		;;
+
+		rem)
+			sed -r -i "s/${conf[5]}[[:blank:]]$2.*?$//g" "$3" # Remove exact match
+		;;
+
+		remw)
+			sed -r -i "s/${conf[5]}[[:blank:]].*\.$2.*?$//g" "$3" # Remove any line with a match
+		;;
+
+	esac
+
+}
+
+# Add or remove a single host from the .hf*rc config files
+function __update {
+
+	# @1 = type: add or rem
+	# @2 = data to add/remove
+	# @3 = file to add/remove @1 to/from
+	
+	case $1 in
+		add)
+			if ! grep "$2" "$3"
+			then
+				echo "$2" >> "$3"
+			fi
+		;;
+
+		rem)
+			sed -r -i "s/$2.*?$//g" "$3" # Remove exact match
+		;;
+
+		remw)
+			sed -r -i "s/.*?\.$2.*?$//g" "$3" # Remove any line with a match
+		;;
+	esac
+	
+}
+
+# Install Host Flash™ hosts list to /etc/hosts
+function __enable() {
+
+	if test ! -f "/etc/hosts.hf.original"
+	then
+		sudo cp "/etc/hosts" "/etc/hosts.hf.original" # The original hosts file before Host Flash™ first ever use in this system.
+	fi
+	
+	if test -f "$dirsrctmp/hosts.txt"
+	then
+		sudo cp "/etc/hosts" "/etc/hosts.hf.backup" # General restore file
+		sudo mv "$dirsrctmp/hosts.txt" "/etc/hosts"
+		sudo mv "$dirsrctmp/hosts.copy" "/etc/hosts.hf.head" # This is the raw head of the hosts file.
+	else
+		printf "$package hosts file not found. Have you built it yet?"
+	fi
+	
+}
+
+# Remove Host Flash™ hosts list from /etc/hosts
+function __disable() {
+
+	if test -f "/etc/hosts.hf.head"
+	then # Restore the backup head from the original hosts file
+		sudo mv "/etc/hosts.hf.head" "/etc/hosts"
+	else # Delete Host Flash™ data from /etc/hosts, if it exists
+		cp /etc/hosts "$dirsrctmp/hosts.copy"
+		sed -i '/#### Host Flash™ Bad Hosts Block ########/,$d' "$dirsrctmp/hosts.copy"
+		sudo mv "$dirsrctmp/hosts.copy" "/etc/hosts"
+	fi
+	
+}
+
+# Build the hosts file: download lists, clean them, merge them, create new hosts file
+function __build() {
+
+	# Download lists. Merge them into new hosts file
+	n=1
+	while [ $n -le 14 ]; do
+
+		list[0]=$( eval echo "\${list$n[0]}" )
+		list[1]=$( eval echo "\${list$n[1]}" )
+		list[2]=$( eval echo "\${list$n[2]}" )
+		list[3]=$( eval echo "\${list$n[3]}" )
+		list[4]=$( eval echo "\${list$n[4]}" )
+		list[5]=$( eval echo "\${list$n[5]}" )
+
+		if test "${list[0]}" = '+'
+		then
+			if test "${list[2]}" != 'localhost'
+			then
+				curl -e "${list[2]}" "${list[2]}/${list[3]}" -o "$dirsrctmp/${list[3]}"
+				if test "${list[5]}" = 'unzip'; then unzip -o "$dirsrctmp/${list[3]}" -d "$dirsrctmp"; fi
+				if test "${list[5]}" = 'p7zip'; then 7z e -y "$dirsrctmp/${list[3]}" -o"$dirsrctmp" ; fi
+				
+				if test "${list[5]}" = 'whitelist'
+				then
+					cat "$dirsrctmp/${list[4]}" >> "$dirsrctmp/whitelist-temp.txt"
+				elif test "${list[5]}" = 'whitelist-wild'
+				then
+					cat "$dirsrctmp/${list[4]}" >> "$dirsrctmp/whitelist-wild-temp.txt"
+				else
+					cat "$dirsrctmp/${list[4]}" >> "$dirsrctmp/hosts-temp.txt"
+				fi
+				
+			else # It's local host
+				if test "${list[5]}" = 'whitelist'
+				then
+					cat "$HOME/${list[4]}" >> "$dirsrctmp/whitelist-temp.txt"
+				elif test "${list[5]}" = 'whitelist-wild'
+				then
+					cat "$HOME/${list[4]}" >> "$dirsrctmp/whitelist-wild-temp.txt"
+				else
+					cat "$HOME/${list[4]}" >> "$dirsrctmp/hosts-temp.txt"
+				fi
+			fi
+
+			credits+=("# Includes hosts blacklist from ${list[1]}\n")
+		fi
+		
+		let n=n+1
+
+	done
+	
+	__repaint
+	
+	printf "This next part could take some time.\nLook in $dirsrctmp to view activity in realtime.\n\nProcessing...\n"
+	
+	#	Format raw list data in hosts-temp.txt
+
+	sed -i 's/#.*//g' "$dirsrctmp/hosts-temp.txt" # Remove all comments (some come after hostname <-> IP map lines)
+	iconv -c -t UTF-8//TRANSLIT "$dirsrctmp/hosts-temp.txt" > "$dirsrctmp/hosts-utf8.txt" # Convert non UTF8 characters to fix character faults in French lists.
+	mv "$dirsrctmp/hosts-utf8.txt" "$dirsrctmp/hosts-temp.txt"
+	sed -i 's/^[^01-9].*//g' "$dirsrctmp/hosts-temp.txt" # Remove any line that does not begin with a number
+	sed -i '/^$/d' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 1
+	sed -i '/^[[:blank:]]*$/d' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 2
+	sed -i 's/\n\n/\n/g' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 3
+	sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 4
+	sed -i '/.*\blocalhost\b.*/d' "$dirsrctmp/hosts-temp.txt" # Remove localhost lines - the computer's installed host file already has localhost defined the way it should be
+	sed -i "s/^[01-9\.].*[ \t]/${conf[5]} /g" "$dirsrctmp/hosts-temp.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab(s) or space(s) in each line
+
+	# Sort the lists
+	if test -f "$dirsrctmp/hosts-temp.txt"
+	then
+		sort -f -u "$dirsrctmp/hosts-temp.txt" > "$dirsrctmp/hosts-temp2.txt"
+		rm "$dirsrctmp/hosts-temp.txt"
+		mv "$dirsrctmp/hosts-temp2.txt" "$dirsrctmp/hosts-temp.txt"
+	fi
+
+	if test -f "$dirsrctmp/whitelist-temp.txt"
+	then
+		sort -f -u "$dirsrctmp/whitelist-temp.txt" > "$dirsrctmp/whitelist.txt"
+		rm "$dirsrctmp/whitelist-temp.txt"
+	fi
+	
+	if test -f "$dirsrctmp/whitelist-wild-temp.txt"
+	then
+		sort -f -u "$dirsrctmp/whitelist-wild-temp.txt" > "$dirsrctmp/whitelist-wild.txt"
+		rm "$dirsrctmp/whitelist-wild-temp.txt"
+	fi
+
+	# Process whitelist -- remove whitelisted domains from hosts-temp.txt
+
+	__white "norm" "$dirsrctmp/hosts-temp.txt" "$dirsrctmp/whitelist.txt"
+	__white "wild" "$dirsrctmp/hosts-temp.txt" "$dirsrctmp/whitelist-wild.txt"
+	
+	#	Get head of the existing hosts file stored at /etc/hosts
+	#	Remove old Host Flash™ blacklist from existing hosts file, assuming blacklist exists
+	#	Remove empty lines from the end of the header
+	#	This creates file hosts.copy which is used a few lines down from here
+
+	cp /etc/hosts "$dirsrctmp/hosts.copy"
+	sed -r -i '/#### Host.+? Flash.+? Bad Hosts Block ########/,$d' "$dirsrctmp/hosts.copy" # Delete old Host Flash data from /etc/hosts
+	sed -i 's/\n\n/\n/g' "$dirsrctmp/hosts.copy" # First Pass: Ensuring we don't have hundreds of successive newlines
+	sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' "$dirsrctmp/hosts.copy" # Second Pass: Ensuring we don't have hundreds of successive newlines
+	printf '\n\n#### Host Flash™ Bad Hosts Block ########\n\n# Credits\n\n' >> "$dirsrctmp/hosts.copy"
+
+	for i in "${credits[@]}" ; do
+		printf "$i" >> "$dirsrctmp/hosts.copy"
+	done
+
+	printf "\n\n# Installed with $package\n\n# Visit host-flash.com to learn more\n\n" >> "$dirsrctmp/hosts.copy"
+	
+	
+	# Merge the old head with the new hosts blacklist
+	
+	cat "$dirsrctmp/hosts.copy" "$dirsrctmp/hosts-temp.txt" > "$dirsrctmp/hosts.txt"
+
+}
+
+
 function __prompt() {
 
 	# $1 = instruction
@@ -375,6 +592,7 @@ function __prompt() {
 
 			esac
 
+			# Display lists available
 			menu[1]="[${list1[0]}] - ${list1[1]}"
 			menu[2]="[${list2[0]}] - ${list2[1]}"
 			menu[3]="[${list3[0]}] - ${list3[1]}"
@@ -396,6 +614,13 @@ function __prompt() {
 			menu[100]=''
 
 			menu[101]="[${conf[5]}] - Change redirect IP address"
+			menu[102]=''
+			menu[103]="Add a host to custom whitelist"
+			menu[104]="Add a host to custom wild whitelist"
+			menu[105]="Add a host to custom blacklist"
+			menu[106]="Remove a host from custom whitelist"
+			menu[107]="Remove a host from custom wild whitelist"
+			menu[108]="Remove a host from custom blacklist"
 
 			menu[200]=''
 
@@ -419,7 +644,9 @@ function __prompt() {
 
 			menu[301]='Enable Host Flash™ list.'
 			menu[302]='Disable Host Flash™ list.'
-			menu[303]='Restore original hosts file.'
+			menu[303]='Update Host Flash™ list with new custom rules'
+			menu[304]=''
+			menu[305]='Restore original hosts file.'
 
 			menu[400]=''
 
@@ -430,7 +657,7 @@ function __prompt() {
 			printf $normal
 
 			printf "MENU\n\n"
-			printf "INSTRUCTIONS: a) Select lists to install, b) optionally set the redirect IP address then c) build the hosts file firewall before you d) Enable the built Host Flash™ hosts firewall i.e. options 1 to 16, then 17 (optional), 19 and 20. In this beta version The MODE selector does not affect these steps.\n\n"
+			printf "INSTRUCTIONS: a) Select lists to install, b) optionally set the redirect IP address then c) build the hosts file firewall before you d) Enable the built Host Flash™ hosts firewall i.e. options 1 to 16, then 17 (optional), 25 and 26. Change MODE to Build and Install to set $package to automatically install the hosts file after it is built.\n\n"
 
 			n=1
 			for i in "${menu[@]}"; do
@@ -489,7 +716,7 @@ function __prompt() {
 		17) # Change redirect IP address
 
 			printf "Current Redirect IP: ${conf[5]}"
-			printf "\nEnter new Redirect IP then press Enter:\n"
+			printf "\nType in new Redirect IP then press Enter:\n\n"
 			read ip
 
 			if grep "conf\[5]=" "$configloc"
@@ -502,8 +729,80 @@ function __prompt() {
 			__repaint
 
 		;;
+		
+		18) # Add to custom whitelist
 
-		18) # Set Mode
+			printf "Custom whitelist is located at $HOME/.hfwlrc"
+			printf "\nType in a host to add then press Enter:\n\n"
+			read a
+
+			__update 'add' "$a" "$HOME/.hfwlrc"
+			
+			__repaint
+
+		;;
+
+		19) # Add to custom wild whitelist
+
+			printf "Custom wild whitelist is located at $HOME/.hfwlwrc"
+			printf "\nType in a host to add then press Enter:\n\n"
+			read a
+
+			__update 'add' "$a" "$HOME/.hfwlwrc"
+			
+			__repaint
+
+		;;
+
+		20) # Add to custom blacklist
+
+			printf "Custom blacklist is located at $HOME/.hfblrc"
+			printf "\nType in a host to add then press Enter:\n\n"
+			read a
+
+			__update 'add' "$a" "$HOME/.hfblrc"
+
+			__repaint
+
+		;;
+
+		21) # Remove from custom whitelist
+
+			printf "Custom whitelist is located at $HOME/.hfwlrc"
+			printf "\nType in a host to remove then press Enter:\n\n"
+			read a
+
+			__update 'rem' "$a" "$HOME/.hfwlrc"
+
+			__repaint
+
+		;;
+
+		22) # Remove from custom wild whitelist
+
+			printf "Custom wild whitelist is located at $HOME/.hfwlwrc"
+			printf "\nType in a host to remove then press Enter:\n\n"
+			read a
+
+			__update 'rem' "$a" "$HOME/.hfwlwrc"
+
+			__repaint
+
+		;;
+
+		23) # Remove from custom blacklist
+
+			printf "Custom blacklist is located at $HOME/.hfblrc"
+			printf "\nType in a host to remove then press Enter:\n\n"
+			read a
+
+			__update 'rem' "$a" "$HOME/.hfblrc"
+
+			__repaint
+
+		;;
+
+		24) # Set Mode
 
 			if grep "conf\[6]='0'" "$configloc"
 			then
@@ -521,140 +820,15 @@ function __prompt() {
 			
 		;;
 
-		19) # Build or Build and Install the Host Flash™ hosts file
+		25) # Build or Build and Install the Host Flash™ hosts file
 
-			# Download lists. Merge them into new hosts file
-			n=1
-			while [ $n -le 14 ]; do
-
-				list[0]=$( eval echo "\${list$n[0]}" )
-				list[1]=$( eval echo "\${list$n[1]}" )
-				list[2]=$( eval echo "\${list$n[2]}" )
-				list[3]=$( eval echo "\${list$n[3]}" )
-				list[4]=$( eval echo "\${list$n[4]}" )
-				list[5]=$( eval echo "\${list$n[5]}" )
-
-				if test "${list[0]}" = '+'
-				then
-					if test "${list[2]}" != 'localhost'
-					then
-						curl -e "${list[2]}" "${list[2]}/${list[3]}" -o "$dirsrctmp/${list[3]}"
-						if test "${list[5]}" = 'unzip'; then unzip -o "$dirsrctmp/${list[3]}" -d "$dirsrctmp"; fi
-						if test "${list[5]}" = 'p7zip'; then 7z e -y "$dirsrctmp/${list[3]}" -o"$dirsrctmp" ; fi
-						
-						if test "${list[5]}" = 'whitelist'
-						then
-							cat "$dirsrctmp/${list[4]}" >> "$dirsrctmp/whitelist-temp.txt"
-						elif test "${list[5]}" = 'whitelist-wild'
-						then
-							cat "$dirsrctmp/${list[4]}" >> "$dirsrctmp/whitelist-wild-temp.txt"
-						else
-							cat "$dirsrctmp/${list[4]}" >> "$dirsrctmp/hosts-temp.txt"
-						fi
-						
-					else # It's local host
-						if test "${list[5]}" = 'whitelist'
-						then
-							cat "$HOME/${list[4]}" >> "$dirsrctmp/whitelist-temp.txt"
-						elif test "${list[5]}" = 'whitelist-wild'
-						then
-							cat "$HOME/${list[4]}" >> "$dirsrctmp/whitelist-wild-temp.txt"
-						else
-							cat "$HOME/${list[4]}" >> "$dirsrctmp/hosts-temp.txt"
-						fi
-					fi
-
-					credits+=("# Includes hosts blacklist from ${list[1]}\n")
-				fi
-				
-				let n=n+1
-
-			done
-			
-			__repaint
-			
-			printf "This next part could take some time.\nLook in $dirsrctmp to view activity in realtime.\n\nProcessing..."
-			
-			#	Format raw list data in hosts-temp.txt
-
-			sed -i 's/#.*//g' "$dirsrctmp/hosts-temp.txt" # Remove all comments (some come after hostname <-> IP map lines)
-			iconv -c -t UTF-8//TRANSLIT "$dirsrctmp/hosts-temp.txt" > "$dirsrctmp/hosts-utf8.txt" # Convert non UTF8 characters to fix character faults in French lists.
-			mv "$dirsrctmp/hosts-utf8.txt" "$dirsrctmp/hosts-temp.txt"
-			sed -i 's/^[^01-9].*//g' "$dirsrctmp/hosts-temp.txt" # Remove any line that does not begin with a number
-			sed -i '/^$/d' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 1
-			sed -i '/^[[:blank:]]*$/d' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 2
-			sed -i 's/\n\n/\n/g' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 3
-			sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' "$dirsrctmp/hosts-temp.txt" # Remove empty lines 4
-			sed -i '/.*\blocalhost\b.*/d' "$dirsrctmp/hosts-temp.txt" # Remove localhost lines - the computer's installed host file already has localhost defined the way it should be
-			sed -i "s/^[01-9\.].*[ \t]/${conf[5]} /g" "$dirsrctmp/hosts-temp.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab(s) or space(s) in each line
-
-			# Sort the lists
-			if test -f "$dirsrctmp/hosts-temp.txt"
-			then
-				sort -f -u "$dirsrctmp/hosts-temp.txt" > "$dirsrctmp/hosts-temp2.txt"
-				rm "$dirsrctmp/hosts-temp.txt"
-				mv "$dirsrctmp/hosts-temp2.txt" "$dirsrctmp/hosts-temp.txt"
-			fi
-
-			if test -f "$dirsrctmp/whitelist-temp.txt"
-			then
-				sort -f -u "$dirsrctmp/whitelist-temp.txt" > "$dirsrctmp/whitelist.txt"
-				rm "$dirsrctmp/whitelist-temp.txt"
-			fi
-			
-			if test -f "$dirsrctmp/whitelist-wild-temp.txt"
-			then
-				sort -f -u "$dirsrctmp/whitelist-wild-temp.txt" > "$dirsrctmp/whitelist-wild.txt"
-				rm "$dirsrctmp/whitelist-wild-temp.txt"
-			fi
-
-			# Process whitelist -- remove whitelisted domains from hosts-temp2.txt
-			
-			# Standard
-			# Iterate through non wildcard domain list
-			while read -r LINE
-			do
-				# sed -r -i "s/(${conf[5]} $LINE(.*)?)$/# \1/g" "$dirsrctmp/hosts-temp.txt" # This method comments out whitelisted hostnames
-				sed -r -i "s/${conf[5]}[[:blank:]]$LINE.*?$//g" "$dirsrctmp/hosts-temp.txt" # This method removes whitelisted hostnames
-
-			done <"$dirsrctmp/whitelist.txt"
-			
-			# Wild
-			# Iterate through wildcard domain list
-			while read -r LINE
-			do
-				# sed -r -i "s/(${conf[5]} (.*\.)$LINE(.*)?)$/# \1/g" "$dirsrctmp/hosts-temp.txt" # This method comments out whitelisted hostnames
-				sed -r -i "s/${conf[5]}[[:blank:]].*\.$LINE.*?$//g" "$dirsrctmp/hosts-temp.txt" # This method removes whitelisted hostnames
-
-			done <"$dirsrctmp/whitelist-wild.txt"
-			
-			#	Get head of the existing hosts file stored at /etc/hosts
-			#	Remove old Host Flash™ blacklist from existing hosts file, assuming blacklist exists
-			#	Remove empty lines from the end of the header
-			#	This creates file hosts.copy which is used a few lines down from here
-
-			cp /etc/hosts "$dirsrctmp/hosts.copy"
-			sed -r -i '/#### Host.+? Flash.+? Bad Hosts Block ########/,$d' "$dirsrctmp/hosts.copy" # Delete old Host Flash data from /etc/hosts
-			sed -i 's/\n\n/\n/g' "$dirsrctmp/hosts.copy" # First Pass: Ensuring we don't have hundreds of successive newlines
-			sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' "$dirsrctmp/hosts.copy" # Second Pass: Ensuring we don't have hundreds of successive newlines
-			printf '\n\n#### Host Flash™ Bad Hosts Block ########\n\n# Credits\n\n' >> "$dirsrctmp/hosts.copy"
-
-			for i in "${credits[@]}" ; do
-				printf "$i" >> "$dirsrctmp/hosts.copy"
-			done
-
-			printf "\n\n# Installed with $package\n\n# Visit host-flash.com to learn more\n\n" >> "$dirsrctmp/hosts.copy"
-			
-			
-			# Merge the old head with the new hosts blacklist
-			
-			cat "$dirsrctmp/hosts.copy" "$dirsrctmp/hosts-temp.txt" > "$dirsrctmp/hosts.txt"
+			__build
 			
 			case "${conf[6]}" in
 			
 				1)
 			
-					__run "20"
+					__enable
 					
 				;;
 				
@@ -664,42 +838,40 @@ function __prompt() {
 
 		;;
 
-		20) # Enable Host Flash™ hosts list
+		26) # Enable Host Flash™ hosts list
 
-			if test ! -f "/etc/hosts.hf.original"
-			then
-				sudo cp "/etc/hosts" "/etc/hosts.hf.original" # The original hosts file before Host Flash™ first ever use in this system.
-			fi
+			__enable
+
+			__repaint
+
+		;;
+
+		27) # Disable Host Flash™ hosts list
+
+			__disable
+
+			__repaint
+
+		;;
+		
+		28) # Update hosts file with new custom rules
+
+			__repaint
 			
-			if test -f "$dirsrctmp/hosts.txt"
-			then
-				sudo cp "/etc/hosts" "/etc/hosts.hf.backup" # General restore file
-				sudo mv "$dirsrctmp/hosts.txt" "/etc/hosts"
-				sudo mv "$dirsrctmp/hosts.copy" "/etc/hosts.hf.head" # This is the raw head of the hosts file.
-			else
-				printf "$package hosts file not found. Have you built it yet?"
-			fi
-
+			printf "This next part could take some time.\nLook in $dirsrctmp to view activity in realtime.\n\nProcessing...\n"
+			
+			cp /etc/hosts "$dirsrctmp/hosts-temp.txt"
+			cat "$dirsrctmp/hosts-temp.txt" "$HOME/.hfblrc" >> "$dirsrctmp/hosts.txt"
+			__white "norm" "$dirsrctmp/hosts.txt" "$HOME/.hfwlrc"
+			__white "wild" "$dirsrctmp/hosts.txt" "$HOME/.hfwlwrc"
+			
+			sudo mv "$dirsrctmp/hosts.txt" "/etc/hosts"
+			
 			__repaint
 
 		;;
 
-		21) # Disable Host Flash™ hosts list
-
-			if test -f "/etc/hosts.hf.head"
-			then # Restore the backup head from the original hosts file
-				sudo mv "/etc/hosts.hf.head" "/etc/hosts"
-			else # Delete Host Flash™ data from /etc/hosts, if it exists
-				cp /etc/hosts "$dirsrctmp/hosts.copy"
-				sed -i '/#### Host Flash™ Bad Hosts Block ########/,$d' "$dirsrctmp/hosts.copy"
-				sudo mv "$dirsrctmp/hosts.copy" "/etc/hosts"
-			fi
-
-			__repaint
-
-		;;
-
-		22) # Restore Host Flash™ hosts list
+		29) # Restore Host Flash™ hosts list
 
 			if test -f "/etc/hosts.hf.original"
 			then # Restore the backup head from the original hosts file
@@ -710,7 +882,7 @@ function __prompt() {
 
 		;;
 
-		23) # Reset Custom Configs
+		30) # Reset Custom Configs
 
 			if test -f "$configloc"; then
 				rm "$configloc"
@@ -727,7 +899,7 @@ function __prompt() {
 
 		;;
 
-		24) # Install software packages necessary to build the package
+		31) # Install software packages necessary to build the package
 
 			case "${conf[0]}" in
 			
