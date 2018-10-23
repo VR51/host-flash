@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v2.7.1
+Host Flash™ v3.0.0 beta
 
 Lead Author: Lee Hodson
 
@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 10th Jan. 2018
+This Release: 23rd Oct. 2018
 
 First Written: 18th Oct. 2015
 
@@ -25,26 +25,21 @@ Use of this program is at your own risk
 TO RUN:
 
 - Ensure the script is executable.
-- Command line: bash host-flash.sh or ./host-flash.sh
-- File browser: click host-flash.sh
+- Command line: `bash hostflash` or `./hostflash`
+- File browser: click hostflash
 
 Use Host Flash™ to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
 
 Use Host Flash™ to manage the Linux hosts file
 
 # New Features
-- New host list providers added
-- Automatic Program Updates
-- Community Whitelist Installer
-- Event log file
-- Wildcard Whitelist
-- Quick Run
-- Save options for reuse
-- More block list sources
-- Hosts file backup archive directory
-- Host file providers used are credited in the compiled hosts file
-	
-Read docs/change.log to view version change brief.
+- Rebuilt from the ground up
+- Improved performance
+- Returned to text mode only. Dialog and other terminal GUIs were overkill for this app
+- New menu system
+- Custom settings are now stored in $HOME/.hf* files (.hfrc, .hfwlrc, .hfwlwrc and .hfblrc)
+- Various tweaks and fixes
+- More to come...
 
 # What Host Flash™ Does
 Host Flash™ blocks computers from accessing content served by certain web hosts. These hosts, for example, could be reported malicious websites, known ad servers, adult websites or torrent sites.
@@ -53,17 +48,17 @@ Host Flash™
 
 - downloads host name blacklists from any one or more of 11 host blacklist providers,
 - merges those lists into one large compilation of bad hosts,
-- adds your custom bad hosts list into the mix (blocklist.txt),
+- adds your custom bad hosts list into the mix (.hfblrc),
 - removes duplicate bad host entries from the compiled bad hosts list,
-- comments out (unblocks) whitelisted hosts (whitelist.txt),
+- comments out (unblocks) whitelisted hosts (.hfwlrc and .hfwlwrc),
 - copies the hosts file that exists when Host Flash™ is first run to /etc/hosts.hf.original,
-- stores replaced hosts files in archive directory 'Hosts Flash/backup/',
-- option to remove previously installed bad hosts added by Host Flash™ from the existing hosts file,
+- copies successive hosts file replacements to /etc/hosts.hf.backup.
+- option to remove previously installed Host Flash™ firewall from the existing hosts file,
 - retains the hosts file entries that already exist in the original hosts file so that the hosts file created by Host Flash™ does not remove your own custom hosts file edits (provided they are placed above the Host Flash header).
 
 Host Flash™ is interactive.
 
-The interactive set-up program is launched when Host Flash™ is first used or until a configuration profile is created and saved. When Host Flash™ detects a configuration profile, Host Flash™ will prompt to use the profile or to use manual settings.
+The interactive set-up program lets you control the host file firewall rules installed by Host Flash™ and control the actions performed by Host Flash.
 
 You will not be able to access sites blocked by Host Flash™.
 
@@ -71,40 +66,41 @@ Run Host Flash™ regularly to keep your hosts file up-to-date with new bad host
 
 Run Host Flash™ if you need to undo changes made to the hosts file by Host Flash™
 
-Use Host Flash™ and the files whitelist.txt and blocklist.txt to manage your computer's hosts file.
-
-Rerun Host Flash™ to update the list of blocked sites or to activate changes to whitelist.txt, whitelist-wild.txt and blocklist.txt.
+Use Host Flash™ to manage your computer's hosts file.
 
 Make sure manual edits to the hosts file are above the content added by Host Flash™ otherwise Host Flash™ will delete them.
 
-Press Esc or Ctrl+C to stop the process at any stage.
+Updates to the hosts file rules that are managed through Host Flash™ will be respected by Host Flash™ in subsequent funs.
 
 # Requirements
-This program needs either 'dialog' or 'whiptail' as well as 'wget', 'sed', 'zip', 'unzip' and 'p7zip' to be installed in the OS environment. Host Flash™ will display an alert if any of those programs is not installed. In Ubuntu, they can be installed with sudo apt-get install dialog whiptail wget sed sed zip unzip p7zip
+This program needs curl, sed, zip, unzip and p7zip to be installed in the OS environment. Host Flash™ will display an alert if any of those programs is not installed and will prompt you to install them (see Host Flash™ options).
 
 This software is known to work on Debian Linux systems. It may or may not work on other Unix based systems.
 
 # Portability
 Host Flash™ will run in many Debian (and probably non Debian) environments like Ubuntu, Kubuntu and Debian. It might work on rooted Android devices, though full BusyBox needs to be installed into Android with a few additional shell scripts (it is easier to compile the hosts file on a full Linux machine then transfer it to Android).
 
-Saved Quick Run settings will work independently of the host they were configured on. If you want to reuse the settings, just move the Host Flash™ directory to any other system and any saved settings will be migrated too.
+If you want to reuse local Host Flash™ settings in other environments, just move the .hf* files from $HOME to $HOME of other environments.
 
 # How to Use Host Flash™
-Download Host Flash™ from GitHub, run the program, follow the on screen prompts to quickly configure the program and install your new hosts file block list then save your settings for use as the default Quick Run options for the next time you run Host Flash™.
+Download Host Flash™ from GitHub, run the program, follow the on screen prompts to quickly configure the program and install your new hosts file block list. Custom settings automatically saved by Host Flash™ in realtime.
 
 - Download the program from https://github.com/VR51/host-flash/archive/master.zip
 - Unzip host-flash-master.zip
 - Enter the directory 'host-flash-master'
-- Run host-flash.sh
+- Run hostflash
 
 Programatically, that is
 
-`wget https://github.com/VR51/host-flash/archive/master.zip ; unzip host-flash-master.zip ; cd host-flash-master ; sh host-flash.sh`
+`wget https://github.com/VR51/host-flash/archive/master.zip ; unzip host-flash-master.zip ; cd host-flash-master ; sh hostflash`
 
 To Run Host Flash™, either
 
-* click host-flash.sh, or
-* type 'bash host-flash.sh' or './host-flash.sh' at the command line.
+Ensure the script is executable they click to run:
+
+* Right-click > properties > Executable OR `chmod u+x hostflash`
+* click `hostflash`, or
+* type 'bash `hostflash` or `./host-flash.sh` at the command line.
 
 Note: You may need to restart your computer and clear your browser cache(s) for the new hosts file rules to be observed by your OS.
 
@@ -115,7 +111,7 @@ Whitelist
 
 	The presence of a website in one of the downloaded lists does not necessarily imply the site is malicious. If you trust that a blocked website is safe to view you can 'whitelist' it to prevent Host Flash™ blocking access to it.
 
-	To whitelist a website, add the website's root address to the whitelist.txt file stored in the same directory as host-flash.sh.
+	To whitelist a website, add the website's root address to the .hfwlrc file stored in $HOME.
 
 	Notes
 
@@ -146,9 +142,9 @@ Whitelist
 
 Wildcard Whitelist
 
-	This applies to the file whitelist-wild.txt. Apply the same instructions as explained above for the regular Whitelist.
+	This applies to the file .hfwlwrc. Apply the same instructions as explained above for the regular Whitelist.
 
-	The difference between the regular Whitelist and the Wildcard Whitelist is that hostnames added to whitelist-wild.txt are removed from the hosts blocklist along with any subdomains. The subdomains are discovered in the blocklist automatically.
+	The difference between the regular Whitelist and the Wildcard Whitelist is that hostnames added to .hfwlwrc are removed from the hosts blocklist along with any subdomains. The subdomains are discovered in the blocklist automatically.
 
 		GOOD Examples
 
@@ -169,7 +165,7 @@ Blocklist
 
 	You may want to block access to more hosts than are included in the bad hosts lists downloaded by Host Flash™.
 
-	To block extra websites (hosts), add their root addresses (e.g. name.tld) to the blocklist.txt file stored in the same directory as host-flash.sh.
+	To block extra websites (hosts), add their root addresses (e.g. name.tld) to .hfblrc in $HOME.
 
 	Notes
 
