@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.0.0 beta
+Host Flash™ v3.0.1 beta
 
 Lead Author: Lee Hodson
 
@@ -34,10 +34,13 @@ Use Host Flash™ to manage the Linux hosts file
 
 # New Features
 - Rebuilt from the ground up
+- Better hosts file management
 - Improved performance
-- Returned to text mode only. Dialog and other terminal GUIs were overkill for this app
+- Returned to text mode only terminal GUI. Dialog, whiptale and other terminal GUIs were overkill for this app
 - New menu system
 - Custom settings are now stored in $HOME/.hf* files (.hfrc, .hfwlrc, .hfwlwrc and .hfblrc)
+- Update local custom whitelist or blacklist through the GUI
+- Update hosts file with local custom rules without rebuilding the whole list
 - Various tweaks and fixes
 - More to come...
 
