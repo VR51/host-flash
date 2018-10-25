@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-#	Host Flash™ 3.0.1 beta
+#	Host Flash™ 3.0.2 beta
 #
 #	Downloads hosts file rules from various sources.
 #	Installs hosts file rules into /etc/hosts
@@ -63,6 +63,10 @@ clear
 #
 #	Move more actions into functions.
 #
+# Change menu system
+#		What do you want to do? Lists, Update, Manage Custom Files
+#			Do it here.
+#
 #	Some configs/variables/options are yet to be re-implemented
 #
 ###
@@ -74,7 +78,7 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.0.1 beta'
+version='3.0.2 beta - 24th Oct. 2018'
 
 repoloc='https://github.com/VR51/host-flash' # Github master URL for this package.
 srcloc='https://github.com/VR51/host-flash.git' # Software source package git address
@@ -210,14 +214,14 @@ list11[5]='whitelist'
 
 list12[0]='+'
 list12[1]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
-list12[2]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/4555b9a820386e5d25cf09a85e440d1008bc8240'
+list12[2]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
 list12[3]='whitelist-wild.txt'
 list12[4]='whitelist-wild.txt'
 list12[5]='whitelist-wild'
 
 list13[0]='+'
 list13[1]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
-list13[2]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/a31adff448fb854c81009493b74fd2c4466ee3ef'
+list13[2]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
 list13[3]='blocklist.txt'
 list13[4]='blocklist.txt'
 list13[5]=''
@@ -339,9 +343,11 @@ function __run() {
 # Read the file of hosts and remove any line listed in the input whitelist file
 function __white() {
 
-	# @1 = type: norm or wild
+	# @1 = type: (file) norm or wild, or (string) rem or remw
 	# @2 = file to remove data from
-	# @3 = file containing lines of data to remove from @2
+	# @3 = file containing lines of data to remove from @2 or single line of text to remove from @2
+	
+	# grep -vE '[mn][pv][mn]|nano|sed|grep|sudo|\bman\b' # Convert file to regex -- quicker.
 
 	case $1 in
 		norm)
@@ -349,7 +355,10 @@ function __white() {
 			do
 
 				# sed -r -i "s/(${conf[5]} $LINE(.*)?)$/# \1/g" "$2" # This method comments out whitelisted hostnames
-				sed -r -i "s/${conf[5]}[[:blank:]]$LINE.*?$//g" "$2" # This method removes whitelisted hostnames
+				# sed -r -i "s/${conf[5]}[[:blank:]]$LINE.*?$//g" "$2" # This method removes whitelisted hostnames
+				grep -vE "${conf[5]}[[:blank:]]$LINE" "$2" > "$2.tmp" # This method removes whitelisted hostnames
+				rm "$2"
+				mv "$2.tmp" "$2"
 
 			done <"$3"
 		;;
@@ -359,17 +368,26 @@ function __white() {
 			do
 
 				# sed -r -i "s/(${conf[5]} (.*\.)$LINE(.*)?)$/# \1/g" "$2" # This method comments out whitelisted hostnames
-				sed -r -i "s/${conf[5]}[[:blank:]].*\.$LINE.*?$//g" "$2" # This method removes whitelisted hostnames
+				# sed -r -i "s/${conf[5]}[[:blank:]].*\.$LINE.*?$//g" "$2" # This method removes whitelisted hostnames
+				grep -vE "${conf[5]}.*$LINE" "$2" > "$2.tmp" # This method removes whitelisted hostnames
+				rm "$2"
+				mv "$2.tmp" "$2"
 
 			done <"$3"
 		;;
 
 		rem)
-			sed -r -i "s/${conf[5]}[[:blank:]]$2.*?$//g" "$3" # Remove exact match
+			# sed -r -i "s/${conf[5]}[[:blank:]]$3.*?$//g" "$2" # Remove exact match
+			grep -vE "${conf[5]}[[:blank:]]$3" "$2" > "$2.tmp" # This method removes whitelisted hostnames
+			rm "$2"
+			mv "$2.tmp" "$2"
 		;;
 
 		remw)
-			sed -r -i "s/${conf[5]}[[:blank:]].*\.$2.*?$//g" "$3" # Remove any line with a match
+			# sed -r -i "s/${conf[5]}[[:blank:]].*\.$3.*?$//g" "$2" # Remove any line with a match
+			grep -vE "${conf[5]}.*$3.*?" "$2" > "$2.tmp" # This method removes whitelisted hostnames
+			rm "$2"
+			mv "$2.tmp" "$2"
 		;;
 
 	esac
@@ -379,7 +397,7 @@ function __white() {
 # Add or remove a single host from the .hf*rc config files
 function __update {
 
-	# @1 = type: add or rem
+	# @1 = type: add, rem or remw
 	# @2 = data to add/remove
 	# @3 = file to add/remove @1 to/from
 	
