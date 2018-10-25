@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.0.1 beta
+Host Flash™ v3.0.2 beta
 
 Lead Author: Lee Hodson
 
@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 23rd Oct. 2018
+This Release: 24th Oct. 2018
 
 First Written: 18th Oct. 2015
 
@@ -24,20 +24,28 @@ Use of this program is at your own risk
 
 TO RUN:
 
-- Ensure the script is executable.
-- Command line: `bash hostflash` or `./hostflash`
-- File browser: click hostflash
+- Ensure the script is executable:
+-	`Right-click > properties > Executable`
+-	OR
+-	`chmod u+x hostflash`
+- Run with:
+-	Command line: `bash hostflash` or `./hostflash`
+-	OR
+-	File browser: click hostflash
 
-Use Host Flash™ to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
+Use Host Flash™ to block computer requests to (and access to) websites (hosts), ad servers, malicious websites and time wasting websites.
 
 Use Host Flash™ to manage the Linux hosts file
+
+Host Flash™ works at the OS level. This means requests from any program or app sent to any flagged external host is blocked.
 
 # New Features
 - Rebuilt from the ground up
 - Better hosts file management
 - Improved performance
+- Faster processing time
 - Returned to text mode only terminal GUI. Dialog, whiptale and other terminal GUIs were overkill for this app
-- New menu system
+- New menu system (will be improved once core app is finalised)
 - Custom settings are now stored in $HOME/.hf* files (.hfrc, .hfwlrc, .hfwlwrc and .hfblrc)
 - Update local custom whitelist or blacklist through the GUI
 - Update hosts file with local custom rules without rebuilding the whole list
@@ -45,7 +53,7 @@ Use Host Flash™ to manage the Linux hosts file
 - More to come...
 
 # What Host Flash™ Does
-Host Flash™ blocks computers from accessing content served by certain web hosts. These hosts, for example, could be reported malicious websites, known ad servers, adult websites or torrent sites.
+Host Flash™ blocks computers from accessing content served by specific web hosts. These hosts, for example, could be reported malicious websites, known ad servers, adult websites or torrent sites.
 
 Host Flash™
 
@@ -63,7 +71,7 @@ Host Flash™ is interactive.
 
 The interactive set-up program lets you control the host file firewall rules installed by Host Flash™ and control the actions performed by Host Flash.
 
-You will not be able to access sites blocked by Host Flash™.
+You will not be able to access sites blocked by Host Flash™. The exception to this rule is that a VPN can be used to bypass the firewall.
 
 Run Host Flash™ regularly to keep your hosts file up-to-date with new bad hosts.
 
@@ -71,19 +79,19 @@ Run Host Flash™ if you need to undo changes made to the hosts file by Host Fla
 
 Use Host Flash™ to manage your computer's hosts file.
 
-Make sure manual edits to the hosts file are above the content added by Host Flash™ otherwise Host Flash™ will delete them.
+Make sure manual edits to the hosts file are above the content added by Host Flash™ otherwise Host Flash™ will delete them when the rules are updated.
 
 Updates to the hosts file rules that are managed through Host Flash™ will be respected by Host Flash™ in subsequent funs.
 
 # Requirements
-This program needs curl, sed, zip, unzip and p7zip to be installed in the OS environment. Host Flash™ will display an alert if any of those programs is not installed and will prompt you to install them (see Host Flash™ options).
+This program needs curl, sed, zip, unzip and p7zip to be installed in the OS environment. Host Flash™ will display an alert if any of these programs is not installed and will prompt you to install them (see Host Flash™ options).
 
-This software is known to work on Debian Linux systems. It may or may not work on other Unix based systems.
+This software is known to work on Debian Linux systems. It may or may not work on other Unix based systems. It is a BASH program so any system with BASH installed should be fine.
 
 # Portability
-Host Flash™ will run in many Debian (and probably non Debian) environments like Ubuntu, Kubuntu and Debian. It might work on rooted Android devices, though full BusyBox needs to be installed into Android with a few additional shell scripts (it is easier to compile the hosts file on a full Linux machine then transfer it to Android).
+Host Flash™ will run in many Debian (and probably non Debian) environments like Ubuntu, Kubuntu and Debian. It might work on rooted Android devices, though full BusyBox needs to be installed into Android with a few additional shell scripts (though it is quicker and easier to compile the hosts file on a full Linux machine then transfer the file to Android).
 
-If you want to reuse local Host Flash™ settings in other environments, just move the .hf* files from $HOME to $HOME of other environments.
+If you want to reuse local Host Flash™ settings in other environments, just move the .hf* files from $HOME to the $HOME of other environments.
 
 # How to Use Host Flash™
 Download Host Flash™ from GitHub, run the program, follow the on screen prompts to quickly configure the program and install your new hosts file block list. Custom settings automatically saved by Host Flash™ in realtime.
@@ -106,6 +114,8 @@ Ensure the script is executable they click to run:
 * type 'bash `hostflash` or `./host-flash.sh` at the command line.
 
 Note: You may need to restart your computer and clear your browser cache(s) for the new hosts file rules to be observed by your OS.
+
+# Host Flash™ is being rewritten (we are on version 3.0.2 now). Information below this point may be slightly out of date.
 
 # Advanced Usage
 Whitelist
