@@ -3,37 +3,37 @@ clear
 # set -x
 ###
 #
-#	Host Flash™ 3.0.3 beta
+# Host Flash™ 3.0.4 beta
 #
-#	Downloads hosts file rules from various sources.
-#	Installs hosts file rules into /etc/hosts
-#	Integrates Host Flash™ hosts file rules with rules that already exist in /etc/hosts
+# Downloads hosts file rules from various sources.
+# Installs hosts file rules into /etc/hosts
+# Integrates Host Flash™ hosts file rules with rules that already exist in /etc/hosts
 #
-#	For OS: Linux (Debian)
-#	Tested With: Ubuntu flavours
+# For OS: Linux (Debian)
+# Tested With: Ubuntu flavours
 #
-#	Lead Author: Lee Hodson
-#	Donate: https://paypal.me/vr51
-#	Website: https://host-flash.com<https://host-flash.com>
-#	This Release: 25th Oct. 2018
-#	First Written: 18th Oct. 2015
-#	First Release: 2nd Nov. 2015
+# Lead Author: Lee Hodson
+# Donate: https://paypal.me/vr51
+# Website: https://host-flash.com<https://host-flash.com>
+# This Release: 25th Oct. 2018
+# First Written: 18th Oct. 2015
+# First Release: 2nd Nov. 2015
 #
-#	Copyright Host Flash™ https://host-flash.com<https://host-flash.com>
-#	License: GPL3
+# Copyright Host Flash™ https://host-flash.com<https://host-flash.com>
+# License: GPL3
 #
-#	Programmer: Lee Hodson<journalxtra.com>, VR51<vr51.com>
+# Programmer: Lee Hodson<journalxtra.com>, VR51<vr51.com>
 #
-#	Use of this program is at your own risk
+# Use of this program is at your own risk
 #
-#	INSTALLS OR UPDATES
+# INSTALLS OR UPDATES
 #
-#	Use Host Flash™ to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
-#	Use Host Flash™ to manage your hosts file
+# Use Host Flash™ to block access to websites (hosts), ad servers, malicious websites and time wasting websites.
+# Use Host Flash™ to manage your hosts file
 #
-#	TO RUN:
+# TO RUN:
 #
-#	Ensure the script is executable:
+# Ensure the script is executable:
 #
 #		Right-click > properties > Executable
 #
@@ -41,9 +41,9 @@ clear
 #
 #		chmod u+x hostflash
 #
-#	Launch by clicking the script file or by typing `bash hostflash` at the command line.
+# Launch by clicking the script file or by typing `bash hostflash` at the command line.
 #
-#	Host Flash™ will attempt to preserve existing host rules.
+# Host Flash™ will attempt to preserve existing host rules.
 #
 #
 ###
@@ -64,62 +64,87 @@ clear
 #	Move more actions into functions.
 #
 # Change menu system
-#		What do you want to do? Lists, Update, Manage Custom Files
+#		What do you want to do? Manage Lists, Update hosts, Manage Custom Files
 #			Do it here.
 #
-#	Info table
+# Info table
 #		Details about the live hosts file
 #		Details about the built hosts file
 #
-#	Some configs/variables/options are yet to be re-implemented
+# Add last 7 updates log
+#		${log#[time]}
+#		${log#[size]}
+#		${log#[lines]}
+#
+# Compact local whitelists and local blacklists (all lower, sort -u)
+# View/Edit local lists (nano, pico, cat)
+#
+# Add new lists
+#
+# Some configs/variables/options are yet to be re-implemented
 #
 ###
 
 ##
-#	CONFIGS - should be no reason to manually change these
 #
-#		Any of these can be overruled by adding each variable along with its new value into $HOME/.hfrc
+# CONFIGS - should be no reason to manually change these
+#
+# Any of these can be overruled by adding each variable along with its new value into $HOME/.config/hostflash/.hfrc
+#
 ##
 
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.0.3 beta - 25th Oct. 2018'
+version='3.0.4 beta - 26th Oct. 2018'
 
-declare -A conf dir file
+declare -A app conf dir file
 
-dir[gith]='https://github.com/VR51/host-flash' # Github master URL for this package.
+# Directories
+
+dir[gith]='https://github.com/VR51/host-flash' # Github home URL for this package.
 dir[gitp]='https://github.com/VR51/host-flash.git' # Software source package git address
 dir[src]="$HOME/src/hostflash" # Directory where the source code will be stored locally
-dir[tmp]="$HOME/src/hostflash/tmp" # Directory where the source code will be stored locally
-dir[docs]="$HOME/src/hostflash/DOC" # Location of program documents.
+dir[tmp]="${dir[src]}/tmp" # Directory where temporary files will be stored locally
+dir[docs]="${dir[src]}/DOC" # Location of program documents. # To be written
+dir[conf]="$HOME/.config/hostflash" # Location of custom configuration files.
+
+# Files
 
 file[hosts]='/etc/hosts' # Location of system hosts file. Where it is copied from and where it is installed to.
 # file[hosts]='/home/lee/Goodies/Downloaders/test/hosts' # For testing by me
 
-file[conf]="$HOME/.hfrc" # Location of user's custom settings for Host Flash™.
-file[confwl]="$HOME/.hfwlrc" # Location of the user's custom whitelist.
-file[confwlw]="$HOME/.hfwlwrc" # Location of the user's custom whitelist-wild.
-file[confbl]="$HOME/.hfblrc" # Location of the user's custom blacklist.
+file[conf]="${dir[conf]}/.hfrc" # Location of user's custom settings for Host Flash™.
+file[confwl]="${dir[conf]}/.hfwlrc" # Location of the user's custom whitelist.
+file[confwlw]="${dir[conf]}/.hfwlwrc" # Location of the user's custom whitelist-wild.
+file[confbl]="${dir[conf]}/.hfblrc" # Location of the user's custom blacklist.
+file[confcl]="${dir[conf]}/.hfclrc" # Location of the user's custom hosts lists.
 
 # App Launcher Settings
 # These are specific to the application/task manager installer (to be implemented)
 
-dir[icon]="$HOME/src/hostflash/data" # Directory where the application icon will be located.
+dir[icon]="${dir[src]}/data" # Directory where the application icon will be located.
 dir[bin]='/usr/bin' # Binary installation path. Where should the compiled binary be installed to? Exact path. # Not required for this installer.
 file[icon]="hostflash.svg" # Icon name
-type='Application' # 
-cats='Utilities' # Application launcher categories
-binary="hostflash" # Name of the binary file that is this program.
+app[type]='Application' # 
+app[cats]='Utilities' # Application launcher categories
+app[binary]="hostflash" # Name of the binary file that is this program.
+
+# Detected settings
 
 user=$(whoami) # Current User
 group=$(id -g -n $user) # Current user's primary group
 
 ###
-# INTERNAL SETTINGS
+#
+# OTHER SETTINGS
+#
+# Indexed arrays do not need to be declared before use.
+# These declare statements are here mostly to assist script readability and for tracking.
+# 
 ###
 
-declare -a list1 list2 list3 list4 list5 list6 list7 list8 list9 list10 list11 list12 list13 list14 list15 list16
+declare -a list1 list2 list3 list4 list5 list6 list7 list8 list9 list10 list11 list12 list13 list14 list15 list16 # Hosts lists
 declare -a menu # Menu options are set within __prompt()
 declare -a select # Menu options count
 declare -a message # Index indicates related conf, mode or menu item
@@ -128,9 +153,10 @@ declare -a essentialpackages # Packages to install to help the build process
 declare -a credits # Hosts file credits
 
 ##
-#	LISTS
-##
-
+#
+# LISTS
+#
+#
 # These are...
 #
 # list[0]='Enabled / Disabled' # * or 0 for TRUE or FALSE
@@ -141,6 +167,10 @@ declare -a credits # Hosts file credits
 # list[5]='Flags: E.g Package Type' # unzip, p7zip, empty if raw txt, or whitelist.
 #
 # Changes to list[0] are stored in .hfrc
+# Custom lists will be added to .hfclrc
+#		Framework in place: conf etc... Needs menu section to be added.
+#
+##
 
 list1[0]='+'
 list1[1]='hosts-file.net (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
@@ -301,9 +331,14 @@ else
 	mkdir "${dir[tmp]}"
 fi
 
+if test ! -d "${dir[conf]}"; then
+	mkdir "${dir[conf]}"
+fi
+
+
 # Make User Config files
 
-f=( "$HOME/src" "${file[conf]}" "${file[confwl]}" "${file[confwlw]}" "${file[confbl]}" )
+f=( "$HOME/src" "${file[conf]}" "${file[confwl]}" "${file[confwlw]}" "${file[confbl]}" "${file[confcl]}" )
 for i in ${f[@]}; do
 	if test ! -f "$i"; then
 		touch "$i"
@@ -318,9 +353,11 @@ function __repaint() {
 # Whatever calls this should reload the screen for the new configs to be reflected on the screen
 
 	# @1 = type: soft, hard, conf
-	# soft just refreshes the screen
-	# conf or no argument reloads the config file
-	# hard reloads the script in the current shell
+	#  soft just refreshes the screen
+	#  hard reloads the script in the current shell
+	#  conf must be followed by a config file to load. Loads default conf then extra conf.
+	#  'no argument' loads the default config file represented by ${file[conf]}
+	# @2 = config file to reload
 	
 	clear
 	
@@ -335,8 +372,21 @@ function __repaint() {
 			exec bash "$0"
 		
 		;;
+
+		conf)
+
+		if source "$2"
+		then
+				source "${file[conf]}"
+				source "$2"
+		else
+				. "${file[conf]}"
+				. "$2"
+		fi
 		
-		*|conf)
+		;;
+
+		*)
 
 		if source "${file[conf]}"
 		then
@@ -351,7 +401,7 @@ function __repaint() {
 
 }
 
-__repaint
+__repaint conf "${file[confcl]}"
 
 
 ##
@@ -361,6 +411,7 @@ __repaint
 
 function __run() {
 	# Check for terminal then run else just run program
+	
 	tty -s
 	if test "$?" -ne 0 ; then
 		__launch
@@ -370,8 +421,8 @@ function __run() {
 
 }
 
-# Read the file of hosts and remove any line listed in the input whitelist file
 function __hosts_update() {
+	# Read the file of hosts and remove any line listed in the input whitelist file
 
 	# @1 = type: (file) norm or wild, or (string) rem or remw
 	# @2 = file to remove data from
@@ -415,8 +466,8 @@ function __hosts_update() {
 	
 }
 
-# Add or remove a single host from the .hf*rc config files
 function __conf_update {
+	# Add or remove a single host from the .hf*rc config files
 
 	# @1 = type: add, rem or remw
 	# @2 = data to add/remove
@@ -441,8 +492,8 @@ function __conf_update {
 	
 }
 
-# Install Host Flash™ hosts list to /etc/hosts
 function __enable() {
+	# Install Host Flash™ hosts list to /etc/hosts
 
 	if test ! -f "${file[hosts]}.hf.original"
 	then
@@ -460,8 +511,8 @@ function __enable() {
 	
 }
 
-# Remove Host Flash™ hosts list from /etc/hosts
 function __disable() {
+	# Remove Host Flash™ hosts list from /etc/hosts
 
 	if test -f "${file[hosts]}.hf.head"
 	then # Restore the backup head from the original hosts file
@@ -475,12 +526,12 @@ function __disable() {
 	
 }
 
-# Build the hosts file: download lists, clean them, merge them, create new hosts file
 function __build() {
+	# Build the hosts file: download lists, clean them, merge them, create new hosts file
 
 	# Download lists. Merge them into new hosts file
 	n=1
-	while [ $n -le 14 ]; do
+	until [ $n -eq 0 ]; do
 
 		list[0]=$( eval echo "\${list$n[0]}" )
 		list[1]=$( eval echo "\${list$n[1]}" )
@@ -489,7 +540,7 @@ function __build() {
 		list[4]=$( eval echo "\${list$n[4]}" )
 		list[5]=$( eval echo "\${list$n[5]}" )
 
-		if test "${list[0]}" = '+'
+		if test "${list[0]}" = '+' # && test ${#list[0]} -ne 0
 		then
 			if test "${list[2]}" != 'localhost'
 			then
@@ -506,25 +557,39 @@ function __build() {
 				else
 					cat "${dir[tmp]}/${list[4]}" >> "${dir[tmp]}/hosts-temp.txt"
 				fi
+
+				if test -f "${dir[tmp]}/${list[3]}"
+				then
+					rm "${dir[tmp]}/${list[3]}"
+				fi
+				
+				if test -f "${dir[tmp]}/${list[4]}"
+				then
+					rm "${dir[tmp]}/${list[4]}"
+				fi
 				
 			else # It's local host
 				if test "${list[5]}" = 'whitelist'
 				then
-					cat "$HOME/${list[4]}" >> "${dir[tmp]}/whitelist-temp.txt"
+					cat "${dir[conf]}/${list[4]}" >> "${dir[tmp]}/whitelist-temp.txt"
 				elif test "${list[5]}" = 'whitelist-wild'
 				then
-					cat "$HOME/${list[4]}" >> "${dir[tmp]}/whitelist-wild-temp.txt"
+					cat "${dir[conf]}/${list[4]}" >> "${dir[tmp]}/whitelist-wild-temp.txt"
 				else
-					cat "$HOME/${list[4]}" >> "${dir[tmp]}/hosts-temp.txt"
+					cat "${dir[conf]}/${list[4]}" >> "${dir[tmp]}/hosts-temp.txt"
 				fi
 			fi
 
 			credits+=("# Includes hosts blacklist from ${list[1]}\n")
-			
-			rm "${dir[tmp]}/${list[3]}" "${dir[tmp]}/${list[4]}"
+
 		fi
 		
-		let n=n+1
+		if test ${#list[0]} -eq 0
+		then
+			let n=n-n
+		else
+			let n=n+1
+		fi
 
 	done
 	
@@ -735,15 +800,15 @@ function __prompt() {
 
 		case $REPLY in
 
-		1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16) # Choose lists to download
+		1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16) # Choose lists to download # When moved to its own menu this will only be [[:num:]]
 
 			if grep "list$REPLY\[0]='-'" "${file[conf]}"
 			then
 				sed -i "/list$REPLY\[0]=/d" "${file[conf]}"
-				echo -e "list$REPLY""[0]='+'" >> "${file[conf]}"
+				echo -e "list${REPLY}[0]='+'" >> "${file[conf]}"
 			else
 				sed -i "/list$REPLY\[0]=/d" "${file[conf]}"
-				echo -e "list$REPLY""[0]='-'" >> "${file[conf]}"
+				echo -e "list${REPLY}[0]='-'" >> "${file[conf]}"
 			fi
 
 			__repaint
@@ -1009,9 +1074,8 @@ function __prompt() {
 }
 
 
-## launch terminal
-
 function __launch() {
+	# launch terminal
 
 	terminal=( konsole gnome-terminal x-terminal-emulator xdg-terminal terminator urxvt rxvt Eterm aterm roxterm xfce4-terminal termite lxterminal xterm )
 	for i in ${terminal[@]}; do
