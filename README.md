@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.0.3 beta
+Host Flash™ v3.0.4 beta
 
 Lead Author: Lee Hodson
 
