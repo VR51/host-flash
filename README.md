@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.0.5 beta
+Host Flash™ v3.0.6 beta
 
 Lead Author: Lee Hodson
 
@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 28th Oct. 2018
+This Release: 31st Oct. 2018
 
 First Written: 18th Oct. 2015
 
@@ -50,6 +50,8 @@ Host Flash™ works at the OS level. This means requests from any program or app
 - Update local custom whitelist or blacklist through the GUI
 - Update hosts file with local custom rules without rebuilding the whole hosts file
 - List management. Easily add new host list repositories from within the Host Flash™ app.
+- Local DNS Cache cleared after hosts file installation (Rudimentary now. To be improved later)
+- Better information about installed HF version to help you recognise when an update is available.
 - Various tweaks and fixes
 - More to come...
 
