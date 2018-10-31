@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-# Host Flash™ 3.0.5 beta
+# Host Flash™ 3.0.6 beta
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -15,7 +15,7 @@ clear
 # Lead Author: Lee Hodson
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 28th Oct. 2018
+# This Release: 31st Oct. 2018
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -35,11 +35,11 @@ clear
 #
 # Ensure the script is executable:
 #
-#		Right-click > properties > Executable
+#  Right-click > properties > Executable
 #
-#		OR
+#  OR
 #
-#		chmod u+x hostflash
+#  chmod u+x hostflash
 #
 # Launch by clicking the script file or by typing `bash hostflash` at the command line.
 #
@@ -50,33 +50,34 @@ clear
 
 ##
 #
-#	TO DO / DEV NOTES
+# TO DO / DEV NOTES
 #
 ##
 # versions: add deb installer
-#		installed has desktop icon (like ServUp)
+#  installed has desktop icon (like ServUp)
 #
-#	 	En/disable Automatic list update
-# 	En/disable Automatic script update
+#  En/disable Automatic list update
+#  En/disable Automatic script update
 #
 # CLI: disable HF, enable HF, add rule, remove rule, update lists, set options
 #
-#	Move even more actions into functions.
-#	Tidy up
-#	Add input checking
+# Move even more actions into functions.
+# Tidy up
+# Add input checking
+# Add error logging
 #
 # Improve menu system
-#		What do you want to do? Manage Lists, Update hosts, Manage Custom Files
-#			Do it here.
+#  What do you want to do? Manage Lists, Update hosts, Manage Custom Files
+#  Do it here.
 #
 # Info table
-#		Details about the live hosts file
-#		Details about the built hosts file
+#  Details about the live hosts file
+#  Details about the built hosts file
 #
 # Add last 7 updates log
-#		${log#[time]}
-#		${log#[size]}
-#		${log#[lines]}
+#  ${log#[time]}
+#  ${log#[size]}
+#  ${log#[lines]}
 #
 # Compact local whitelists and local blacklists (all lower, sort -u)
 # View/Edit local lists (nano, pico, cat)
@@ -95,9 +96,9 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.0.5 beta - 28th Oct. 2018'
+version='3.0.6 beta - 31st Oct. 2018'
 
-declare -A app conf dir file
+declare -A app conf dir file message
 declare -A list1 list2 list3 list4 list5 list6 list7 list8 list9 list10 list11 list12 list13 list14 list15 list16 list17 # Hosts lists
 # Additional associative arrays for lists declared in while loop above first `__repaint conf` written above ACTIONS
 
@@ -147,7 +148,6 @@ group=$(id -g -n $user) # Current user's primary group
 
 declare -a menu # Menu options are set within __menu_main()
 declare -a select # Menu options count
-declare -a message # Index indicates related conf, mode or menu item
 declare -a mode # Used for notices
 declare -a essentialpackages # Packages to install to help the build process
 declare -a credits # Hosts file credits
@@ -304,7 +304,8 @@ essentialpackages=( zip unzip 7z curl sed git )
 conf[ess]=0 # Essentials # Install build essential software. 0 = Not done, 1 = Done
 conf[upv]=0 # Update Host Flash™ program.
 #conf[locv]=$($binary -v) # Installed package version
-conf[locv]="$version"
+conf[inst]=$( ls -l "$0" | cut -d' ' -f 6-8)
+conf[locv]="$version installed ${conf[inst]}"
 conf[gitv]=$(curl -v --silent "${dir[gith]}/commit/master" --stderr - | grep '<relative-time datetime' | sed -E 's#<relative-time datetime="(.+)">.+$#\1#g' | tr -d '[:space:]' | tr '[:alpha:]' ' ')
 
 conf[ip]='127.0.0.1' # Redirect IP address
@@ -564,34 +565,49 @@ function __status() {
 function __enable() {
 	# Install Host Flash™ hosts list to /etc/hosts
 
+	echo
+	# Get su authority
+	sudo -v
+
+	# Backup original hosts file before first ever use of Host Flash™ in this system.
+	# Only happens if it does not yet exist.
 	if test ! -f "${file[hosts]}.hf.original"
 	then
-		sudo cp "${file[hosts]}" "${file[hosts]}.hf.original" # The original hosts file before Host Flash™ first ever use in this system.
+		sudo cp "${file[hosts]}" "${file[hosts]}.hf.original"
 	fi
-	
+
 	if test -f "${dir[tmp]}/hosts.txt"
 	then
 		sudo cp "${file[hosts]}" "${file[hosts]}.hf.backup" # General restore file
-		sudo mv "${dir[tmp]}/hosts.txt" "${file[hosts]}"
-		sudo mv "${dir[tmp]}/hosts.copy" "${file[hosts]}.hf.head" # This is the raw head of the hosts file.
+		sudo mv "${dir[tmp]}/hosts.txt" "${file[hosts]}" # New hosts file
 	else
-		printf "$package hosts file not found. Have you built it yet?"
+		message[enable]="$package hosts file not found. Have you built it yet?"
 	fi
-	
+
+	# Help the new hosts file take effect.
+	__cleandns
+
 }
 
 function __disable() {
 	# Remove Host Flash™ hosts list from /etc/hosts
 
-	if test -f "${file[hosts]}.hf.head"
-	then # Restore the backup head from the original hosts file
-		cp "${file[hosts]}" "${dir[tmp]}/hosts.copy"
-		sudo mv "${file[hosts]}.hf.head" "${file[hosts]}"
-	else # Delete Host Flash™ data from /etc/hosts, if it exists
-		cp "${file[hosts]}" "${dir[tmp]}/hosts.copy"
-		sed -i '/#### Host Flash™ Bad Hosts Block ########/,$d' "${dir[tmp]}/hosts.copy"
-		sudo mv "${dir[tmp]}/hosts.copy" "${file[hosts]}"
+	echo
+	# Get su authority
+	sudo -v
+	
+	cp "${file[hosts]}" "${dir[tmp]}/hosts.copy"
+	if grep -zPo '#### Host.? Flash.? Bad Hosts Block ########' "${dir[tmp]}/hosts.copy"
+	then
+		# Remove old HF data, remove HF header remove empty lines.
+		grep -zPo '(?s).*#### Host.? Flash.? Bad Hosts Block ########' "${dir[tmp]}/hosts.copy" | head -n -1 | grep -Ev '^[[:space:]]$' > "${dir[tmp]}/hosts.head"
+		sudo mv "${dir[tmp]}/hosts.head" "${file[hosts]}"
+	else
+		message[disable]="$package not installed. Nothing to do."
 	fi
+
+	# Help the new hosts file take effect.
+	__cleandns
 
 }
 
@@ -725,7 +741,16 @@ function __build() {
 
 }
 
-
+function __cleandns() {
+	# Clean the DNS local servers. We try them all.. just in case.
+	sudo /etc/init.d/networking force-reload
+	sudo /etc/init.d/dns-clean restart
+	sudo /etc/init.d/dnsmasq restart
+	sudo /etc/init.d/nscd restart
+	sudo systemd-resolve --flush-caches
+	
+	printf "\nIgnore error messages shown above.\n"
+}
 
 ##
 # MENUS
@@ -1064,12 +1089,12 @@ function __menu_main() {
 			case "${conf[mode]}" in
 
 					0)
-						mode[0]='MODE: Build Only\n'
+						mode[0]='MODE: Build Hosts Firewall Only\n'
 
 					;;
 
 					1)
-						mode[0]='MODE: Build and Install\n'
+						mode[0]='MODE: Build and Install Hosts Firewall\n'
 
 					;;
 
@@ -1215,6 +1240,12 @@ function __menu_main() {
 			
 					__enable
 					
+					if test "${message[enable]}"
+					then
+						printf "\n${message[enable]}\nPress any key."
+						read -a
+					fi
+					
 				;;
 				
 			esac
@@ -1233,6 +1264,13 @@ function __menu_main() {
 		7) # Disable Host Flash™ hosts list
 
 			__disable
+			
+			if test "${message[disable]}"
+			then
+				printf "\n${message[disable]}\nPress any key."
+				read -a
+			fi
+			
 			__repaint
 
 		;;
