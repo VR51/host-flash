@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.0.6 beta
+Host Flash™ v3.0.7 beta
 
 Lead Author: Lee Hodson
 
@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 31st Oct. 2018
+This Release: 1st Nov. 2018
 
 First Written: 18th Oct. 2015
 
@@ -44,6 +44,7 @@ Host Flash™ works at the OS level. This means requests from any program or app
 - Better hosts file management
 - Much improved performance
 - Much faster processing time
+- More host list repositories to choose from (17 built in, 3 Host Flash community lists and 3 user customizable lists)
 - Returned to text mode only terminal GUI. Dialog, whiptale and other terminal GUIs were overkill for this app
 - New menu system (will be improved once core app is finalised)
 - Custom settings are now stored in $HOME/.hf* files (.hfrc, .hfwlrc, .hfwlwrc and .hfblrc)
@@ -52,6 +53,7 @@ Host Flash™ works at the OS level. This means requests from any program or app
 - List management. Easily add new host list repositories from within the Host Flash™ app.
 - Local DNS Cache cleared after hosts file installation (Rudimentary now. To be improved later)
 - Better information about installed HF version to help you recognise when an update is available.
+- Better config reset management.
 - Various tweaks and fixes
 - More to come...
 
