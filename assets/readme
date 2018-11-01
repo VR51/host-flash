@@ -1,0 +1,16 @@
+# Ready Made Hosts File
+
+The hosts.zip file is here for use by anyone not able to compile their own hosts blacklist.
+
+Build credits for the hosts file repositories used to build the provided hosts file are near the top of the file.
+
+1. Download hosts.zip
+1. Unzip hosts.zip
+1. Install the premade hosts file to wherever your OS looks for it
+
+# Typical Places for hosts to be Installed
+
+Unix, Unix-like and POSIX: `/etc/hosts`
+iOS, Apple Mac: `/private/etc/hosts`
+Android:  `/system/etc/hosts`
+Windows NT, 2000, XP,[5] 2003, Vista, 2008, 7, 2012, 8, 10: `%SystemRoot%\System32\drivers\etc\hosts`
