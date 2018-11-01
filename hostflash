@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-# Host Flash™ 3.0.6 beta
+# Host Flash™ 3.0.7 beta
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -64,15 +64,37 @@ clear
 # Move even more actions into functions.
 # Tidy up
 # Add input checking
-# Add error logging
+# Add error checking/logging
+# Refine/add messages
+# Improve DNS cache cleaner
+#  Check app exists before use
+#  Message: Suggest browser DNS cache clean options
+#
+# Detect hosts file location
+#  Menu: configure file location
 #
 # Improve menu system
-#  What do you want to do? Manage Lists, Update hosts, Manage Custom Files
-#  Do it here.
+#  What do you want to do? Manage Lists, Update hosts, Manage Custom Files, See Info
+#   Do it
+#
+# Summary info on main screen / maybe footer for all screens
+#  Add extra useful info
+#  Include link to host-flash.com
 #
 # Info table
 #  Details about the live hosts file
+#   size
+#   lines
+#   timestamp
+#  View all HF configs
+#
 #  Details about the built hosts file
+#   size
+#   lines
+#   timestamp
+#
+#  Info about each list
+#   Last update time
 #
 # Add last 7 updates log
 #  ${log#[time]}
@@ -82,6 +104,8 @@ clear
 # Compact local whitelists and local blacklists (all lower, sort -u)
 # View/Edit local lists (nano, pico, cat)
 #
+#
+# Integrate with SaLi (?)
 #
 ###
 
@@ -96,11 +120,20 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.0.6 beta - 31st Oct. 2018'
+version='3.0.7 beta - 1st Nov 2018'
+
+# Declare arrays and types
 
 declare -A app conf dir file message
-declare -A list1 list2 list3 list4 list5 list6 list7 list8 list9 list10 list11 list12 list13 list14 list15 list16 list17 # Hosts lists
-# Additional associative arrays for lists declared in while loop above first `__repaint conf` written above ACTIONS
+# Additional associative arrays for lists declared in while loop below. See 'DECLARE LIST ARRAYS'
+
+declare -a menu # Menu options are set within __menu_main()
+declare -a select # Menu options count
+declare -a mode # Used for notices
+declare -a essentialpackages # Packages to install to help the build process
+declare -a credits # Hosts file credits
+declare -a flush # DNS cache flush commands
+declare -i listc listcc listsc # For list repository counts
 
 # Directories
 
@@ -123,11 +156,11 @@ file[confbl]="${dir[conf]}/.hfblrc" # Location of the user's custom blacklist.
 file[confcl]="${dir[conf]}/.hfclrc" # Location of the user's custom hosts lists.
 
 # App Launcher Settings
-# These are specific to the application/task manager installer (to be implemented)
+# These are specific to the application/task manager installer (yet to be implemented)
 
-dir[icon]="${dir[src]}/data" # Directory where the application icon will be located.
-dir[bin]='/usr/bin' # Binary installation path. Where should the compiled binary be installed to? Exact path. # Not required for this installer.
-file[icon]="hostflash.svg" # Icon name
+app[icon]="${dir[src]}/data" # Directory where the application icon will be located.
+app[bin]='/usr/bin' # Binary installation path. Where should the compiled binary be installed to? Exact path. # Not required for this installer.
+app[icon]="hostflash.svg" # Icon name
 app[type]='Application' # 
 app[cats]='Utilities' # Application launcher categories
 app[binary]="hostflash" # Name of the binary file that is this program.
@@ -137,21 +170,32 @@ app[binary]="hostflash" # Name of the binary file that is this program.
 user=$(whoami) # Current User
 group=$(id -g -n $user) # Current user's primary group
 
+
 ###
 #
-# OTHER SETTINGS
-#
-# Indexed arrays do not need to be declared before use.
-# These declare statements are here mostly to assist script readability and for tracking.
+# DECLARE LIST ARRAYS
 # 
 ###
 
-declare -a menu # Menu options are set within __menu_main()
-declare -a select # Menu options count
-declare -a mode # Used for notices
-declare -a essentialpackages # Packages to install to help the build process
-declare -a credits # Hosts file credits
-declare -i listc listcc listsc
+# Declare custom list associative arrays. If they are not declared we cannot use them.
+
+# Count Lists
+listc=$(grep -E 't[[:digit:]]+\[status]=' "$0" | wc -l) # Count lists in hostflash script
+if test $(grep -En 't[[:digit:]]+\[status]=' "${file[confcl]}")
+then
+	listcc=$(grep -E 't[[:digit:]]+\[status]=' "${file[confcl]}" | wc -l) # Count custom lists in .hfclrc
+else
+	listcc=0
+fi
+let listsc=listc+listcc
+
+# Declare the list arrays
+n=1 # list[0] is reserved for future special purpose. Maybe will hold list count?
+while [ $n -le $listsc ] ; do
+	declare -A list${n}
+	let n=n+1
+done
+
 
 ##
 #
@@ -242,58 +286,100 @@ list10[info]='malwaredomainlist.com (Liberal: Blocks mostly malware. Small list)
 list10[src]='http://www.malwaredomainlist.com/hostslist'
 list10[file]='hosts.txt'
 list10[target]='hosts.txt'
-list10[flag]=''
+list10[flag]='raw'
 
 list11[status]='+'
-list11[info]='hostsfile.org (Very Strict: Regular blocks + porn, gambling and gaming sites)\n'
-list11[src]='http://www.hostsfile.org/Downloads'
+list11[info]='KADhosts (Liberal: Blocks malware hosts)'
+list11[src]='https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.txt'
 list11[file]='hosts.txt'
 list11[target]='hosts.txt'
-list11[flag]=''
+list11[flag]='raw'
+
+list12[status]='+'
+list12[info]='yoyo.org (Liberal: Blocks adservers)'
+list12[src]='https://pgl.yoyo.org/as/serverlist.php?showintro=0;hostformat=hosts'
+list12[file]='hosts.txt'
+list12[target]='hosts.txt'
+list12[flag]='raw'
+
+list13[status]='+'
+list13[info]='Mitchell Krog (Liberal: Blocks spam bot hosts)'
+list13[src]='https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts'
+list13[file]='hosts.txt'
+list13[target]='hosts.txt'
+list13[flag]='raw'
+
+list14[status]='+'
+list14[info]='CoinBlockerLists (Liberal: Blocks cryptominers)'
+list14[src]='https://zerodot1.gitlab.io/CoinBlockerLists/hosts_browser'
+list14[file]='hosts.txt'
+list14[target]='hosts.txt'
+list14[flag]='raw'
+
+list15[status]='+'
+list15[info]='Lightswitch05 (Liberal: Blocks ads and trackers)'
+list15[src]='https://raw.githubusercontent.com/lightswitch05/hosts/master'
+list15[file]='ads-and-tracking-extended.txt'
+list15[target]='ads-and-tracking-extended.txt'
+list15[flag]=''
+
+list16[status]='+'
+list16[info]='AdAway (Liberal: Blocks ad networks)'
+list16[src]='https://adaway.org/hosts.txt'
+list16[file]='hosts.txt'
+list16[target]='hosts.txt'
+list16[flag]=''
+
+list17[status]='+'
+list17[info]='hostsfile.org (Very Strict: Regular blocks + porn, gambling and gaming sites)\n'
+list17[src]='http://www.hostsfile.org/Downloads'
+list17[file]='hosts.txt'
+list17[target]='hosts.txt'
+list17[flag]=''
 
 # Others
 
-list12[status]='+'
-list12[info]='Community Whitelist (Host Flash™ whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
-list12[src]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw/ad90168c61e926d462895b190ad84e37f4e5c99e'
-list12[file]='whitelist.txt'
-list12[target]='whitelist.txt'
-list12[flag]='whitelist'
+list18[status]='+'
+list18[info]='Community Whitelist (Host Flash™ whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
+list18[src]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw'
+list18[file]='whitelist.txt'
+list18[target]='whitelist.txt'
+list18[flag]='whitelist'
 
-list13[status]='+'
-list13[info]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
-list13[src]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
-list13[file]='whitelist-wild.txt'
-list13[target]='whitelist-wild.txt'
-list13[flag]='whitelist-wild'
+list19[status]='+'
+list19[info]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
+list19[src]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
+list19[file]='whitelist-wild.txt'
+list19[target]='whitelist-wild.txt'
+list19[flag]='whitelist-wild'
 
-list14[status]='+'
-list14[info]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
-list14[src]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
-list14[file]='blocklist.txt'
-list14[target]='blocklist.txt'
-list14[flag]=''
+list20[status]='+'
+list20[info]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
+list20[src]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
+list20[file]='blocklist.txt'
+list20[target]='blocklist.txt'
+list20[flag]=''
 
-list15[status]='+'
-list15[info]='Local Whitelist (Your own custom whitelist)'
-list15[src]='localhost'
-list15[file]='.hfwlrc'
-list15[target]='.hfwlrc'
-list15[flag]='whitelist'
+list21[status]='+'
+list21[info]='Local Whitelist (Your own custom whitelist)'
+list21[src]='localhost'
+list21[file]='.hfwlrc'
+list21[target]='.hfwlrc'
+list21[flag]='whitelist'
 
-list16[status]='+'
-list16[info]='Local Whitelist Wild (Your own custom wild whitelist)'
-list16[src]='localhost'
-list16[file]='.hfwlwrc'
-list16[target]='.hfwlwrc'
-list16[flag]='whitelist-wild'
+list22[status]='+'
+list22[info]='Local Whitelist Wild (Your own custom wild whitelist)'
+list22[src]='localhost'
+list22[file]='.hfwlwrc'
+list22[target]='.hfwlwrc'
+list22[flag]='whitelist-wild'
 
-list17[status]='+'
-list17[info]='Local blacklist (Your own custom blacklist)'
-list17[src]='localhost'
-list17[file]='.hfblrc'
-list17[target]='.hfblrc'
-list17[flag]=''
+list23[status]='+'
+list23[info]='Local blacklist (Your own custom blacklist)'
+list23[src]='localhost'
+list23[file]='.hfblrc'
+list23[target]='.hfblrc'
+list23[flag]=''
 
 
 
@@ -304,11 +390,14 @@ essentialpackages=( zip unzip 7z curl sed git )
 conf[ess]=0 # Essentials # Install build essential software. 0 = Not done, 1 = Done
 conf[upv]=0 # Update Host Flash™ program.
 #conf[locv]=$($binary -v) # Installed package version
-conf[inst]=$( ls -l "$0" | cut -d' ' -f 6-8)
+conf[inst]=$( ls -l "$0" | cut -d' ' -f 6-8) # $package installation date
 conf[locv]="$version installed ${conf[inst]}"
 conf[gitv]=$(curl -v --silent "${dir[gith]}/commit/master" --stderr - | grep '<relative-time datetime' | sed -E 's#<relative-time datetime="(.+)">.+$#\1#g' | tr -d '[:space:]' | tr '[:alpha:]' ' ')
+conf[hosts]=$( ls -l "${file[hosts]}" | cut -d' ' -f5 ) # Hosts file size
+conf[hostt]=$( ls -l "${file[hosts]}" | cut -d' ' -f 6-9 ) # Hosts file timestamp
+conf[hostc]=$( wc -l "${file[hosts]}" | cut -d' ' -f1 ) # Hosts file line count
 
-conf[ip]='127.0.0.1' # Redirect IP address
+conf[ip]='0.0.0.0' # Redirect IP address
 conf[mode]='0' # Build Only or Build and Install 0 or 1
 
 ## END SETTINGS
@@ -428,28 +517,6 @@ function __repaint() {
 
 }
 
-# Declare custom list associative arrays
-# If they are not declared we cannot use them.
-if test $(grep -En 't[[:digit:]]+\[status]=' "${file[confcl]}")
-then
-	# Get counts
-	listc=$(grep -E 't[[:digit:]]+\[status]=' "$0" | wc -l) # Count lists in hostflash
-	listcc=$(grep -E 't[[:digit:]]+\[status]=' "${file[confcl]}" | wc -l) # Count custom lists in .hfclrc
-
-	let listsc=listc+listcc
-
-	let n=$listc+1
-
-	while [ $n -le $listsc ] ; do
-		declare -A list${n}
-		let n=n+1
-	done
-
-else
-	listc=$(grep -E 't[[:digit:]]+\[status]=' "$0" | wc -l) # Count lists in hostflash
-	listcc=0
-	listsc=$listc
-fi
 
 # Include custom lists
 
@@ -545,6 +612,63 @@ function __conf_update() {
 	
 }
 
+function __conf_delete() {
+	__repaint conf "${file[confcl]}"
+	
+	# Delete specified file
+	# @1 = File to delete
+	# @2 = File's friendly name
+
+	f[1]=${1}
+	f[2]=${2}
+
+	printf "${bold}DELETE CONFIG FILES${normal}"
+	printf "\n\nReset chosen configuration file\n\n"
+
+	# Display menu
+	unset menu
+	menu[1]="Proceed: Reset ${f[2]} by deleting file ${f[1]}"
+	menu[2]="Return: Do not reset ${f[2]}"
+
+	m=1
+	while [ $m -le ${#menu[@]} ] ; do
+		printf "$m) ${menu[$m]}\n"
+		print
+		let m=m+1
+	done
+	
+	printf "\nChoose an option then press Enter:\n"
+	read a
+	
+	while true ; do
+		case $a in
+			1)
+				if test -f "${f[1]}"; then
+					rm "${f[1]}"
+					printf "${f[2]} reset.\n"
+					printf "\nPress any key to continue\n"
+					touch "${f[1]}"
+					read something
+				else
+					printf "${f[2]} custom settings not yet created. Nothing to do. Nothing done.\n"
+					printf "\nPress any key to continue\n"
+					read something
+				fi
+				__menu_reset_confs
+			;;
+			
+			2)
+				__menu_reset_confs
+			;;
+			
+			*)
+				__repaint
+			;;
+		esac
+	done
+
+}
+
 function __status() {
 	# Change status of list: On or Off.
 	
@@ -562,54 +686,6 @@ function __status() {
 	
 }
 
-function __enable() {
-	# Install Host Flash™ hosts list to /etc/hosts
-
-	echo
-	# Get su authority
-	sudo -v
-
-	# Backup original hosts file before first ever use of Host Flash™ in this system.
-	# Only happens if it does not yet exist.
-	if test ! -f "${file[hosts]}.hf.original"
-	then
-		sudo cp "${file[hosts]}" "${file[hosts]}.hf.original"
-	fi
-
-	if test -f "${dir[tmp]}/hosts.txt"
-	then
-		sudo cp "${file[hosts]}" "${file[hosts]}.hf.backup" # General restore file
-		sudo mv "${dir[tmp]}/hosts.txt" "${file[hosts]}" # New hosts file
-	else
-		message[enable]="$package hosts file not found. Have you built it yet?"
-	fi
-
-	# Help the new hosts file take effect.
-	__cleandns
-
-}
-
-function __disable() {
-	# Remove Host Flash™ hosts list from /etc/hosts
-
-	echo
-	# Get su authority
-	sudo -v
-	
-	cp "${file[hosts]}" "${dir[tmp]}/hosts.copy"
-	if grep -zPo '#### Host.? Flash.? Bad Hosts Block ########' "${dir[tmp]}/hosts.copy"
-	then
-		# Remove old HF data, remove HF header remove empty lines.
-		grep -zPo '(?s).*#### Host.? Flash.? Bad Hosts Block ########' "${dir[tmp]}/hosts.copy" | head -n -1 | grep -Ev '^[[:space:]]$' > "${dir[tmp]}/hosts.head"
-		sudo mv "${dir[tmp]}/hosts.head" "${file[hosts]}"
-	else
-		message[disable]="$package not installed. Nothing to do."
-	fi
-
-	# Help the new hosts file take effect.
-	__cleandns
-
-}
 
 function __build() {
 	# Build the hosts file: download lists, clean them, merge them, create new hosts file
@@ -627,11 +703,30 @@ function __build() {
 		target=$( eval echo "\${list$n[target]}" )
 		flag=$( eval echo "\${list$n[flag]}" )
 
+		#echo $status >> "${dir[conf]}/log.txt"
+		#echo $info >> "${dir[conf]}/log.txt"
+		#echo $src >> "${dir[conf]}/log.txt"
+		#echo $file >> "${dir[conf]}/log.txt"
+		#echo $target >> "${dir[conf]}/log.txt"
+		#echo $flag >> "${dir[conf]}/log.txt"
+
 		if test "$status" = '+' # && test ${#list[status]} -ne 0
 		then
+		
 			if test "$src" != 'localhost'
 			then
-				curl -e "$src" "$src/$file" -o "${dir[tmp]}/$file"
+				if ! test "$flag" = 'raw'
+				then
+					curl -e "$src" "$src/$file" -o "${dir[tmp]}/$file"
+					#echo "curl -e $src $src/$file -o ${dir[tmp]}/$file" >> "${dir[conf]}/log.txt"
+				else
+					curl -e "$src" "$src" -o "${dir[tmp]}/$file"
+					#echo "curl -e $src $src -o ${dir[tmp]}/$file" >> "${dir[conf]}/log.txt"
+				fi
+				
+		echo >> "${dir[conf]}/log.txt"
+		echo >> "${dir[conf]}/log.txt"
+		
 				if test "$flag" = 'unzip'; then unzip -o "${dir[tmp]}/$file" -d "${dir[tmp]}"; fi
 				if test "$flag" = 'p7zip'; then 7z e -y "${dir[tmp]}/$file" -o"${dir[tmp]}" ; fi
 				
@@ -741,20 +836,426 @@ function __build() {
 
 }
 
+function __enable() {
+	# Install Host Flash™ hosts list to /etc/hosts
+
+	echo
+	# Get su authority
+	sudo -v
+
+	# Backup original hosts file before first ever use of Host Flash™ in this system.
+	# Only happens if it does not yet exist.
+	if test ! -f "${file[hosts]}.hf.original"
+	then
+		sudo cp "${file[hosts]}" "${file[hosts]}.hf.original"
+	fi
+
+	if test -f "${dir[tmp]}/hosts.txt"
+	then
+		sudo cp "${file[hosts]}" "${file[hosts]}.hf.backup" # General restore file
+		sudo mv "${dir[tmp]}/hosts.txt" "${file[hosts]}" # New hosts file
+	else
+		message[enable]="$package hosts file not found. Have you built it yet?"
+	fi
+
+	# Help the new hosts file take effect.
+	__cleandns
+
+}
+
+function __disable() {
+	# Remove Host Flash™ hosts list from /etc/hosts
+
+	echo
+	# Get su authority
+	sudo -v
+	
+	cp "${file[hosts]}" "${dir[tmp]}/hosts.copy"
+	if grep -zPo '#### Host.? Flash.? Bad Hosts Block ########' "${dir[tmp]}/hosts.copy"
+	then
+		# Remove old HF data, remove HF header remove empty lines.
+		grep -zPo '(?s).*#### Host.? Flash.? Bad Hosts Block ########' "${dir[tmp]}/hosts.copy" | head -n -1 | grep -Ev '^[[:space:]]$' > "${dir[tmp]}/hosts.head"
+		sudo mv "${dir[tmp]}/hosts.head" "${file[hosts]}"
+	else
+		message[disable]="$package not installed. Nothing to do."
+	fi
+
+	# Help the new hosts file take effect.
+	__cleandns
+
+}
+
 function __cleandns() {
 	# Clean the DNS local servers. We try them all.. just in case.
-	sudo /etc/init.d/networking force-reload
-	sudo /etc/init.d/dns-clean restart
-	sudo /etc/init.d/dnsmasq restart
-	sudo /etc/init.d/nscd restart
-	sudo systemd-resolve --flush-caches
+
+	flush=(
+	'systemd-resolve --flush-caches' # General
+	'service network-manager restart' # Debian
+	'systemctl restart network.service' # Systemd
+	'systemctl restart wicd.service' #  Systemd for WICD
+	'systemctl restart NetworkManager.service' # Fedora, Manjaro, Arch using Network Manager
+	'service nscd restart' # FreeBSD
+	'/etc/init.d/network restart' # RHEL/Centos'
+	'/etc/init.d/dns-clean restart' # Mint'
+	'/etc/init.d/nscd restart' # other
+	'/etc/init.d/networking force-reload' # Other
+	'/etc/init.d/dnsmasq restart' # Other
+	)
 	
-	printf "\nIgnore error messages shown above.\n"
+	sudo -v
+
+	for i in "${flush[@]}"; do
+		printf "${bold}Attempting to flush DNS cache ${normal} using command: $i\n"
+		sudo $i
+		printf "Do not worry if the above says 'fail'. We only need one success.\n\n"
+	done
+
 }
 
 ##
 # MENUS
 ##
+
+
+# Main Menu
+
+function __menu_main() {
+
+	__repaint conf "${file[confcl]}"
+
+	# $1 = instruction
+
+	while true; do
+
+		if test "$?" -eq 0
+		then
+
+			case "${conf[mode]}" in
+
+					0)
+						mode[0]='MODE: Build Hosts Firewall Only\n'
+
+					;;
+
+					1)
+						mode[0]='MODE: Build and Install Hosts Firewall\n'
+
+					;;
+
+			esac
+
+			# Set Menu Options
+
+			unset menu
+			menu[1]='List Management (enable or disable repositories)'
+			menu[2]='Custom List Management (add or remove rules)\n'
+
+			menu[3]="[${conf[ip]}] - Change redirect IP address\n"
+
+			menu[4]='Change Build/Install Mode\n'
+
+			case "${conf[mode]}" in
+
+				0)
+					menu[5]='Build Host Flash™ list but do not install.\n'
+
+				;;
+
+				1)
+					menu[5]='Build and Install Host Flash™ list.\n'
+
+				;;
+
+			esac
+
+			menu[6]='Enable Host Flash™ list.'
+			menu[7]='Disable Host Flash™ list.'
+			case "${conf[mode]}" in
+
+				0)
+					menu[8]='Update hosts file with new custom rules but do not enable new hosts file\n'
+
+				;;
+
+				1)
+					menu[8]='Update and Enable hosts file with new custom rules\n'
+
+				;;
+
+			esac
+			menu[9]='Flush DNS rules\n'
+
+			menu[10]='Restore original hosts file.\n'
+
+			menu[11]="Reset $package configs and files (select in next menu)"
+
+			case "${conf[ess]}" in
+
+				0)
+					menu[1000]='Install missing software packages needed by Host Flash™\n'
+
+				;;
+
+			esac
+
+			printf $bold
+			printf "${mode[0]}\n"
+			printf $normal
+
+			printf "MENU\n\n"
+			printf "INSTRUCTIONS: a) Select lists to install with option 1, b) optionally add custom domains to blacklist or whitelist, c) build the hosts file firewall with option 5, before you d) Enable the newly built hosts file firewall with option 6. Change MODE to Build and Install to set $package to automatically install the hosts file after it is built.\n\n"
+
+			n=1
+			for i in "${menu[@]}"; do
+				if [ "$i" == '' ]; then
+					printf "\n"
+				else
+					printf "$n) $i\n"
+					select[$n]=$n
+					let n=n+1
+				fi
+			done
+
+			printf "\nR) Restart $package\n"
+			printf "\n0) Exit\n\n"
+
+			# Notices
+
+			printf $bold
+
+			printf "\nGENERAL INFO\n"
+				
+			printf $normal
+
+			printf "\n System $package: ${conf[locv]}"
+			printf "\n Latest git commit: ${conf[gitv]}\n"
+			printf "\n Hosts File Info: Line Count: ${conf[hostc]} | Bytes: ${conf[hosts]} | Timestamp: ${conf[hostt]} | Location: ${file[hosts]}\n"
+
+			printf "\nIf the computer crashes during installation lower the number of lists processed or cool your computer then try again.\n"
+
+			printf $bold
+				printf "\nChoose Wisely: "
+			printf $normal
+			read REPLY
+		
+		else
+			REPLY=$1
+		fi
+
+		case $REPLY in
+
+		1) # Choose lists to download # When moved to its own menu this will only be [[:num:]]
+			__menu_list_management
+
+		;;
+		
+		2) # Manage custom whitelists and blacklists
+			__menu_custom_list_management
+			
+		;;
+
+		3) # Change redirect IP address
+
+			printf "Current Redirect IP: ${conf[ip]}"
+			printf "\nType in new Redirect IP then press Enter:\n\n"
+			read ip
+
+			if grep "conf\[ip]=" "${file[conf]}"
+			then
+				sed -i "s/conf\[ip]='.*'/conf\[ip]='$ip'/g" "${file[conf]}"
+			else
+				echo -e "conf""[ip]='$ip'" >> "${file[conf]}"
+			fi
+
+			__repaint
+
+		;;
+
+		4) # Set Mode
+
+			if grep "conf\[mode]='0'" "${file[conf]}"
+			then
+				sed -i "s/conf\[mode]='0'/conf\[mode]='1'/g" "${file[conf]}"
+				
+			elif grep "conf\[mode]='1'" "${file[conf]}"
+			then
+				sed -i "s/conf\[mode]='1'/conf\[mode]='0'/g" "${file[conf]}"
+				
+			else
+				echo -e "conf""[mode]='1'" >> "${file[conf]}"
+			fi
+
+			__repaint
+
+		;;
+
+		5) # Build or Build and Install the Host Flash™ hosts file
+
+			__build
+			
+			case "${conf[mode]}" in
+			
+				1)
+			
+					__enable
+					
+					if test "${message[enable]}"
+					then
+						printf "\n${message[enable]}\nPress any key."
+						read -a
+					fi
+					
+				;;
+				
+			esac
+			
+			__repaint hard
+
+		;;
+
+		6) # Enable Host Flash™ hosts list
+
+			__enable
+			__repaint
+
+		;;
+
+		7) # Disable Host Flash™ hosts list
+
+			__disable
+			
+			if test "${message[disable]}"
+			then
+				printf "\n${message[disable]}\nPress any key."
+				read -a
+			fi
+
+			__repaint
+
+		;;
+
+		8) # Update hosts file with new custom rules
+
+			clear
+
+			printf "This next part could take some time.\nLook in ${dir[tmp]} to view activity in realtime.\n\nProcessing...\n"
+
+			cp "${file[hosts]}" "${dir[tmp]}/hosts-temp.txt"
+			cat "${dir[tmp]}/hosts-temp.txt" "${file[confbl]}" >> "${dir[tmp]}/hosts.txt"
+			__hosts_update "norm" "${dir[tmp]}/hosts.txt" "${file[confwl]}"
+			__hosts_update "wild" "${dir[tmp]}/hosts.txt" "${file[confwlw]}"
+
+			sudo mv "${dir[tmp]}/hosts.txt" "${file[hosts]}"
+
+			__cleandns
+			__repaint
+
+		;;
+		
+		9)
+			clear
+			__cleandns
+			printf "\nPress any key"
+			read a
+			__repaint
+		
+		;;
+
+		10) # Restore original hosts list
+
+			if test -f "${file[hosts]}.hf.original"
+			then # Restore the backup head from the original hosts file
+				sudo mv "${file[hosts]}.hf.original" "${file[hosts]}"
+			fi
+
+			__repaint
+
+		;;
+
+		11) # Reset Custom Configs
+
+			__menu_reset_confs
+
+			__repaint hard
+
+		;;
+
+		12) # Install software packages necessary to build the package
+
+			case "${conf[ess]}" in
+			
+				0)
+
+					printf "\nThis will attempt to install the following packages:\n"
+
+					for i in "${essentialpackages[@]}"; do
+						printf "$i "
+					done
+
+					printf "\nContinue to install them: Yn:\n"
+					read a
+					
+					let n=1
+					while true; do
+						case $a in
+
+						y|Y)
+						
+							case $n in
+							1)
+								echo -e "conf""[ess]='1'" >> "${file[conf]}"
+								sudo apt-get update
+								let n=n+1
+							;;
+							esac
+							
+							for i in "${essentialpackages[@]}"; do
+								sudo apt-get build-dep -y -q $i
+								sudo apt-get install -y -q --install-suggests $i
+							done
+
+							printf "\nPress any key to continue\n"
+							read something
+							__repaint
+
+						;;
+
+						n|N)
+
+							__repaint
+
+						;;
+						
+						*)
+
+						esac
+						
+					done
+					
+				;;
+				
+			esac
+
+		;;
+		
+		[Rr])
+			__repaint hard
+		;;
+
+		0) # Exit
+
+			exit 0
+
+		;;
+
+		*)
+
+		esac
+
+	done
+
+}
+
 
 # Sub Menus
 
@@ -919,7 +1420,6 @@ function __menu_custom_list_management() {
 
 		# Display custom list options
 		unset menu
-
 		menu[1]="Add a host to custom whitelist"
 		menu[2]="Add a host to custom wild whitelist"
 		menu[3]="Add a host to custom blacklist"
@@ -1069,333 +1569,80 @@ function __menu_custom_list_management() {
 	done
 }
 
-
-
-
-
-# Main Menu
-
-function __menu_main() {
+function __menu_reset_confs() {
 
 	__repaint conf "${file[confcl]}"
 
-	# $1 = instruction
-
 	while true; do
 
-		if test "$?" -eq 0
-		then
+		printf "${bold}CUSTOM CONFS MANAGEMENT${normal}"
+		printf "\n\nReset custom lists and configurations\n\n"
 
-			case "${conf[mode]}" in
+		# Display menu
+		unset menu
+		menu[1]="Reset general configurations to their default values"
+		menu[2]="Delete custom host file repository lists"
+		menu[3]="Delete custom whitelist"
+		menu[4]="Delete custom whitelist wild"
+		menu[5]="Delete custom blacklist"
 
-					0)
-						mode[0]='MODE: Build Hosts Firewall Only\n'
-
-					;;
-
-					1)
-						mode[0]='MODE: Build and Install Hosts Firewall\n'
-
-					;;
-
-			esac
-
-			# Set Menu Options
-
-			case "${conf[ess]}" in
-
-				0)
-					menu[1000]='Install missing software packages needed by Host Flash™\n'
-
-				;;
-
-			esac
-
-			menu[1]='List Management'
-			menu[2]='Custom List Management\n'
-
-			menu[3]="[${conf[ip]}] - Change redirect IP address\n"
-
-			menu[4]='Change Build/Install Mode\n'
-
-			case "${conf[mode]}" in
-
-				0)
-					menu[5]='Build Host Flash™ list.\n'
-
-				;;
-
-				1)
-					menu[5]='Build and Install Host Flash™ list.\n'
-
-				;;
-
-			esac
-
-			menu[6]='Enable Host Flash™ list.'
-			menu[7]='Disable Host Flash™ list.'
-			menu[8]='Update Host Flash™ list with new custom rules\n'
-
-			menu[9]='Restore original hosts file.\n'
-
-			menu[10]="Reset to default $package configuration?"
-
-			printf $bold
-			printf "${mode[0]}\n"
-			printf $normal
-
-			printf "MENU\n\n"
-			printf "INSTRUCTIONS: a) Select lists to install with option 1, b) optionally set the redirect IP address with option 3 then c) build the hosts file firewall with option 5, before you d) Enable the newly built hosts file firewall with option 6. Change MODE to Build and Install to set $package to automatically install the hosts file after it is built.\n\n"
-
-			n=1
-			for i in "${menu[@]}"; do
-				if [ "$i" == '' ]; then
-					printf "\n"
-				else
-					printf "$n) $i\n"
-					select[$n]=$n
-					let n=n+1
-				fi
-			done
-
-			printf "\nR) Restart $package\n"
-			printf "\n0) Exit\n\n"
-
-			# Notices
-
-			printf $bold
-
-			printf "\nGENERAL INFO\n"
-				
-			printf $normal
-
-			printf "\n System $package: ${conf[locv]}"
-			printf "\n Latest git commit: ${conf[gitv]}\n"
-
-			printf "\nIf the computer crashes during installation lower the number of lists processed or cool your computer then try again.\n"
-
-			printf $bold
-				printf "\nChoose Wisely: "
-			printf $normal
-			read REPLY
+		m=1
+		while [ $m -le ${#menu[@]} ] ; do
+			printf "$m) ${menu[$m]}\n"
+			print
+			let m=m+1
+		done
 		
-		else
-			REPLY=$1
-		fi
-
-		case $REPLY in
-
-		1) # Choose lists to download # When moved to its own menu this will only be [[:num:]]
-			__menu_list_management
-
-		;;
+		printf "\n0) Return to Main Menu\n"
 		
-		2) # Manage custom whitelists and blacklists
-			__menu_custom_list_management
-			
-		;;
-
-		3) # Change redirect IP address
-
-			printf "Current Redirect IP: ${conf[ip]}"
-			printf "\nType in new Redirect IP then press Enter:\n\n"
-			read ip
-
-			if grep "conf\[ip]=" "${file[conf]}"
-			then
-				sed -i "s/conf\[ip]='.*'/conf\[ip]='$ip'/g" "${file[conf]}"
-			else
-				echo -e "conf""[ip]='$ip'" >> "${file[conf]}"
-			fi
-
-			__repaint
-
-		;;
-
-		4) # Set Mode
-
-			if grep "conf\[mode]='0'" "${file[conf]}"
-			then
-				sed -i "s/conf\[mode]='0'/conf\[mode]='1'/g" "${file[conf]}"
-				
-			elif grep "conf\[mode]='1'" "${file[conf]}"
-			then
-				sed -i "s/conf\[mode]='1'/conf\[mode]='0'/g" "${file[conf]}"
-				
-			else
-				echo -e "conf""[mode]='1'" >> "${file[conf]}"
-			fi
-
-			__repaint
-
-		;;
-
-		5) # Build or Build and Install the Host Flash™ hosts file
-
-			__build
-			
-			case "${conf[mode]}" in
-			
-				1)
-			
-					__enable
-					
-					if test "${message[enable]}"
-					then
-						printf "\n${message[enable]}\nPress any key."
-						read -a
-					fi
-					
-				;;
-				
-			esac
-			
-			__repaint
-
-		;;
-
-		6) # Enable Host Flash™ hosts list
-
-			__enable
-			__repaint
-
-		;;
-
-		7) # Disable Host Flash™ hosts list
-
-			__disable
-			
-			if test "${message[disable]}"
-			then
-				printf "\n${message[disable]}\nPress any key."
-				read -a
-			fi
-			
-			__repaint
-
-		;;
+		printf "\nEnter item number to action then press Enter.\n"
 		
-		8) # Update hosts file with new custom rules
+		read a
 
-			clear
+		case $a in
+
+			0)
+				__menu_main
+			;;
+
+			1) # Reset confs[]
+				__conf_delete "${file[conf]}" "$package custom configuration"
+
+			;;
+
+			2) # Delete custom host lists
+				__conf_delete "${file[confcl]}" "Custom host file repositories"
+
+			;;
 			
-			printf "This next part could take some time.\nLook in ${dir[tmp]} to view activity in realtime.\n\nProcessing...\n"
+			3) # Delete custom whitelist
+				__conf_delete "${file[confwl]}" "custom whitelist"
+			;;
 			
-			cp "${file[hosts]}" "${dir[tmp]}/hosts-temp.txt"
-			cat "${dir[tmp]}/hosts-temp.txt" "${file[confbl]}" >> "${dir[tmp]}/hosts.txt"
-			__hosts_update "norm" "${dir[tmp]}/hosts.txt" "${file[confwl]}"
-			__hosts_update "wild" "${dir[tmp]}/hosts.txt" "${file[confwlw]}"
+			4) # Delete custom whitelist wild
+				__conf_delete "${file[confwlw]}" "custom whitelist wild"
 			
-			sudo mv "${dir[tmp]}/hosts.txt" "${file[hosts]}"
+			;;
 			
-			__repaint
-
-		;;
-
-		9) # Restore original hosts list
-
-			if test -f "${file[hosts]}.hf.original"
-			then # Restore the backup head from the original hosts file
-				sudo mv "${file[hosts]}.hf.original" "${file[hosts]}"
-			fi
-
-			__repaint
-
-		;;
-
-		10) # Reset Custom Configs
-
-			if test -f "${file[conf]}"; then
-				rm "${file[conf]}"
-				printf "$package configuration reset.\n"
-				printf "\nPress any key to continue\n"
-				read something
-			else
-				printf "$package configuration file not found. Nothing to do. Nothing done.\n"
-				printf "\nPress any key to continue\n"
-				read something
-			fi
-
-			__repaint hard
-
-		;;
-
-		11) # Install software packages necessary to build the package
-
-			case "${conf[ess]}" in
+			5) # Delete custom blacklist
+				__conf_delete "${file[confbl]}" "custom blacklist"
 			
-				0)
+			;;
 
-					printf "\nThis will attempt to install the following packages:\n"
-
-					for i in "${essentialpackages[@]}"; do
-						printf "$i "
-					done
-
-					printf "\nContinue to install them: Yn:\n"
-					read a
-					
-					let n=1
-					while true; do
-						case $a in
-
-						y|Y)
-						
-							case $n in
-							1)
-								echo -e "conf""[ess]='1'" >> "${file[conf]}"
-								sudo apt-get update
-								let n=n+1
-							;;
-							esac
-							
-							for i in "${essentialpackages[@]}"; do
-								sudo apt-get build-dep -y -q $i
-								sudo apt-get install -y -q --install-suggests $i
-							done
-
-							printf "\nPress any key to continue\n"
-							read something
-							__repaint
-
-						;;
-
-						n|N)
-
-							__repaint
-
-						;;
-						
-						*)
-
-						esac
-						
-					done
-					
-				;;
-				
-			esac
-
-		;;
-		
-		[Rr])
-			__repaint hard
-		;;
-
-		0) # Exit
-
-			exit 0
-
-		;;
-
-		*)
+			*)
+				__repaint conf "${file[confcl]}"
+			;;
 
 		esac
 
 	done
 
+	__repaint conf "${file[confcl]}"
+
 }
 
+
+## Launch
 
 function __launch() {
 	# launch terminal
