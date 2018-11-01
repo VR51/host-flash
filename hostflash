@@ -66,9 +66,6 @@ clear
 # Add input checking
 # Add error checking/logging
 # Refine/add messages
-# Improve DNS cache cleaner
-#  Check app exists before use
-#  Message: Suggest browser DNS cache clean options
 #
 # Detect hosts file location
 #  Menu: configure file location
@@ -146,8 +143,15 @@ dir[conf]="$HOME/.config/hostflash" # Location of custom configuration files.
 
 # Files
 
-file[hosts]='/etc/hosts' # Location of system hosts file. Where it is copied from and where it is installed to.
-# file[hosts]='/home/lee/Goodies/Downloaders/test/hosts' # For testing by me
+# System hosts file location. Where it is copied from and where it is installed to.
+# file[hosts]='/private/etc/hosts' # iOS, Apple Mac
+# file[hosts]='/system/etc/hosts' # Android
+# file[hosts]='%SystemRoot%\System32\drivers\etc\hosts' # Windows NT, 2000, XP,[5] 2003, Vista, 2008, 7, 2012, 8, 10
+# Will be autodetected and configurable/selectable soon.
+
+file[hosts]='/etc/hosts' # Location of system hosts file in Unix, Unix-like and POSIX systems.
+
+# HF Config Files
 
 file[conf]="${dir[conf]}/.hfrc" # Location of user's custom settings for Host Flash™.
 file[confwl]="${dir[conf]}/.hfwlrc" # Location of the user's custom whitelist.
@@ -209,7 +213,7 @@ done
 # list[src]='Download URL' # Where the package is downloaded from
 # list[file]='Download Package' # Name of package downloaded
 # list[target]='Package Target' # Name of usable file in the downloaded package
-# list[flag]='Flags: E.g Package Type' # unzip, p7zip, empty if raw txt, or whitelist.
+# list[flag]='Flags: E.g Package Type' # unzip, p7zip, raw, whitelist,  or leave empty.
 #
 # Changes to list[status] are stored in .hfrc
 # Custom lists will be added to .hfclrc
