@@ -22,16 +22,22 @@ Programmer: Lee Hodson <journalxtra.com>, VR51 <vr51.com>
 
 Use of this program is at your own risk
 
+FILE TO DOWNLOAD:
+
+You only need to download the file `hostsflash`.
+
+All the other files in this repository are for reference or emergency only.
+
 TO RUN:
 
-- Ensure the script is executable:
+- Ensure the `hostsflash` file is executable:
 -	`Right-click > properties > Executable`
 -	OR
 -	`chmod u+x hostflash`
 - Run with:
 -	Command line: `bash hostflash` or `./hostflash`
 -	OR
--	File browser: click hostflash
+-	File browser: just click `hostflash`
 
 Use Host Flash™ to block computer requests to (and access to) websites (hosts), ad servers, malicious websites and time wasting websites.
 
@@ -47,11 +53,12 @@ Host Flash™ works at the OS level. This means requests from any program or app
 - More host list repositories to choose from (17 built in, 3 Host Flash community lists and 3 user customizable lists)
 - Returned to text mode only terminal GUI. Dialog, whiptale and other terminal GUIs were overkill for this app
 - New menu system (will be improved once core app is finalised)
-- Custom settings are now stored in $HOME/.hf* files (.hfrc, .hfwlrc, .hfwlwrc and .hfblrc)
+- Custom settings are now stored in $HOME/.config/hostflash/.hf* files (.hfrc, .hfwlrc, .hfwlwrc and .hfblrc, and log)
 - Update local custom whitelist or blacklist through the GUI
 - Update hosts file with local custom rules without rebuilding the whole hosts file
+- Apply rule change updates without complete hosts file rebuild
 - List management. Easily add new host list repositories from within the Host Flash™ app.
-- Local DNS Cache cleared after hosts file installation (Rudimentary now. To be improved later)
+- Local DNS Cache automatically cleared after hosts file installation or update
 - Better information about installed HF version to help you recognise when an update is available.
 - Better config reset management.
 - Various tweaks and fixes
@@ -60,23 +67,28 @@ Host Flash™ works at the OS level. This means requests from any program or app
 # What Host Flash™ Does
 Host Flash™ blocks computers from accessing content served by specific web hosts. These hosts, for example, could be reported malicious websites, known ad servers, adult websites or torrent sites.
 
+# Host Flash™ is interactive and configurable
+The interactive set-up program lets you control the host file firewall rules installed by Host Flash™ and lets you control the actions performed by Host Flash.
+
+Host Flash™ compiles and installs a blacklist of malware, adserver, tracker and cryptominer hosts. This prevents your computer making requests to domains (hosts) that could compromise your computer and privacy. You can choose the host lists to download and install.
+
+Host Flash™ will install your hosts file for you and provide an easy way for you to enable, disable and otherwise manage your system hosts file.
+
+Be aware that hosts file redirect rules can be bypassed by use of a VPN such as the one provided by the Opera browser or by a Tor browser.
+
 Host Flash™
 
-- downloads host name blacklists from any one or more of 11 host blacklist providers,
-- merges those lists into one large compilation of bad hosts,
-- adds your custom bad hosts list into the mix (.hfblrc),
-- removes duplicate bad host entries from the compiled bad hosts list,
-- comments out (unblocks) whitelisted hosts (.hfwlrc and .hfwlwrc),
-- copies the hosts file that exists when Host Flash™ is first run to /etc/hosts.hf.original,
-- copies successive hosts file replacements to /etc/hosts.hf.backup.
-- option to remove previously installed Host Flash™ firewall from the existing hosts file,
-- retains the hosts file entries that already exist in the original hosts file so that the hosts file created by Host Flash™ does not remove your own custom hosts file edits (provided they are placed above the Host Flash header).
-
-Host Flash™ is interactive.
-
-The interactive set-up program lets you control the host file firewall rules installed by Host Flash™ and control the actions performed by Host Flash.
-
-You will not be able to access sites blocked by Host Flash™. The exception to this rule is that a VPN can be used to bypass the firewall.
+- downloads host name / domain name blacklists from any of one or more of over 20 host blacklist repositories
+- merges those lists into one large compilation of bad hosts
+- adds your customizable bad hosts blacklist into the mix (.hfblrc)
+- removes duplicate bad host entries from the compiled bad hosts list
+- removes whitelisted hosts from the compiled list (.hfwlrc and .hfwlwrc)
+- copies the hosts file that exists when Host Flash™ is first run to /etc/hosts.hf.original
+- copies successive hosts file replacements to /etc/hosts.hf.backup
+- option to remove previously installed Host Flash™ firewall from the existing hosts file
+- retains the hosts file entries that already exist in the original hosts file so that the hosts file created by Host Flash™ does not remove your own custom hosts file edits (provided they are placed above the Host Flash header)
+- can be used in web server environments
+- the redirect IP address is configurable
 
 Run Host Flash™ regularly to keep your hosts file up-to-date with new bad hosts.
 
@@ -101,18 +113,17 @@ If you want to reuse local Host Flash™ settings in other environments, just mo
 # How to Use Host Flash™
 Download Host Flash™ from GitHub, run the program, follow the on screen prompts to quickly configure the program and install your new hosts file block list. Custom settings automatically saved by Host Flash™ in realtime.
 
-- Download the program from https://github.com/VR51/host-flash/archive/master.zip
-- Unzip host-flash-master.zip
-- Enter the directory 'host-flash-master'
+- Download the program from https://github.com/VR51/host-flash/
+- You only need to download the file called `hostflash`
 - Run hostflash
 
 Programatically, that is
 
-`wget https://github.com/VR51/host-flash/archive/master.zip ; unzip host-flash-master.zip ; cd host-flash-master ; sh hostflash`
+`wget https://github.com/VR51/host-flash/archive/master.zip ; unzip host-flash-master.zip ; cd host-flash-master ; chmod u+x hostflash ; bash ./hostflash`
 
 To Run Host Flash™, either
 
-Ensure the script is executable they click to run:
+Ensure the script is executable then click to run:
 
 * Right-click > properties > Executable OR `chmod u+x hostflash`
 * click `hostflash`, or
@@ -232,21 +243,21 @@ If you want to block access to additional websites (like social media sites, sea
 
 Host Flash™ lets you choose from 4 IP address mapping options. The IP address you choose is the address your computer will call when host names in the list of bad hosts are requested. Here is more information about these options.
 
-127.0.0.1
-
-	This is the normal loopback address of a computer. This is the address normally used to send a request to a bad host (blocked host / website) back to your own computer so that the bad host is never contacted. Select this IP address unless you know better for your own purposes.
-
 0.0.0.0
 
-	This IP address is mapped to hosts in some blacklists provided by some sources. Can be quicker to use 0.0.0.0 instead of other IP addresses because 0.0.0.0 doesn't requqire the system to wait for a request timeout. This is occasionally also used to resolve a bug in some versions of Windows. This IP address is included for those who might prefer to use it.
+This IP address is mapped to hosts in some blacklists provided at some hosts repositories. It can be quicker to use 0.0.0.0 instead of other IP addresses because 0.0.0.0 doesn't require the system to wait for a request timeout. This is occasionally also used to resolve a bug in some versions of Windows.
 
-127.255.255.254
+127.0.0.1
 
-	This IP address is included for my own convenience. I redirect all blocked hosts to a home server virtual host that listens to all ports on loopback address 127.255.255.254. This allows me to tell my home server to serve a minimally styled 404 message in place of ugly browser Document Not Found error messages. Has a visible affect on mod_pagespeed's cache too... (mod_pagespeed caches the request).
+This is the typical loopback address of a computer. This is the address normally used to send a request to a bad host (blocked host / website) back to your own computer so that the bad host is never contacted. Use this IP address if 0.0.0.0 is problematic for your OS.
+	
+# Typical Places for the hosts file to be Installed
+For reference, hosts files are typically installed to:
 
-Custom
-
-	If you wish, use a custom IP address to redirect bad hosts to websites of your choosing such as Google or any other host with its own dedicated IP address.
+Unix, Unix-like and POSIX: `/etc/hosts`
+iOS, Apple Mac: `/private/etc/hosts`
+Android:  `/system/etc/hosts`
+Windows NT, 2000, XP,[5] 2003, Vista, 2008, 7, 2012, 8, 10: `%SystemRoot%\System32\drivers\etc\hosts`
 
 # Introduction to Host Files and Host Flash™
 Host Flash™ Protects Computers from Malware, Phishing Sites, Undesirable Content and Adservers.
