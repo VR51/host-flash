@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-# Host Flash™ 3.0.7 beta
+# Host Flash™ 3.0.8
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -15,7 +15,7 @@ clear
 # Lead Author: Lee Hodson
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 31st Oct. 2018
+# This Release: 6th Nov 2018
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -61,21 +61,30 @@ clear
 #
 # CLI: disable HF, enable HF, add rule, remove rule, update lists, set options
 #
+# Switchlist
+#  Temporarily disable and enable whitelist hosts
+# Options
+#  Check .hfremoved list
+#   Move items from .hfremoved to post processing blacklist
+#   Move items from .hfremoved to Switch List
+#
 # Move even more actions into functions.
 # Tidy up
 # Add input checking
 # Add error checking/logging
+#  Activate logging
 # Refine/add messages
 #
 # Detect hosts file location
 #  Menu: configure file location
+#  Ask user to confirm location on first HF use
 #
 # Improve menu system
 #  What do you want to do? Manage Lists, Update hosts, Manage Custom Files, See Info
 #   Do it
 #
 # Summary info on main screen / maybe footer for all screens
-#  Add extra useful info
+#  Add more useful info
 #  Include link to host-flash.com
 #
 # Info table
@@ -99,6 +108,7 @@ clear
 #  ${log#[lines]}
 #
 # Compact local whitelists and local blacklists (all lower, sort -u)
+#  Check superfluous rules in post process blacklist
 # View/Edit local lists (nano, pico, cat)
 #
 #
@@ -117,11 +127,15 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.0.7 beta - 1st Nov 2018'
+version='3.0.8 - 6th Nov 2018'
+
+# Clear arrays
+
+unset app conf dir file log message rem menu select mode essentialpackages credits flush listc listcc listsc
 
 # Declare arrays and types
 
-declare -A app conf dir file message
+declare -A app conf dir file log message rem
 # Additional associative arrays for lists declared in while loop below. See 'DECLARE LIST ARRAYS'
 
 declare -a menu # Menu options are set within __menu_main()
@@ -132,10 +146,14 @@ declare -a credits # Hosts file credits
 declare -a flush # DNS cache flush commands
 declare -i listc listcc listsc # For list repository counts
 
-# Directories
+# Remote Hosts
 
-dir[gith]='https://github.com/VR51/host-flash' # Github home URL for this package.
-dir[gitp]='https://github.com/VR51/host-flash.git' # Software source package git address
+rem[gith]='https://github.com/VR51/host-flash' # Github home URL for this package.
+rem[gitp]='https://github.com/VR51/host-flash.git' # Software source package git address
+
+# Directories
+#  These are created by dir[@] dump. Be careful when adding directories to this list
+
 dir[src]="$HOME/src/hostflash" # Directory where the source code will be stored locally
 dir[tmp]="${dir[src]}/tmp" # Directory where temporary files will be stored locally
 dir[docs]="${dir[src]}/DOC" # Location of program documents. # To be written
@@ -152,12 +170,19 @@ dir[conf]="$HOME/.config/hostflash" # Location of custom configuration files.
 file[hosts]='/etc/hosts' # Location of system hosts file in Unix, Unix-like and POSIX systems.
 
 # HF Config Files
+#  These are created by file[@] dump. Be careful when adding files to this list
 
 file[conf]="${dir[conf]}/.hfrc" # Location of user's custom settings for Host Flash™.
 file[confwl]="${dir[conf]}/.hfwlrc" # Location of the user's custom whitelist.
 file[confwlw]="${dir[conf]}/.hfwlwrc" # Location of the user's custom whitelist-wild.
 file[confbl]="${dir[conf]}/.hfblrc" # Location of the user's custom blacklist.
 file[confcl]="${dir[conf]}/.hfclrc" # Location of the user's custom hosts lists.
+file[confr]="${dir[conf]}/.hfremoved" # Hosts removed from hosts list during hosts build/update.
+
+# to be used in a later version
+file[confpost]="${dir[conf]}/.hfpost" # Location of the post processing blacklist (block hosts that are wild needlessly whitelisted)
+file[confsl]="${dir[conf]}/.hfslrc" # Location of the user's hosts switch list.
+file[conflog]="${dir[conf]}/.log" # Location of the log file.
 
 # App Launcher Settings
 # These are specific to the application/task manager installer (yet to be implemented)
@@ -396,13 +421,24 @@ conf[upv]=0 # Update Host Flash™ program.
 #conf[locv]=$($binary -v) # Installed package version
 conf[inst]=$( ls -l "$0" | cut -d' ' -f 6-8) # $package installation date
 conf[locv]="$version installed ${conf[inst]}"
-conf[gitv]=$(curl -v --silent "${dir[gith]}/commit/master" --stderr - | grep '<relative-time datetime' | sed -E 's#<relative-time datetime="(.+)">.+$#\1#g' | tr -d '[:space:]' | tr '[:alpha:]' ' ')
+conf[gitv]=$(curl -v --silent "${rem[gith]}/commit/master" --stderr - | grep '<relative-time datetime' | sed -E 's#<relative-time datetime="(.+)">.+$#\1#g' | tr -d '[:space:]' | tr '[:alpha:]' ' ')
 conf[hosts]=$( ls -l "${file[hosts]}" | cut -d' ' -f5 ) # Hosts file size
 conf[hostt]=$( ls -l "${file[hosts]}" | cut -d' ' -f 6-9 ) # Hosts file timestamp
 conf[hostc]=$( wc -l "${file[hosts]}" | cut -d' ' -f1 ) # Hosts file line count
 
 conf[ip]='0.0.0.0' # Redirect IP address
 conf[mode]='0' # Build Only or Build and Install 0 or 1
+
+# LOGS
+
+function __log() {
+	# @1 = Message
+	
+	message=$1
+	
+	now="$(date +"%Y-%m-%d %H:%M:%S")"
+	log[$now]="$now: $message"
+}
 
 ## END SETTINGS
 
@@ -418,38 +454,15 @@ filepath="$( echo $PWD )"
 # A Little precaution
 cd "$filepath"
 
+# Make/Remove directories and files
 
-# Make directories
-
-if test ! -d "$HOME/src"; then
-	mkdir "$HOME/src"
+if test -d "${dir[tmp]}"; then
+	rm -r "${dir[tmp]}" # Clean the tmp directory.
 fi
 
-if test ! -d "${dir[src]}"; then
-	mkdir "${dir[src]}"
-fi
+mkdir -p "${dir[@]}" # Make directories
+touch -a "${file[@]}" # Make config files
 
-if test ! -d "${dir[tmp]}"; then
-	mkdir "${dir[tmp]}"
-else
-	rm -r "${dir[tmp]}"
-	mkdir "${dir[tmp]}"
-fi
-
-if test ! -d "${dir[conf]}"; then
-	mkdir "${dir[conf]}"
-fi
-
-
-# Make User Config files
-
-f=( "$HOME/src" "${file[conf]}" "${file[confwl]}" "${file[confwlw]}" "${file[confbl]}" "${file[confcl]}" )
-for i in ${f[@]}; do
-	if test ! -f "$i"; then
-		touch "$i"
-	fi
-done
-unset f
 
 # INSTALL RC SETTINGS
 
@@ -557,6 +570,7 @@ function __hosts_update() {
 
 			data=$(<$3)
 			data=$(echo $data | tr "[:blank:]" '|')
+			grep -iE "^${conf[ip]}[[:blank:]]($data)" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
 			grep -viE "^${conf[ip]}[[:blank:]]($data)" "$2" > "$2.tmp" # This method removes whitelisted hostnames
 
 		;;
@@ -565,18 +579,21 @@ function __hosts_update() {
 
 			data=$(<$3)
 			data=$(echo $data | tr "[:blank:]" '|')
+			grep -iE "^${conf[ip]}.*($data)" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
 			grep -viE "^${conf[ip]}.*($data)" "$2" > "$2.tmp" # This method removes whitelisted hostnames
 
 		;;
 
 		linen)
 			# sed -r -i "s/${conf[ip]}[[:blank:]]$3.*?$//g" "$2" # Remove exact match
+			grep -iE "^${conf[ip]}[[:blank:]]$3" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
 			grep -viE "^${conf[ip]}[[:blank:]]$3" "$2" > "$2.tmp" # This method removes whitelisted hostnames
 
 		;;
 
 		linew)
 			# sed -r -i "s/${conf[ip]}[[:blank:]].*\.$3.*?$//g" "$2" # Remove any line with a match
+			grep -iE "^${conf[ip]}.*$3.*?" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
 			grep -viE "^${conf[ip]}.*$3.*?" "$2" > "$2.tmp" # This method removes whitelisted hostnames
 
 		;;
@@ -592,6 +609,7 @@ function __hosts_update() {
 
 function __conf_update() {
 	# Add or remove a single host from the .hf*rc config files
+	# ! Considered merging this function with __hosts_update. Opted to keep the two separate. It simplifies input sanitization (to come later).
 
 	# @1 = type: add, rem or remw
 	# @2 = data to add/remove
@@ -1007,7 +1025,7 @@ function __menu_main() {
 			printf $normal
 
 			printf "MENU\n\n"
-			printf "INSTRUCTIONS: a) Select lists to install with option 1, b) optionally add custom domains to blacklist or whitelist, c) build the hosts file firewall with option 5, before you d) Enable the newly built hosts file firewall with option 6. Change MODE to Build and Install to set $package to automatically install the hosts file after it is built.\n\n"
+			# printf "INSTRUCTIONS: a) Select lists to install with option 1, b) optionally add custom domains to blacklist or whitelist, c) build the hosts file firewall with option 5, before you d) Enable the newly built hosts file firewall with option 6. Change MODE to Build and Install to set $package to automatically install the hosts file after it is built.\n\n"
 
 			n=1
 			for i in "${menu[@]}"; do
