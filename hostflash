@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-# Host Flash™ 3.0.8
+# Host Flash™ 3.1.0
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -15,7 +15,7 @@ clear
 # Lead Author: Lee Hodson
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 6th Nov 2018
+# This Release: 8th Nov 2018
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -64,15 +64,23 @@ clear
 # Switchlist
 #  Temporarily disable and enable whitelist hosts
 # Options
-#  Check .hfremoved list
+#  Check .hfremoved list # Script written and tested ready for insertion
 #   Move items from .hfremoved to post processing blacklist
 #   Move items from .hfremoved to Switch List
+#
+# Build Options
+#  Build pure list. No whitelisting
+#   Check whitelists (extracted, found, not found)
+#    Rebuild whitelists after check
+#  Build filtered list. Whitelisting done
+#   Install after build
+#   Do not install after build
+# Compact local whitelists and local blacklists (all lower, sort -u)
+# View/Edit local lists (nano, pico, cat)
 #
 # Move even more actions into functions.
 # Tidy up
 # Add input checking
-# Add error checking/logging
-#  Activate logging
 # Refine/add messages
 #
 # Detect hosts file location
@@ -107,14 +115,28 @@ clear
 #  ${log#[size]}
 #  ${log#[lines]}
 #
-# Compact local whitelists and local blacklists (all lower, sort -u)
-#  Check superfluous rules in post process blacklist
-# View/Edit local lists (nano, pico, cat)
-#
 #
 # Integrate with SaLi (?)
 #
 ###
+
+##
+# NOTES
+#
+# Build Process
+#
+#  The host file work is done in $HOME/src/hostflash/tmp. This eventually builds hosts.txt
+#  The final build of hosts.txt is moved to $HOME/src/hostflash/
+#  __enable looks for $HOME/src/hostflash/hosts.txt which it moves to /etc/hosts
+#
+# Whitelist Processing
+#
+#  Whitelist wild is processed twice:
+#   As a normal whitelist
+#   As a wild whitelist
+#  A period is added before the first character of the host name
+#
+##
 
 ##
 #
@@ -127,7 +149,8 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.0.8 - 6th Nov 2018'
+version='3.1.0 - 8th Nov 2018'
+debug='0'
 
 # Clear arrays
 
@@ -150,6 +173,7 @@ declare -i listc listcc listsc # For list repository counts
 
 rem[gith]='https://github.com/VR51/host-flash' # Github home URL for this package.
 rem[gitp]='https://github.com/VR51/host-flash.git' # Software source package git address
+rem[tld]='https://data.iana.org/TLD/tlds-alpha-by-domain.txt' # Official list of valid TLDs
 
 # Directories
 #  These are created by dir[@] dump. Be careful when adding directories to this list
@@ -178,11 +202,13 @@ file[confwlw]="${dir[conf]}/.hfwlwrc" # Location of the user's custom whitelist-
 file[confbl]="${dir[conf]}/.hfblrc" # Location of the user's custom blacklist.
 file[confcl]="${dir[conf]}/.hfclrc" # Location of the user's custom hosts lists.
 file[confr]="${dir[conf]}/.hfremoved" # Hosts removed from hosts list during hosts build/update.
+file[conftld]="${dir[conf]}/.hftld" # Location of valid TLD list.
+file[debug]="${dir[conf]}/.debug.txt" # Location of debug logging file.
 
 # to be used in a later version
 file[confpost]="${dir[conf]}/.hfpost" # Location of the post processing blacklist (block hosts that are wild needlessly whitelisted)
 file[confsl]="${dir[conf]}/.hfslrc" # Location of the user's hosts switch list.
-file[conflog]="${dir[conf]}/.log" # Location of the log file.
+file[log]="${dir[conf]}/.log" # Location of the log file.
 
 # App Launcher Settings
 # These are specific to the application/task manager installer (yet to be implemented)
@@ -214,7 +240,7 @@ if test $(grep -En 't[[:digit:]]+\[status]=' "${file[confcl]}")
 then
 	listcc=$(grep -E 't[[:digit:]]+\[status]=' "${file[confcl]}" | wc -l) # Count custom lists in .hfclrc
 else
-	listcc=0
+	listcc=1
 fi
 let listsc=listc+listcc
 
@@ -233,12 +259,12 @@ done
 #
 # These are...
 #
-# list[status]='Enabled / Disabled' # * or 0 for TRUE or FALSE
+# list[status]='Enabled / Disabled' # + or - for TRUE or FALSE
 # list[info]='List Domain' # The name of the list
-# list[src]='Download URL' # Where the package is downloaded from
-# list[file]='Download Package' # Name of package downloaded
-# list[target]='Package Target' # Name of usable file in the downloaded package
-# list[flag]='Flags: E.g Package Type' # unzip, p7zip, raw, whitelist,  or leave empty.
+# list[src]='Download URL' # From where the package will be retrieved
+# list[file]='Download Package' # Name of package retrieved
+# list[target]='Package Target' # Name of usable file in a retrieved zip package / Name of file created on retrieval if FLAG is raw
+# list[flag]='Flags: E.g Package Type' # direct (the URL leads to the file), raw (URL + File name), unzip (URL + file name), p7zip (URL + File name).
 #
 # Changes to list[status] are stored in .hfrc
 # Custom lists will be added to .hfclrc
@@ -246,20 +272,21 @@ done
 #
 ##
 
+# TO DO: Change to list[NUM TYPE]
 #https://hosts-file.net/?s=Download
 list1[status]='+'
 list1[info]='hosts-file.net (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
 list1[src]='http://hosts-file.net/download'
 list1[file]='hosts.txt'
 list1[target]='hosts.txt'
-list1[flag]=''
+list1[flag]='raw'
 
 list2[status]='+'
 list2[info]='hosts-file.net update (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
 list2[src]='http://hosts-file.net'
 list2[file]='hphosts-partial.txt'
-list2[target]='hphosts-partial.txt'
-list2[flag]=''
+list2[target]='hosts.txt'
+list2[flag]='raw'
 
 list3[status]='+'
 list3[info]='mvps.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
@@ -307,8 +334,8 @@ list9[status]='+'
 list9[info]='someonewhocares.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Small list)'
 list9[src]='http://someonewhocares.org/hosts'
 list9[file]='hosts'
-list9[target]='hosts'
-list9[flag]=''
+list9[target]='hosts.txt'
+list9[flag]='raw'
 
 list10[status]='+'
 list10[info]='malwaredomainlist.com (Liberal: Blocks mostly malware. Small list)'
@@ -322,49 +349,49 @@ list11[info]='KADhosts (Liberal: Blocks malware hosts)'
 list11[src]='https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.txt'
 list11[file]='hosts.txt'
 list11[target]='hosts.txt'
-list11[flag]='raw'
+list11[flag]='direct'
 
 list12[status]='+'
 list12[info]='yoyo.org (Liberal: Blocks adservers)'
 list12[src]='https://pgl.yoyo.org/as/serverlist.php?showintro=0;hostformat=hosts'
 list12[file]='hosts.txt'
 list12[target]='hosts.txt'
-list12[flag]='raw'
+list12[flag]='direct'
 
 list13[status]='+'
 list13[info]='Mitchell Krog (Liberal: Blocks spam bot hosts)'
 list13[src]='https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts'
 list13[file]='hosts.txt'
 list13[target]='hosts.txt'
-list13[flag]='raw'
+list13[flag]='direct'
 
 list14[status]='+'
 list14[info]='CoinBlockerLists (Liberal: Blocks cryptominers)'
 list14[src]='https://zerodot1.gitlab.io/CoinBlockerLists/hosts_browser'
 list14[file]='hosts.txt'
 list14[target]='hosts.txt'
-list14[flag]='raw'
+list14[flag]='direct'
 
 list15[status]='+'
 list15[info]='Lightswitch05 (Liberal: Blocks ads and trackers)'
 list15[src]='https://raw.githubusercontent.com/lightswitch05/hosts/master'
 list15[file]='ads-and-tracking-extended.txt'
-list15[target]='ads-and-tracking-extended.txt'
-list15[flag]=''
+list15[target]='hosts.txt'
+list15[flag]='raw'
 
 list16[status]='+'
 list16[info]='AdAway (Liberal: Blocks ad networks)'
-list16[src]='https://adaway.org/hosts.txt'
+list16[src]='https://adaway.org'
 list16[file]='hosts.txt'
 list16[target]='hosts.txt'
-list16[flag]=''
+list16[flag]='raw'
 
 list17[status]='+'
 list17[info]='hostsfile.org (Very Strict: Regular blocks + porn, gambling and gaming sites)\n'
 list17[src]='http://www.hostsfile.org/Downloads'
 list17[file]='hosts.txt'
 list17[target]='hosts.txt'
-list17[flag]=''
+list17[flag]='raw'
 
 # Others
 
@@ -373,42 +400,42 @@ list18[info]='Community Whitelist (Host Flash™ whitelist. Unblocks a limited s
 list18[src]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw'
 list18[file]='whitelist.txt'
 list18[target]='whitelist.txt'
-list18[flag]='whitelist'
+list18[flag]='direct'
 
 list19[status]='+'
 list19[info]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
 list19[src]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
 list19[file]='whitelist-wild.txt'
 list19[target]='whitelist-wild.txt'
-list19[flag]='whitelist-wild'
+list19[flag]='direct'
 
 list20[status]='+'
 list20[info]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
 list20[src]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
 list20[file]='blocklist.txt'
-list20[target]='blocklist.txt'
-list20[flag]=''
+list20[target]='hosts.txt'
+list20[flag]='direct'
 
 list21[status]='+'
 list21[info]='Local Whitelist (Your own custom whitelist)'
 list21[src]='localhost'
 list21[file]='.hfwlrc'
-list21[target]='.hfwlrc'
-list21[flag]='whitelist'
+list21[target]='whitelist.txt'
+list21[flag]='raw'
 
 list22[status]='+'
 list22[info]='Local Whitelist Wild (Your own custom wild whitelist)'
 list22[src]='localhost'
 list22[file]='.hfwlwrc'
-list22[target]='.hfwlwrc'
-list22[flag]='whitelist-wild'
+list22[target]='whitelist-wild.txt'
+list22[flag]='raw'
 
 list23[status]='+'
 list23[info]='Local blacklist (Your own custom blacklist)'
 list23[src]='localhost'
 list23[file]='.hfblrc'
-list23[target]='.hfblrc'
-list23[flag]=''
+list23[target]='hosts.txt'
+list23[flag]='raw'
 
 
 
@@ -430,7 +457,7 @@ conf[ip]='0.0.0.0' # Redirect IP address
 conf[mode]='0' # Build Only or Build and Install 0 or 1
 
 # LOGS
-
+# Not yet used
 function __log() {
 	# @1 = Message
 	
@@ -438,6 +465,8 @@ function __log() {
 	
 	now="$(date +"%Y-%m-%d %H:%M:%S")"
 	log[$now]="$now: $message"
+	
+	# ${file[log]}
 }
 
 ## END SETTINGS
@@ -456,9 +485,28 @@ cd "$filepath"
 
 # Make/Remove directories and files
 
-if test -d "${dir[tmp]}"; then
-	rm -r "${dir[tmp]}" # Clean the tmp directory.
-fi
+function __download_tlds() {
+	if test $(find "${file[conftld]}" -mmin +1440) || test ! -f "${file[conftld]}" # If exists but is older than 1440 minutes
+	then
+		curl -e "${rem[tld]}" "${rem[tld]}" -o "${file[conftld]}"
+		sed -e 's/\(.*\)/\L\1/' "${file[conftld]}" > "${file[conftld]}tmp"
+		grep -vE '^#' "${file[conftld]}tmp" > "${file[conftld]}"
+		# Next lines allow the file to be passed to Grep as a string of ORs
+		#grep -vE '^#' "${file[conftld]}tmp" | tr '[:space:]' '|' > "${file[conftld]}"
+		#sed -i 's/[|]$//' "${file[conftld]}" # Remove superfluous | from end of file
+		#rm "${file[conftld]}tmp"
+	fi
+}
+__download_tlds # Get TLD list # Not yet used.
+
+
+case "${debug}" in
+	0)
+		if test -d "${dir[tmp]}"; then
+			rm -r "${dir[tmp]}" # Clean the tmp directory but not if we are debugging.
+		fi
+	;;
+esac
 
 mkdir -p "${dir[@]}" # Make directories
 touch -a "${file[@]}" # Make config files
@@ -560,51 +608,79 @@ function __run() {
 
 function __hosts_update() {
 	# Read the file of hosts and remove any line listed in the input whitelist file
+	# The results are logged in a file in the config directory.
 
 	# @1 = type: (file) norm or wild, or (string) rem or remw
 	# @2 = file to remove data from
 	# @3 = file containing lines of data to remove from @2 or single line of text to remove from @2
+	
+	f2="$2"
+	f3="$3"
 
+	ip=$(echo "${conf[ip]}" | sed 's/\./[.]/g') # Convert periods to character group (just commenting out sometimes failed)
+	
 	case $1 in
 		norm)
+			# We tried a method that removed the while loop. It was overzealous so reverted back to while loop.
+			echo -ne "\n###\n# NON-WILD WHITELIST\n###\n\n" >> "${file[confr]}"
 
-			data=$(<$3)
-			data=$(echo $data | tr "[:blank:]" '|')
-			grep -iE "^${conf[ip]}[[:blank:]]($data)" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
-			grep -viE "^${conf[ip]}[[:blank:]]($data)" "$2" > "$2.tmp" # This method removes whitelisted hostnames
+			while read LINE ; do
+				LINE=$(echo $LINE | sed 's/\./[.]/g')
+				echo -ne  "\n# $LINE\n\n" >> "${file[confr]}"
+				grep -i "^${ip}[[:blank:]]${LINE}"'$' "${f2}" >> "${file[confr]}" # List of hosts removed during whitelisting
+				grep -vi "^${ip}[[:blank:]]${LINE}"'$' "${f2}" > "${f2}.tmp" # This method removes whitelisted hostnames
+				mv "${f2}.tmp" "${f2}"
+			done < "${f3}"
 
 		;;
 
 		wild)
 
-			data=$(<$3)
-			data=$(echo $data | tr "[:blank:]" '|')
-			grep -iE "^${conf[ip]}.*($data)" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
-			grep -viE "^${conf[ip]}.*($data)" "$2" > "$2.tmp" # This method removes whitelisted hostnames
+			# Process wild whitelist to replace .TLD with all possible TLD values
+			# Testing - will eventually allow for .TLD in wild whitelist to represent any valid TLD.
+			# Disabled for now because it causes grep to crash while whitelisting -- too many arguments.
+			#while read LINE ; do
+			#	sed -r "s/^(.*)[.]TLD/\1.${LINE}/g" "$3" >> "${dir[tmp]}/wlwtmp" # Replace 'TLD' with list of possible TLDs
+			#	echo '' >> "${dir[tmp]}/wlwtmp"
+			#done < "${file[conftld]}"
+
+			#grep -v "[.]TLD" "$3" >> "${dir[tmp]}/wlwtmp" # Add none .TLD$ lines back into the wild list
+
+			echo -ne "\n###\n# WILD WHITELIST PASS 2 - WILD\n###\n\n" >> "${file[confr]}"
+
+			while read LINE ; do
+				LINE=$(echo $LINE | sed 's/\./[.]/g') # Replace periods with character group match to prevent periods being interpreted as 'any character'
+				echo -ne  "\n# $LINE\n\n" >> "${file[confr]}"
+				grep -i "^${ip}[[:blank:]].*[.]${LINE}" "${f2}" >> "${file[confr]}" # List of hosts removed during whitelisting
+				grep -vi "^${ip}[[:blank:]].*[.]${LINE}" "${f2}" > "${f2}.tmp" # This method removes whitelisted hostnames
+				mv "${f2}.tmp" "${f2}"
+			done < "${f3}"
 
 		;;
 
-		linen)
-			# sed -r -i "s/${conf[ip]}[[:blank:]]$3.*?$//g" "$2" # Remove exact match
-			grep -iE "^${conf[ip]}[[:blank:]]$3" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
-			grep -viE "^${conf[ip]}[[:blank:]]$3" "$2" > "$2.tmp" # This method removes whitelisted hostnames
+		linen) # Not yet used
+		
+			data=$3
+			data=$(echo $data | sed 's/\./[.]/g') # Replace periods with character group to prevent them being interpreted as 'any character'
+			# sed -r -i "s/${ip}[[:blank:]]$3.*?$//g" "$2" # Remove exact match
+			grep -i "^${ip}[[:blank:]]${data}"'$' "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
+			grep -vi "^${ip}[[:blank:]]${data}"'$' "$2" > "$2.tmp" # This method removes whitelisted hostnames
+			mv "$2.tmp" "$2"
 
 		;;
 
-		linew)
-			# sed -r -i "s/${conf[ip]}[[:blank:]].*\.$3.*?$//g" "$2" # Remove any line with a match
-			grep -iE "^${conf[ip]}.*$3.*?" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
-			grep -viE "^${conf[ip]}.*$3.*?" "$2" > "$2.tmp" # This method removes whitelisted hostnames
+		linew) # Not yet used
+			data=$3
+			data=$(echo $data | sed 's/\./[.]/g') # Replace periods with character group to prevent them being interpreted as 'any character'
+			# sed -r -i "s/${ip}[[:blank:]].*\.$3.*?$//g" "$2" # Remove any line with a match
+			grep -i "^${ip}[[:blank:]].*[.]${data}" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
+			grep -vi "^${ip}[[:blank:]].*[.]${data}" "$2" > "$2.tmp" # This method removes whitelisted hostnames
+			mv "$2.tmp" "$2"
 
 		;;
 
 	esac
 
-	# Clean up
-	if test -f "$2"; then
-		mv "$2.tmp" "$2"
-	fi
-	
 }
 
 function __conf_update() {
@@ -715,8 +791,6 @@ function __build() {
 	# Download lists. Merge them into new hosts file
 	n=1
 	until [ $n -eq 0 ]; do
-	
-		# unset status info src file target flag
 
 		status=$( eval echo "\${list$n[status]}" )
 		info=$( eval echo "\${list$n[info]}" )
@@ -725,42 +799,50 @@ function __build() {
 		target=$( eval echo "\${list$n[target]}" )
 		flag=$( eval echo "\${list$n[flag]}" )
 
-		#echo $status >> "${dir[conf]}/log.txt"
-		#echo $info >> "${dir[conf]}/log.txt"
-		#echo $src >> "${dir[conf]}/log.txt"
-		#echo $file >> "${dir[conf]}/log.txt"
-		#echo $target >> "${dir[conf]}/log.txt"
-		#echo $flag >> "${dir[conf]}/log.txt"
-
-		if test "$status" = '+' # && test ${#list[status]} -ne 0
+		if test "$status" = '+' # The list is enabled
 		then
-		
+
 			if test "$src" != 'localhost'
 			then
-				if ! test "$flag" = 'raw'
+				# Download the lists
+				if test "$flag" = 'direct' # $file is the target
+				then
+					curl -e "$src" "$src" -o "${dir[tmp]}/$target"
+				fi
+
+				if test "$flag" = 'raw'
+				then
+					curl -e "$src" "$src/$file" -o "${dir[tmp]}/$target"
+				fi
+
+				if test "$flag" = 'unzip' || test "$flag" = 'p7zip'
 				then
 					curl -e "$src" "$src/$file" -o "${dir[tmp]}/$file"
-					#echo "curl -e $src $src/$file -o ${dir[tmp]}/$file" >> "${dir[conf]}/log.txt"
-				else
-					curl -e "$src" "$src" -o "${dir[tmp]}/$file"
-					#echo "curl -e $src $src -o ${dir[tmp]}/$file" >> "${dir[conf]}/log.txt"
-				fi
-				
-		echo >> "${dir[conf]}/log.txt"
-		echo >> "${dir[conf]}/log.txt"
-		
-				if test "$flag" = 'unzip'; then unzip -o "${dir[tmp]}/$file" -d "${dir[tmp]}"; fi
-				if test "$flag" = 'p7zip'; then 7z e -y "${dir[tmp]}/$file" -o"${dir[tmp]}" ; fi
-				
-				if test "$flag" = 'whitelist'
-				then
-					cat "${dir[tmp]}/$target" >> "${dir[tmp]}/whitelist-temp.txt"
-				elif test "$flag" = 'whitelist-wild'
-				then
-					cat "${dir[tmp]}/$target" >> "${dir[tmp]}/whitelist-wild-temp.txt"
-				else
+					# Extract package content
+					if test "$flag" = 'unzip'; then unzip -o "${dir[tmp]}/$file" -d "${dir[tmp]}"; fi
+					if test "$flag" = 'p7zip'; then 7z e -y "${dir[tmp]}/$file" -o"${dir[tmp]}" ; fi
+					# Move target file
 					cat "${dir[tmp]}/$target" >> "${dir[tmp]}/hosts-temp.txt"
 				fi
+
+				# Merge files
+
+				if test "$target" = 'hosts.txt'
+				then
+					cat "${dir[tmp]}/$target" >> "${dir[tmp]}/hosts-temp.txt"
+				fi
+
+				if test "$target" = 'whitelist'
+				then
+					cat "${dir[tmp]}/$target" >> "${dir[tmp]}/whitelist-temp.txt"
+				fi
+
+				if test "$target" = 'whitelist-wild'
+				then
+					cat "${dir[tmp]}/$target" >> "${dir[tmp]}/whitelist-wild-temp.txt"
+				fi
+
+				# Clean up retrieved files
 
 				if test -f "${dir[tmp]}/$file"
 				then
@@ -773,21 +855,34 @@ function __build() {
 				fi
 
 			else # It's local host
-				if test "$flag" = 'whitelist'
+			
+				if test "$target" = 'whitelist.txt'
 				then
-					cat "${dir[conf]}/$target" >> "${dir[tmp]}/whitelist-temp.txt"
-				elif test "$flag" = 'whitelist-wild'
-				then
-					cat "${dir[conf]}/$target" >> "${dir[tmp]}/whitelist-wild-temp.txt"
-				else
-					cat "${dir[conf]}/$target" >> "${dir[tmp]}/hosts-temp.txt"
+					cat "${dir[conf]}/$file" >> "${dir[tmp]}/whitelist-temp.txt"
 				fi
+				
+				if test "$target" = 'whitelist-wild.txt'
+				then
+					cat "${dir[conf]}/$file" >> "${dir[tmp]}/whitelist-wild-temp.txt"
+					
+				if test "$target" = 'hosts.txt'
+				then
+					cat "${dir[conf]}/$file" >> "${dir[tmp]}/hosts-temp.txt"
+				fi
+
 			fi
+
+			# Add empty line to end of temp files to prevent malformatting on merge. It is ok if these don't yet exist. They soon will.
+			echo >> "${dir[tmp]}/whitelist-temp.txt"
+			echo >> "${dir[tmp]}/whitelist-wild-temp.txt"
+			echo >> "${dir[tmp]}/hosts-temp.txt"
 
 			credits+=("# Includes hosts blacklist from $info\n")
 
 		fi
-		
+
+		fi
+
 		if test ${#status} -eq 0
 		then
 			let n=n-n
@@ -801,39 +896,61 @@ function __build() {
 
 	printf "This next part could take some time.\nLook in ${dir[tmp]} to view activity in realtime.\n\nProcessing...\n"
 
+	# Convert non-UTF8 characters to UTF8. Fix characters in French lists.
+	# And remove empty lines from whitelists
+
+	iconv -c -t UTF-8//TRANSLIT < "${dir[tmp]}/whitelist-temp.txt" > "${dir[tmp]}/whitelist-temp-copy.txt"
+	sed '/^$/d' "${dir[tmp]}/whitelist-temp-copy.txt" > "${dir[tmp]}/whitelist-temp.txt"
+	rm "${dir[tmp]}/whitelist-temp-copy.txt"
+
+	iconv -c -t UTF-8//TRANSLIT < "${dir[tmp]}/whitelist-wild-temp.txt" > "${dir[tmp]}/whitelist-wild-temp-copy.txt"
+	sed '/^$/d' "${dir[tmp]}/whitelist-wild-temp-copy.txt" > "${dir[tmp]}/whitelist-wild-temp.txt"
+	rm "${dir[tmp]}/whitelist-wild-temp-copy.txt"
+
+	iconv -c -t UTF-8//TRANSLIT < "${dir[tmp]}/hosts-temp.txt" > "${dir[tmp]}/hosts-temp-copy.txt"
+	rm "${dir[tmp]}/hosts-temp.txt"
+
 	#	Format raw list data in hosts-temp.txt
 
-	iconv -c -t UTF-8//TRANSLIT "${dir[tmp]}/hosts-temp.txt" > "${dir[tmp]}/hosts-temp-copy.txt" # Convert non-UTF8 characters to UTF8. Fix characters in French lists.
 	grep -v '^#' "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt" # Remove all lines that begin with a comment
 	sed -r -i 's/[[:blank:]]+/ /g' "${dir[tmp]}/hosts-temp-copy.txt" # Convert spaces and tabs each to a single space
 	grep -Ev "[[:blank:]](ip6-)?(localhost|loopback|localnet|mcastprefix|allnodes|allrouters)\s?\b" "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt" # Remove localhost lines - the computer's installed host file already has localhost defined the way it should be
 	grep -E '^[012][\.01-9]{1,2}' "${dir[tmp]}/hosts-temp.txt" > "${dir[tmp]}/hosts-temp-copy.txt" # Remove any line that does not begin with 0,1 or 2
 	sed -r -i "s/^[012][\.01-9]{1,2}+[[:blank:]]/${conf[ip]} /g" "${dir[tmp]}/hosts-temp-copy.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab in each line
 
-	# grep -Ev '^[[:space:]]$' # Remove empty lines # Should not be needed now
-
 	# Sort the lists
 	if test -f "${dir[tmp]}/hosts-temp-copy.txt"
 	then
+		sed -i 's/\r$//' "${dir[tmp]}/hosts-temp-copy.txt" # Standardise line endings
 		sort -f -u "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt"
+		rm "${dir[tmp]}/hosts-temp-copy.txt"
 	fi
 
 	if test -f "${dir[tmp]}/whitelist-temp.txt"
 	then
+		sed -i 's/\r$//' "${dir[tmp]}/whitelist-temp.txt" # Fix line endings
 		sort -f -u "${dir[tmp]}/whitelist-temp.txt" > "${dir[tmp]}/whitelist.txt"
 		rm "${dir[tmp]}/whitelist-temp.txt"
 	fi
 
 	if test -f "${dir[tmp]}/whitelist-wild-temp.txt"
 	then
+		sed -i 's/\r$//' "${dir[tmp]}/whitelist-wild-temp.txt" # Fix line endings
 		sort -f -u "${dir[tmp]}/whitelist-wild-temp.txt" > "${dir[tmp]}/whitelist-wild.txt"
 		rm "${dir[tmp]}/whitelist-wild-temp.txt"
 	fi
 
 	# Process whitelist -- remove whitelisted domains from hosts-temp.txt
-
+	# Always pass wild through norm too
 	__hosts_update "norm" "${dir[tmp]}/hosts-temp.txt" "${dir[tmp]}/whitelist.txt"
+	__hosts_update "norm" "${dir[tmp]}/hosts-temp.txt" "${dir[tmp]}/whitelist-wild.txt"
 	__hosts_update "wild" "${dir[tmp]}/hosts-temp.txt" "${dir[tmp]}/whitelist-wild.txt"
+	
+	# hosts.txt should not exist at this point
+	if test -f "${dir[tmp]}/hosts.txt"
+	then
+		rm "${dir[tmp]}/hosts.txt"
+	fi
 
 	#	Get head of the existing hosts file stored at /etc/hosts
 	#	Remove old Host Flash™ blacklist from existing hosts file, assuming blacklist exists
@@ -854,7 +971,7 @@ function __build() {
 
 	printf "\n\n# Installed with $package\n\n# Visit host-flash.com to learn more\n\n" >> "${dir[tmp]}/hosts.head" # Add HF credit
 
-	cat "${dir[tmp]}/hosts.head" "${dir[tmp]}/hosts-temp.txt" > "${dir[tmp]}/hosts.txt" # Merge the old head with the new hosts blacklist
+	cat "${dir[tmp]}/hosts.head" "${dir[tmp]}/hosts-temp.txt" > "${dir[src]}/hosts.txt" # Merge the old head with the new hosts blacklist
 
 }
 
@@ -872,16 +989,18 @@ function __enable() {
 		sudo cp "${file[hosts]}" "${file[hosts]}.hf.original"
 	fi
 
-	if test -f "${dir[tmp]}/hosts.txt"
+	if test -f "${dir[src]}/hosts.txt"
 	then
 		sudo cp "${file[hosts]}" "${file[hosts]}.hf.backup" # General restore file
-		sudo mv "${dir[tmp]}/hosts.txt" "${file[hosts]}" # New hosts file
+		sudo mv "${dir[src]}/hosts.txt" "${file[hosts]}" # New hosts file
 	else
 		message[enable]="$package hosts file not found. Have you built it yet?"
 	fi
 
 	# Help the new hosts file take effect.
 	__cleandns
+	
+	sudo -k
 
 }
 
@@ -904,6 +1023,8 @@ function __disable() {
 
 	# Help the new hosts file take effect.
 	__cleandns
+	
+	sudo -k
 
 }
 
@@ -931,6 +1052,8 @@ function __cleandns() {
 		sudo $i
 		printf "Do not worry if the above says 'fail'. We only need one success.\n\n"
 	done
+	
+	sudo -k
 
 }
 
@@ -1164,13 +1287,31 @@ function __menu_main() {
 
 			cp "${file[hosts]}" "${dir[tmp]}/hosts-temp.txt"
 			cat "${dir[tmp]}/hosts-temp.txt" "${file[confbl]}" >> "${dir[tmp]}/hosts.txt"
+			
+			# Always pass wild through norm too
 			__hosts_update "norm" "${dir[tmp]}/hosts.txt" "${file[confwl]}"
+			__hosts_update "norm" "${dir[tmp]}/hosts.txt" "${file[confwlw]}"
 			__hosts_update "wild" "${dir[tmp]}/hosts.txt" "${file[confwlw]}"
 
-			sudo mv "${dir[tmp]}/hosts.txt" "${file[hosts]}"
+			mv "${dir[tmp]}/hosts.txt" "${dir[src]}/hosts.txt"
 
-			__cleandns
-			__repaint
+			case "${conf[mode]}" in
+			
+				1)
+			
+					__enable
+					
+					if test "${message[enable]}"
+					then
+						printf "\n${message[enable]}\nPress any key."
+						read -a
+					fi
+					
+				;;
+				
+			esac
+			
+			__repaint hard
 
 		;;
 		
@@ -1498,7 +1639,7 @@ function __menu_custom_list_management() {
 					;;
 					
 					*)
-						__conf_update 'add' "$a" "${file[confwlw]}"
+						__conf_update 'add' "$a" "${file[confwlw]}" # Add host to wild whitelist
 						__repaint '__menu_custom_list_management' # Effectively 'Return here'
 					;;
 				esac
@@ -1607,6 +1748,9 @@ function __menu_reset_confs() {
 		menu[3]="Delete custom whitelist"
 		menu[4]="Delete custom whitelist wild"
 		menu[5]="Delete custom blacklist"
+		menu[6]="Delete log of removed hosts"
+		menu[7]="Delete general log"
+		menu[8]="Delete debug log"
 
 		m=1
 		while [ $m -le ${#menu[@]} ] ; do
@@ -1636,19 +1780,33 @@ function __menu_reset_confs() {
 				__conf_delete "${file[confcl]}" "Custom host file repositories"
 
 			;;
-			
+
 			3) # Delete custom whitelist
 				__conf_delete "${file[confwl]}" "custom whitelist"
 			;;
-			
+
 			4) # Delete custom whitelist wild
 				__conf_delete "${file[confwlw]}" "custom whitelist wild"
-			
+
 			;;
-			
+
 			5) # Delete custom blacklist
 				__conf_delete "${file[confbl]}" "custom blacklist"
-			
+
+			;;
+
+			6)
+				__conf_delete "${file[confr]}" "removed hosts log"
+
+			;;
+
+			7)
+			__conf_delete "${file[log]}" "removed hosts log"
+
+			;;
+
+			8)
+
 			;;
 
 			*)
@@ -1682,8 +1840,21 @@ function __launch() {
 	done
 }
 
-## Boot
+## Debug Flags
 
+case "${debug}" in
+
+	1)
+
+		#exec 3>&1 4>&2
+		#trap 'exec 2>&4 1>&3' 0 1 2 3
+		#exec 2>&1 >> "${file[log]}"
+		exec 2>> "${file[debug]}"
+	;;
+	
+esac
+
+## Boot
 __run "$@" # Loops back to the start. The script is read by BASH then __run is run. This ensures all functions are read into memory before anything happens.
 
 # Exit is at end of __run()
