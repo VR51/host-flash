@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.0.8
+Host Flash™ v3.1.0
 
 Lead Author: Lee Hodson
 
@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 6th Nov 2018
+This Release: 8th Nov 2018
 
 First Written: 18th Oct 2015
 
@@ -50,10 +50,10 @@ Host Flash™ works at the OS level. This means requests from any program or app
 - Better hosts file management
 - Much improved performance
 - Much faster processing time
-- More host list repositories to choose from (17 built in, 3 Host Flash community lists and 3 user customizable lists)
+- More host blacklist repositories to choose from (17 built in, 3 Host Flash community lists and 3 user customizable lists)
 - Returned to text mode only terminal GUI. Dialog, whiptale and other terminal GUIs were overkill for this app
 - New menu system (will be improved once core app is finalised)
-- Custom settings are now stored in $HOME/.config/hostflash/.hf* files (.hfrc, .hfwlrc, .hfwlwrc and .hfblrc, and log)
+- Custom settings are now stored in $HOME/.config/hostflash/.hf* files (.hfrc, .hfwlrc, .hfwlwrc and .hfblrc, .hfremoved,  .debug, and log)
 - Update local custom whitelist or blacklist through the GUI
 - Update hosts file with local custom rules without rebuilding the whole hosts file
 - Apply rule change updates without complete hosts file rebuild
@@ -61,18 +61,20 @@ Host Flash™ works at the OS level. This means requests from any program or app
 - Local DNS Cache automatically cleared after hosts file installation or update
 - Better information about installed HF version to help you recognise when an update is available.
 - Better config reset management.
+- Use basic Grep regexes in whitelists.
+- Hosts removed through whitelist rules are logged to $HOME/.config/hostflash/.hfremoved so you can review and update whitelist rules.
 - Various tweaks and fixes
 - More to come...
 
 # What Host Flash™ Does
-Host Flash™ blocks computers from accessing content served by specific web hosts. These hosts, for example, could be reported malicious websites, known ad servers, adult websites or torrent sites.
+Host Flash™ installs a hosts blacklist into your computer. This blacklist consists of bad hosts, undesirable hosts, ad hosts and trackers. All hosts are websites. When installed, the blacklist prevents your computer from accessing content served by the blacklisted web hosts. Host Flash™ is a simple firewall.
 
 # Host Flash™ is interactive and configurable
-The interactive set-up program lets you control the host file firewall rules installed by Host Flash™ and lets you control the actions performed by Host Flash.
+The interactive set-up program lets you control the host file firewall rules installed by Host Flash™ and lets you manage the actions performed by Host Flash.
 
 Host Flash™ compiles and installs a blacklist of malware, adserver, tracker and cryptominer hosts. This prevents your computer making requests to domains (hosts) that could compromise your computer and privacy. You can choose the host lists to download and install.
 
-Host Flash™ will install your hosts file for you and provide an easy way for you to enable, disable and otherwise manage your system hosts file.
+Host Flash™ can install your hosts file for you and provide an easy way for you to enable, disable and otherwise manage your system hosts file.
 
 Be aware that hosts file redirect rules can be bypassed by use of a VPN such as the one provided by the Opera browser or by a Tor browser.
 
@@ -136,7 +138,7 @@ Note: You may need to restart your computer and clear your browser cache(s) for 
 # Advanced Usage
 Whitelist
 
-	The web hosts blocked by the downloaded blocklists may deny you access to a small number of websites that you enjoy visiting.
+	The web hosts blocked by the downloaded blacklists may deny you access to a small number of websites that you enjoy visiting.
 
 	The presence of a website in one of the downloaded lists does not necessarily imply the site is malicious. If you trust that a blocked website is safe to view you can 'whitelist' it to prevent Host Flash™ blocking access to it.
 
@@ -152,7 +154,7 @@ Whitelist
 
 		4) DO NOT include anything after the TLD part of the domain.
 
-		5) DO end the root domain with dot (.) if all gTLD or ccTLD versions of the domain are to be whitelisted
+		5) DO use basic Grep regexes to represent spelling variations of the whitelisted host
 
 		GOOD Examples
 
@@ -160,28 +162,39 @@ Whitelist
 			www.example.com
 			example-two.com
 			www.example-two.com
-			example.
+			example[[:num:]].com # This represents example[1-9].com
 
 		BAD Examples
 
-			http://example.com
-			www.example.com/
-			example-two.com/some-page
-			https://www.example-two.com/one.html
+			http://example.com # Do not state the protocol e.g. http://, https:// or ftp: etc...
+			www.example.com/ # Do not add anything after the TLD e.g. /
+			example-two.com/some-page # Do not add anything after the TLD e.g /some-page
+			https://www.example-two.com/one.html # Do not state the protocol. Do not state the page
 
 Wildcard Whitelist
 
-	This applies to the file .hfwlwrc. Apply the same instructions as explained above for the regular Whitelist.
-
-	The difference between the regular Whitelist and the Wildcard Whitelist is that hostnames added to .hfwlwrc are removed from the hosts blocklist along with any subdomains. The subdomains are discovered in the blocklist automatically.
+	The wildcard whitelist treats any text added to .hfwlwrc as a text fragment to find in any hostname in the hosts file. The search is performed as '[IP ADDRESS][SPACE][anything][HOST FRAGMENT][anything]'.
+	
+	The regular Whitelist will find and remove only the stated host name from the hosts file searched.
+	
+	The Wildcard Whitelist will find and remove any host name that includes the host name fragment specified in the whild card whitelist file .hfwlwrc.
+	
+	The following notes and rules apply to the file .hfwlwrc. Apply the same instructions as explained above for the regular Whitelist with the extra notes that:
+	
+	6) Try to be as precise as possible when stating the hosts fragment rule to match against host names listed in the hosts file. All matches will be removed from the hosts file.
+	
+	7) Use basic grep regex patterns to narrow the number of hosts that are likely to match the search fragment.
+	
+	8) Add a $ character to the end of a host name fragment in the wildcard whitelist if you only want to match sub domains that end with the stated root domain.
 
 		GOOD Examples
 
-			example.com
+			example.com # This will whitelist a.example.com, b.example.com, a.b.example.com and *.example.com.a, *.example.com.b, *.example.com.* etc...
 			www.example.com
 			example-two.com
 			www.example-two.com
-			example.
+			example. # This will whitelist example.com, example.co, example.TLD, *.example.* etc...
+			example.com$ # This will whitelist sub domains of example.com. Here example.com is the exact root domain to match against.
 
 		BAD Examples
 
@@ -190,7 +203,7 @@ Wildcard Whitelist
 			example-two.com/some-page
 			https://www.example-two.com/one.html
 
-Blocklist
+Blacklist
 
 	You may want to block access to more hosts than are included in the bad hosts lists downloaded by Host Flash™.
 
