@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-# Host Flash™ 3.1.0
+# Host Flash™ 3.1.1
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -61,12 +61,6 @@ clear
 #
 # CLI: disable HF, enable HF, add rule, remove rule, update lists, set options
 #
-# Switchlist
-#  Temporarily disable and enable whitelist hosts
-# Options
-#  Check .hfremoved list # Script written and tested ready for insertion
-#   Move items from .hfremoved to post processing blacklist
-#   Move items from .hfremoved to Switch List
 #
 # Build Options
 #  Build pure list. No whitelisting
@@ -78,18 +72,23 @@ clear
 # Compact local whitelists and local blacklists (all lower, sort -u)
 # View/Edit local lists (nano, pico, cat)
 #
+#
+# Switchlist
+#  Temporarily disable and enable whitelist hosts
+# Options
+#  Check .hfremoved list # Script written and tested ready for insertion
+#   Move items from .hfremoved to post processing blacklist
+#   Move items from .hfremoved to Switch List
+#
 # Move even more actions into functions.
 # Tidy up
 # Add input checking
 # Refine/add messages
 #
-# Detect hosts file location
-#  Menu: configure file location
-#  Ask user to confirm location on first HF use
-#
 # Improve menu system
 #  What do you want to do? Manage Lists, Update hosts, Manage Custom Files, See Info
 #   Do it
+#  Clearer messages
 #
 # Summary info on main screen / maybe footer for all screens
 #  Add more useful info
@@ -115,8 +114,12 @@ clear
 #  ${log#[size]}
 #  ${log#[lines]}
 #
+# Add hosts file backup option
+#
 #
 # Integrate with SaLi (?)
+#
+# Go through functions to state the output format
 #
 ###
 
@@ -149,7 +152,7 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.1.0 - 8th Nov 2018'
+version='3.1.1 - 9th Nov 2018'
 debug='0'
 
 # Clear arrays
@@ -186,12 +189,24 @@ dir[conf]="$HOME/.config/hostflash" # Location of custom configuration files.
 # Files
 
 # System hosts file location. Where it is copied from and where it is installed to.
+# file[hosts]='/etc/hosts' # Location of system hosts file in Unix, Unix-like and POSIX systems.
 # file[hosts]='/private/etc/hosts' # iOS, Apple Mac
 # file[hosts]='/system/etc/hosts' # Android
 # file[hosts]='%SystemRoot%\System32\drivers\etc\hosts' # Windows NT, 2000, XP,[5] 2003, Vista, 2008, 7, 2012, 8, 10
-# Will be autodetected and configurable/selectable soon.
 
-file[hosts]='/etc/hosts' # Location of system hosts file in Unix, Unix-like and POSIX systems.
+if test -f "/etc/hosts"; then
+	file[hosts]='/etc/hosts'
+elif test -f "/private/etc/hosts"; then
+	file[hosts]='/private/etc/hosts'
+elif test -f "/system/etc/hosts$"; then
+	file[hosts]='/system/etc/hosts'
+else
+	echo "Unable to detect the location of this system's hosts file."
+	echo "Please edit the hostflash program at section around line 187 to set the value of ${bold}file[hosts]${normal} to point to your hosts file."
+	echo "Press any key to exit $package"
+	read a
+	exit 1
+fi
 
 # HF Config Files
 #  These are created by file[@] dump. Be careful when adding files to this list
@@ -629,7 +644,7 @@ function __hosts_update() {
 				echo -ne  "\n# $LINE\n\n" >> "${file[confr]}"
 				grep -i "^${ip}[[:blank:]]${LINE}"'$' "${f2}" >> "${file[confr]}" # List of hosts removed during whitelisting
 				grep -vi "^${ip}[[:blank:]]${LINE}"'$' "${f2}" > "${f2}.tmp" # This method removes whitelisted hostnames
-				mv "${f2}.tmp" "${f2}"
+				mv -f "${f2}.tmp" "${f2}"
 			done < "${f3}"
 
 		;;
@@ -653,7 +668,7 @@ function __hosts_update() {
 				echo -ne  "\n# $LINE\n\n" >> "${file[confr]}"
 				grep -i "^${ip}[[:blank:]].*[.]${LINE}" "${f2}" >> "${file[confr]}" # List of hosts removed during whitelisting
 				grep -vi "^${ip}[[:blank:]].*[.]${LINE}" "${f2}" > "${f2}.tmp" # This method removes whitelisted hostnames
-				mv "${f2}.tmp" "${f2}"
+				mv -f "${f2}.tmp" "${f2}"
 			done < "${f3}"
 
 		;;
@@ -665,7 +680,7 @@ function __hosts_update() {
 			# sed -r -i "s/${ip}[[:blank:]]$3.*?$//g" "$2" # Remove exact match
 			grep -i "^${ip}[[:blank:]]${data}"'$' "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
 			grep -vi "^${ip}[[:blank:]]${data}"'$' "$2" > "$2.tmp" # This method removes whitelisted hostnames
-			mv "$2.tmp" "$2"
+			mv -f "$2.tmp" "$2"
 
 		;;
 
@@ -675,7 +690,7 @@ function __hosts_update() {
 			# sed -r -i "s/${ip}[[:blank:]].*\.$3.*?$//g" "$2" # Remove any line with a match
 			grep -i "^${ip}[[:blank:]].*[.]${data}" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
 			grep -vi "^${ip}[[:blank:]].*[.]${data}" "$2" > "$2.tmp" # This method removes whitelisted hostnames
-			mv "$2.tmp" "$2"
+			mv -f "$2.tmp" "$2"
 
 		;;
 
@@ -957,13 +972,12 @@ function __build() {
 	#	Remove empty lines from the end of the header
 	#	This creates file hosts.head which is used a few lines down from here
 
-	cp "${file[hosts]}" "${dir[tmp]}/hosts.copy"
-	if grep -zPo '#### Host.? Flash.? Bad Hosts Block ########' "${dir[tmp]}/hosts.copy"
+	if grep -zPo '# Host.? Flash' "${file[hosts]}"
 	then
-		grep -zPo '(?s).*#### Host.? Flash.? Bad Hosts Block ########' "${dir[tmp]}/hosts.copy" | head -n -1 | grep -Ev '^[[:space:]]$' > "${dir[tmp]}/hosts.head" # Remove old HF data, remove HF header remove empty lines.
+		grep -zPo '(?s).*# Host.? Flash' "${file[hosts]}" | head -n -1 | grep -v '^[[:space:]]$' > "${dir[tmp]}/hosts.head" # Remove old HF data, remove HF header remove empty lines.
 	fi
 
-	printf '\n\n#### Host Flash™ Bad Hosts Block ########\n\n# Credits\n\n' >> "${dir[tmp]}/hosts.head" # Add HF heading
+	printf '\n\n###\n# Host Flash™ Firewall\n###\n#\n#\n# Credits\n\n' >> "${dir[tmp]}/hosts.head" # Add HF heading
 
 	for i in "${credits[@]}" ; do
 		printf "$i" >> "${dir[tmp]}/hosts.head" # Add HF list provider credits
@@ -992,7 +1006,7 @@ function __enable() {
 	if test -f "${dir[src]}/hosts.txt"
 	then
 		sudo cp "${file[hosts]}" "${file[hosts]}.hf.backup" # General restore file
-		sudo mv "${dir[src]}/hosts.txt" "${file[hosts]}" # New hosts file
+		sudo mv -f "${dir[src]}/hosts.txt" "${file[hosts]}" # New hosts file
 	else
 		message[enable]="$package hosts file not found. Have you built it yet?"
 	fi
@@ -1016,7 +1030,7 @@ function __disable() {
 	then
 		# Remove old HF data, remove HF header remove empty lines.
 		grep -zPo '(?s).*#### Host.? Flash.? Bad Hosts Block ########' "${dir[tmp]}/hosts.copy" | head -n -1 | grep -Ev '^[[:space:]]$' > "${dir[tmp]}/hosts.head"
-		sudo mv "${dir[tmp]}/hosts.head" "${file[hosts]}"
+		sudo mv -f "${dir[tmp]}/hosts.head" "${file[hosts]}"
 	else
 		message[disable]="$package not installed. Nothing to do."
 	fi
@@ -1174,7 +1188,7 @@ function __menu_main() {
 
 			printf "\n System $package: ${conf[locv]}"
 			printf "\n Latest git commit: ${conf[gitv]}\n"
-			printf "\n Hosts File Info: Line Count: ${conf[hostc]} | Bytes: ${conf[hosts]} | Timestamp: ${conf[hostt]} | Location: ${file[hosts]}\n"
+			printf "\n Hosts File Info: Line Count: ${conf[hostc]} | Bytes: ${conf[hosts]} | Timestamp: ${conf[hostt]} | Location: ${bold}${file[hosts]}${normal}\n"
 
 			printf "\nIf the computer crashes during installation lower the number of lists processed or cool your computer then try again.\n"
 
@@ -1293,7 +1307,7 @@ function __menu_main() {
 			__hosts_update "norm" "${dir[tmp]}/hosts.txt" "${file[confwlw]}"
 			__hosts_update "wild" "${dir[tmp]}/hosts.txt" "${file[confwlw]}"
 
-			mv "${dir[tmp]}/hosts.txt" "${dir[src]}/hosts.txt"
+			mv -f "${dir[tmp]}/hosts.txt" "${dir[src]}/hosts.txt"
 
 			case "${conf[mode]}" in
 			
@@ -1328,7 +1342,7 @@ function __menu_main() {
 
 			if test -f "${file[hosts]}.hf.original"
 			then # Restore the backup head from the original hosts file
-				sudo mv "${file[hosts]}.hf.original" "${file[hosts]}"
+				sudo mv -f "${file[hosts]}.hf.original" "${file[hosts]}"
 			fi
 
 			__repaint
