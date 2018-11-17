@@ -976,7 +976,7 @@ function __build() {
 		grep -zPo '(?s).*# Host.? Flash' "${file[hosts]}" | head -n -1 | grep -v '^[[:space:]]$' > "${dir[tmp]}/hosts.head" # Remove old HF data, remove HF header remove empty lines.
 	fi
 
-	printf '\n\n# Host Flash™ Firewall\n\n Credits\n\n' >> "${dir[tmp]}/hosts.head" # Add HF heading
+	printf '\n\n# Host Flash™ Firewall\n\n# Credits\n\n' >> "${dir[tmp]}/hosts.head" # Add HF heading
 
 	for i in "${credits[@]}" ; do
 		printf "$i" >> "${dir[tmp]}/hosts.head" # Add HF list provider credits
