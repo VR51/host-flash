@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-# Host Flash™ 3.1.2
+# Host Flash™ 3.1.3
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -15,7 +15,7 @@ clear
 # Lead Author: Lee Hodson
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 17th Nov 2018
+# This Release: 8th Dec 2018
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -152,7 +152,7 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.1.2 - 17th Nov 2018'
+version='3.1.3 - 8th Dec 2018'
 debug='0'
 
 # Clear arrays
@@ -271,7 +271,8 @@ let listsc=listc+listcc
 # list[src]='Download URL' # From where the package will be retrieved
 # list[file]='Download Package' # Name of package retrieved
 # list[target]='Package Target' # Name of usable file in a retrieved zip package / Name of file created on retrieval if FLAG is raw
-# list[flag]='Flags: E.g Package Type' # direct (the URL leads to the file), raw (URL + File name), unzip (URL + file name), p7zip (URL + File name).
+# list[flag]='package Type' # direct (the URL leads to the file), raw (URL + File name are used to get the file), unzip (URL + file name, unzip is used), p7zip (URL + File name, p7zip is used).
+# list[ip]='0' # 0 or 1 for false or true. Add loopback IP address to downloaded list. This is required of a hosts list consists of domain names with no IP prefix. Not required for whitelists, in fact should never be set to '1' for whitelists.
 #
 # Changes to list[status] are stored in .hfrc
 # Custom lists will be added to .hfclrc
@@ -287,6 +288,7 @@ list[src1]='http://hosts-file.net/download'
 list[file1]='hosts.txt'
 list[target1]='hosts.txt'
 list[flag1]='raw'
+list[ip1]='0'
 
 list[status2]='+'
 list[info2]='hosts-file.net update (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
@@ -294,6 +296,7 @@ list[src2]='http://hosts-file.net'
 list[file2]='hphosts-partial.txt'
 list[target2]='hosts.txt'
 list[flag2]='raw'
+list[ip2]='0'
 
 list[status3]='+'
 list[info3]='mvps.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
@@ -301,6 +304,7 @@ list[src3]='http://winhelp2002.mvps.org'
 list[file3]='hosts.zip'
 list[target3]='HOSTS'
 list[flag3]='unzip'
+list[ip3]='0'
 
 list[status4]='+'
 list[info4]='free.fr-Trackers (Moderate: Blocks trackers)'
@@ -308,6 +312,7 @@ list[src4]='http://rlwpx.free.fr/WPFF'
 list[file4]='htrc.7z'
 list[target4]='Hosts.trc'
 list[flag4]='p7zip'
+list[ip4]='0'
 
 list[status5]='+'
 list[info5]='free.fr-Ad-Servers (Moderate: Blocks ad servers)'
@@ -315,6 +320,7 @@ list[src5]='http://rlwpx.free.fr/WPFF'
 list[file5]='hpub.7z'
 list[target5]='Hosts.pub'
 list[flag5]='p7zip'
+list[ip5]='0'
 
 list[status6]='+'
 list[info6]='free.fr-Malware (Moderate: Blocks malware domains)'
@@ -322,6 +328,7 @@ list[src6]='http://rlwpx.free.fr/WPFF'
 list[file6]='hrsk.7z'
 list[target6]='Hosts.rsk'
 list[flag6]='p7zip'
+list[ip6]='0'
 
 list[status7]='+'
 list[info7]='free.fr-Adult (Moderate: Blocks adult domains. Coincidentally blocks forums and some social sites)'
@@ -329,6 +336,7 @@ list[src7]='http://rlwpx.free.fr/WPFF'
 list[file7]='hsex.7z'
 list[target7]='Hosts.sex'
 list[flag7]='p7zip'
+list[ip7]='0'
 
 list[status8]='+'
 list[info8]='free.fr-Misc (Moderate: Blocks miscellaneous domains)'
@@ -336,6 +344,7 @@ list[src8]='http://rlwpx.free.fr/WPFF'
 list[file8]='hmis.7z'
 list[target8]='Hosts.mis'
 list[flag8]='p7zip'
+list[ip8]='0'
 
 list[status9]='+'
 list[info9]='someonewhocares.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Small list)'
@@ -343,6 +352,7 @@ list[src9]='http://someonewhocares.org/hosts'
 list[file9]='hosts'
 list[target9]='hosts.txt'
 list[flag9]='raw'
+list[ip9]='0'
 
 list[status10]='+'
 list[info10]='malwaredomainlist.com (Liberal: Blocks mostly malware. Small list)'
@@ -350,6 +360,7 @@ list[src10]='http://www.malwaredomainlist.com/hostslist'
 list[file10]='hosts.txt'
 list[target10]='hosts.txt'
 list[flag10]='raw'
+list[ip10]='0'
 
 list[status11]='+'
 list[info11]='KADhosts (Liberal: Blocks malware hosts)'
@@ -357,6 +368,7 @@ list[src11]='https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.t
 list[file11]='hosts.txt'
 list[target11]='hosts.txt'
 list[flag11]='direct'
+list[ip11]='0'
 
 list[status12]='+'
 list[info12]='yoyo.org (Liberal: Blocks adservers)'
@@ -364,6 +376,7 @@ list[src12]='https://pgl.yoyo.org/as/serverlist.php?showintro=0;hostformat=hosts
 list[file12]='hosts.txt'
 list[target12]='hosts.txt'
 list[flag12]='direct'
+list[ip12]='0'
 
 list[status13]='+'
 list[info13]='Mitchell Krog (Liberal: Blocks spam bot hosts)'
@@ -371,6 +384,7 @@ list[src13]='https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/ma
 list[file13]='hosts.txt'
 list[target13]='hosts.txt'
 list[flag13]='direct'
+list[ip13]='0'
 
 list[status14]='+'
 list[info14]='CoinBlockerLists (Liberal: Blocks cryptominers)'
@@ -378,6 +392,7 @@ list[src14]='https://zerodot1.gitlab.io/CoinBlockerLists/hosts_browser'
 list[file14]='hosts.txt'
 list[target14]='hosts.txt'
 list[flag14]='direct'
+list[ip14]='0'
 
 list[status15]='+'
 list[info15]='Lightswitch05 (Liberal: Blocks ads and trackers)'
@@ -385,6 +400,7 @@ list[src15]='https://raw.githubusercontent.com/lightswitch05/hosts/master'
 list[file15]='ads-and-tracking-extended.txt'
 list[target15]='hosts.txt'
 list[flag15]='raw'
+list[ip15]='0'
 
 list[status16]='+'
 list[info16]='AdAway (Liberal: Blocks ad networks)'
@@ -392,6 +408,7 @@ list[src16]='https://adaway.org'
 list[file16]='hosts.txt'
 list[target16]='hosts.txt'
 list[flag16]='raw'
+list[ip16]='0'
 
 list[status17]='+'
 list[info17]='hostsfile.org (Very Strict: Regular blocks + porn, gambling and gaming sites)\n'
@@ -399,6 +416,7 @@ list[src17]='http://www.hostsfile.org/Downloads'
 list[file17]='hosts.txt'
 list[target17]='hosts.txt'
 list[flag17]='raw'
+list[ip17]='0'
 
 # Others
 
@@ -408,6 +426,7 @@ list[src18]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw'
 list[file18]='whitelist.txt'
 list[target18]='whitelist.txt'
 list[flag18]='direct'
+list[ip18]='0'
 
 list[status19]='+'
 list[info19]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
@@ -415,6 +434,7 @@ list[src19]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
 list[file19]='whitelist-wild.txt'
 list[target19]='whitelist-wild.txt'
 list[flag19]='direct'
+list[ip19]='0'
 
 list[status20]='+'
 list[info20]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
@@ -422,27 +442,31 @@ list[src20]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
 list[file20]='blocklist.txt'
 list[target20]='hosts.txt'
 list[flag20]='direct'
+list[ip20]='1'
 
 list[status21]='+'
 list[info21]='Local Whitelist (Your own custom whitelist)'
 list[src21]='localhost'
-list[file21]='.hfwlrc'
+list[file21]="${file[confwl]}"
 list[target21]='whitelist.txt'
-list[flag21]='raw'
+list[flag21]='direct'
+list[ip21]='0'
 
 list[status22]='+'
 list[info22]='Local Whitelist Wild (Your own custom wild whitelist)'
 list[src22]='localhost'
-list[file22]='.hfwlwrc'
+list[file22]="${file[confwlw]}"
 list[target22]='whitelist-wild.txt'
-list[flag22]='raw'
+list[flag22]='direct'
+list[ip22]='0'
 
 list[status23]='+'
 list[info23]='Local blacklist (Your own custom blacklist)'
 list[src23]='localhost'
-list[file23]='.hfblrc'
+list[file23]="${file[confbl]}"
 list[target23]='hosts.txt'
-list[flag23]='raw'
+list[flag23]='direct'
+list[ip23]='1'
 
 
 
@@ -812,98 +836,107 @@ function __build() {
 		file="${list[file${n}]}"
 		target="${list[target${n}]}"
 		flag="${list[flag${n}]}"
+		ip="${list[ip${n}]}"
 
 		if test "$status" = '+' # The list is enabled
 		then
 
-			if test "$src" != 'localhost'
-			then
-				# Download the lists
-				if test "$flag" = 'direct' # $file is the target
-				then
-					curl -e "$src" "$src" -o "${dir[tmp]}/$target"
-				fi
+			case "$src" in
 
-				if test "$flag" = 'raw'
-				then
-					curl -e "$src" "$src/$file" -o "${dir[tmp]}/$target"
-				fi
+				localhost)
 
-				if test "$flag" = 'unzip' || test "$flag" = 'p7zip'
-				then
-					curl -e "$src" "$src/$file" -o "${dir[tmp]}/$file"
-					# Extract package content
-					if test "$flag" = 'unzip'; then unzip -o "${dir[tmp]}/$file" -d "${dir[tmp]}"; fi
-					if test "$flag" = 'p7zip'; then 7z e -y "${dir[tmp]}/$file" -o"${dir[tmp]}" ; fi
-					# Move target file
-					cat "${dir[tmp]}/$target" >> "${dir[tmp]}/hosts-temp.txt"
-				fi
+					cat "$file" >> "${dir[tmp]}/$target.$n"
 
-				# Merge files
+				;;
 
-				if test "$target" = 'hosts.txt'
-				then
-					cat "${dir[tmp]}/$target" >> "${dir[tmp]}/hosts-temp.txt"
-				fi
+				*)
+					# Download remote repo lists
+					if test "$flag" = 'direct' # $file is the target
+					then
+						curl -e "$src" "$src" -o "${dir[tmp]}/$target.$n"
+					fi
 
-				if test "$target" = 'whitelist'
-				then
-					cat "${dir[tmp]}/$target" >> "${dir[tmp]}/whitelist-temp.txt"
-				fi
+					if test "$flag" = 'raw'
+					then
+						curl -e "$src" "$src/$file" -o "${dir[tmp]}/$target.$n"
+					fi
 
-				if test "$target" = 'whitelist-wild'
-				then
-					cat "${dir[tmp]}/$target" >> "${dir[tmp]}/whitelist-wild-temp.txt"
-				fi
+					if test "$flag" = 'unzip' || test "$flag" = 'p7zip'
+					then
+						curl -e "$src" "$src/$file" -o "${dir[tmp]}/$file"
+						# Extract package content
+						if test "$flag" = 'unzip'; then unzip -o "${dir[tmp]}/$file" -d "${dir[tmp]}"; fi
+						if test "$flag" = 'p7zip'; then 7z e -y "${dir[tmp]}/$file" -o"${dir[tmp]}" ; fi
+						# Rename target file. Helps with debugging
+						mv "${dir[tmp]}/$target" "${dir[tmp]}/hosts.txt.$n"
+					fi
 
-				# Clean up retrieved files
+					# Clean up retrieved files but keep the $target.$n
 
-				if test -f "${dir[tmp]}/$file"
-				then
-					rm "${dir[tmp]}/$file"
-				fi
-				
-				if test -f "${dir[tmp]}/$target"
-				then
-					rm "${dir[tmp]}/$target"
-				fi
+					if test -f "${dir[tmp]}/$file"
+					then
+						rm "${dir[tmp]}/$file"
+					fi
 
-			else # It's local host
-			
-				if test "$target" = 'whitelist.txt'
-				then
-					cat "${dir[conf]}/$file" >> "${dir[tmp]}/whitelist-temp.txt"
-				fi
-				
-				if test "$target" = 'whitelist-wild.txt'
-				then
-					cat "${dir[conf]}/$file" >> "${dir[tmp]}/whitelist-wild-temp.txt"
-					
-				if test "$target" = 'hosts.txt'
-				then
-					cat "${dir[conf]}/$file" >> "${dir[tmp]}/hosts-temp.txt"
-				fi
+				;;
 
-			fi
+			esac
 
-			# Add empty line to end of temp files to prevent malformatting on merge. It is ok if these don't yet exist. They soon will.
-			echo >> "${dir[tmp]}/whitelist-temp.txt"
-			echo >> "${dir[tmp]}/whitelist-wild-temp.txt"
-			echo >> "${dir[tmp]}/hosts-temp.txt"
+			# Add IP address prefix if required
+			case "${ip}" in
 
-			credits+=("# Includes hosts blacklist from $info\n")
+				1)
+					sed -r -i "s/^/${conf[ip]} /g" "${dir[tmp]}/$target.$n" # Loopback IP
+				;;
+
+			esac
 
 		fi
 
-		fi
+		credits+=("# Includes hosts blacklist from $info\n")
 
 		if test ${#status} -eq 0
 		then
+			c=$n
+			let c=c-1
 			let n=n-n
 		else
 			let n=n+1
 		fi
 
+	done
+
+	# Merge files. We do it this way to simplify debugging
+	until [ $c -eq 0 ]; do
+
+		echo "c: $c" >> "${dir[tmp]}/merge-counter.txt"
+
+		if test -f "${dir[tmp]}/hosts.txt.$c"
+		then
+			cat "${dir[tmp]}/hosts.txt.$c" >> "${dir[tmp]}/hosts-temp.txt"
+			if test $? -eq 0; then
+				echo "${dir[tmp]}/hosts.txt.$c" >> "${dir[tmp]}/merge-counter.txt"
+			fi
+		fi
+
+		if test -f "${dir[tmp]}/whitelist.txt.$c"
+		then
+			cat "${dir[tmp]}/whitelist.txt.$c" >> "${dir[tmp]}/whitelist-temp.txt"
+			if test $? -eq 0; then
+				echo "${dir[tmp]}/whitelist.txt.$c" >> "${dir[tmp]}/merge-counter.txt"
+			fi
+		fi
+
+		if test -f "${dir[tmp]}/whitelist-wild.txt.$c"
+		then
+			cat "${dir[tmp]}/whitelist-wild.txt.$c" >> "${dir[tmp]}/whitelist-wild-temp.txt"
+			if test $? -eq 0; then
+				echo "${dir[tmp]}/whitelist-wild.txt.$c" >> "${dir[tmp]}/merge-counter.txt"
+			fi
+		fi
+		
+		let c=c-1
+		
 	done
 
 	__repaint
@@ -1547,6 +1580,10 @@ function __menu_remote_list_management() {
 				printf "\nEnter the target file name that contains the hosts data: "
 				read a
 				__conf_update 'add' "list[target${n}]='${a}'" "${file[confcl]}"
+
+				printf "\nDo all hostnames in this list need an IP address prefix? (1 for Yes, 0 for No): "
+				read a
+				__conf_update 'add' "list[ip${n}]='${a}'" "${file[confcl]}"
 
 				printf "\nList ${n} added to hosts file repository. $package will restart after you press Enter.\n"
 				read a
