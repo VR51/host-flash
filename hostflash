@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-# Host Flash™ 3.1.3
+# Host Flash™ 3.1.4
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -15,7 +15,7 @@ clear
 # Lead Author: Lee Hodson
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 8th Dec 2018
+# This Release: 14th April 2019
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -152,7 +152,7 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.1.3 - 8th Dec 2018'
+version='3.1.4 - 14th April 2019'
 debug='0'
 
 # Clear arrays
@@ -1007,6 +1007,8 @@ function __build() {
 	if grep -zPo '# Host.? Flash' "${file[hosts]}"
 	then
 		grep -zPo '(?s).*# Host.? Flash' "${file[hosts]}" | head -n -1 | grep -v '^[[:space:]]$' > "${dir[tmp]}/hosts.head" # Remove old HF data, remove HF header remove empty lines.
+	else
+		cp "${file[hosts]}" "${dir[tmp]}/hosts.head" # No existing hostsfile so just copy hosts to hosts.head
 	fi
 
 	printf '\n\n# Host Flash™ Firewall\n\n# Credits\n\n' >> "${dir[tmp]}/hosts.head" # Add HF heading
