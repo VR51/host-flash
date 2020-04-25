@@ -564,7 +564,7 @@ conf[hosts]=$( ls -l "${file[hosts]}" | cut -d' ' -f5 ) # Hosts file size
 conf[hostt]=$( ls -l "${file[hosts]}" | cut -d' ' -f 6-9 ) # Hosts file timestamp
 conf[hostc]=$( wc -l "${file[hosts]}" | cut -d' ' -f1 ) # Hosts file line count
 
-conf[ip]='127.0.0.1' # Redirect IP address
+conf[ip]='0.0.0.0' # Redirect IP address
 conf[mode]='0' # Build Only or Build and Install 0 or 1
 
 # LOGS
