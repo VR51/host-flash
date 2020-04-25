@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-# Host Flash™ 3.1.4
+# Host Flash™ 3.1.5
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -15,7 +15,7 @@ clear
 # Lead Author: Lee Hodson
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 14th April 2019
+# This Release: 25th April 2020
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -152,7 +152,7 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.1.4 - 14th April 2019'
+version='3.1.5 - 25th April 2020'
 debug='0'
 
 # Clear arrays
@@ -281,194 +281,274 @@ let listsc=listc+listcc
 ##
 
 # TO DO: Change to list[NUM TYPE]
-#https://hosts-file.net/?s=Download
+# https://hosts-file.net/?s=Download <-- DEAD. This is now a Malwarebytes browser addon.
+# Files from here now mirrored and updated at https://github.com/fredprod/host-file.net-backup
+# & https://github.com/blackskye-sx/host-file.net-backup
 list[status1]='+'
-list[info1]='hosts-file.net (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
-list[src1]='http://hosts-file.net/download'
-list[file1]='hosts.txt'
-list[target1]='hosts.txt'
+list[info1]='hosts-file.net - Ad Servers (Liberal)'
+list[src1]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file1]='ad_servers.txt'
+list[target1]='ad_servers.txt'
 list[flag1]='raw'
 list[ip1]='0'
 
 list[status2]='+'
-list[info2]='hosts-file.net update (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
-list[src2]='http://hosts-file.net'
-list[file2]='hphosts-partial.txt'
-list[target2]='hosts.txt'
+list[info2]='hosts-file.net - EMD (Liberal)'
+list[src2]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file2]='emd.txt'
+list[target2]='emd.txt'
 list[flag2]='raw'
 list[ip2]='0'
 
 list[status3]='+'
-list[info3]='mvps.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
-list[src3]='http://winhelp2002.mvps.org'
-list[file3]='hosts.zip'
-list[target3]='HOSTS'
-list[flag3]='unzip'
+list[info3]='hosts-file.net - EXP (Liberal)'
+list[src3]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file3]='exp.txt'
+list[target3]='exp.txt'
+list[flag3]='raw'
 list[ip3]='0'
 
 list[status4]='+'
-list[info4]='free.fr-Trackers (Moderate: Blocks trackers)'
-list[src4]='http://rlwpx.free.fr/WPFF'
-list[file4]='htrc.7z'
-list[target4]='Hosts.trc'
-list[flag4]='p7zip'
+list[info4]='hosts-file.net - FSA (Liberal)'
+list[src4]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file4]='fsa.txt'
+list[target4]='fsa.txt'
+list[flag4]='raw'
 list[ip4]='0'
 
 list[status5]='+'
-list[info5]='free.fr-Ad-Servers (Moderate: Blocks ad servers)'
-list[src5]='http://rlwpx.free.fr/WPFF'
-list[file5]='hpub.7z'
-list[target5]='Hosts.pub'
-list[flag5]='p7zip'
+list[info5]='hosts-file.net - GRM (Liberal)'
+list[src5]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file5]='grm.txt'
+list[target5]='grm.txt'
+list[flag5]='raw'
 list[ip5]='0'
 
 list[status6]='+'
-list[info6]='free.fr-Malware (Moderate: Blocks malware domains)'
-list[src6]='http://rlwpx.free.fr/WPFF'
-list[file6]='hrsk.7z'
-list[target6]='Hosts.rsk'
-list[flag6]='p7zip'
+list[info6]='hosts-file.net - HFS (Liberal)'
+list[src6]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file6]='hfs.txt'
+list[target6]='hfs.txt'
+list[flag6]='raw'
 list[ip6]='0'
 
 list[status7]='+'
-list[info7]='free.fr-Adult (Moderate: Blocks adult domains. Coincidentally blocks forums and some social sites)'
-list[src7]='http://rlwpx.free.fr/WPFF'
-list[file7]='hsex.7z'
-list[target7]='Hosts.sex'
-list[flag7]='p7zip'
+list[info7]='hosts-file.net - HJK (Liberal)'
+list[src7]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file7]='hjk.txt'
+list[target7]='hjk.txt'
+list[flag7]='raw'
 list[ip7]='0'
 
 list[status8]='+'
-list[info8]='free.fr-Misc (Moderate: Blocks miscellaneous domains)'
-list[src8]='http://rlwpx.free.fr/WPFF'
-list[file8]='hmis.7z'
-list[target8]='Hosts.mis'
-list[flag8]='p7zip'
+list[info8]='hosts-file.net - MMT (Liberal)'
+list[src8]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file8]='mmt.txt'
+list[target8]='mmt.txt'
+list[flag8]='raw'
 list[ip8]='0'
 
 list[status9]='+'
-list[info9]='someonewhocares.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Small list)'
-list[src9]='http://someonewhocares.org/hosts'
-list[file9]='hosts'
-list[target9]='hosts.txt'
+list[info9]='hosts-file.net - PHA (Liberal)'
+list[src9]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file9]='pha.txt'
+list[target9]='pha.txt'
 list[flag9]='raw'
 list[ip9]='0'
 
 list[status10]='+'
-list[info10]='malwaredomainlist.com (Liberal: Blocks mostly malware. Small list)'
-list[src10]='http://www.malwaredomainlist.com/hostslist'
-list[file10]='hosts.txt'
-list[target10]='hosts.txt'
+list[info10]='hosts-file.net - PSH (Liberal)'
+list[src10]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file10]='psh.txt'
+list[target10]='psh.txt'
 list[flag10]='raw'
 list[ip10]='0'
 
 list[status11]='+'
-list[info11]='KADhosts (Liberal: Blocks malware hosts)'
-list[src11]='https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.txt'
-list[file11]='hosts.txt'
-list[target11]='hosts.txt'
-list[flag11]='direct'
+list[info11]='hosts-file.net - PUP (Liberal)'
+list[src11]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file11]='pup.txt'
+list[target11]='pup.txt'
+list[flag11]='raw'
 list[ip11]='0'
 
 list[status12]='+'
-list[info12]='yoyo.org (Liberal: Blocks adservers)'
-list[src12]='https://pgl.yoyo.org/as/serverlist.php?showintro=0;hostformat=hosts'
-list[file12]='hosts.txt'
-list[target12]='hosts.txt'
-list[flag12]='direct'
+list[info12]='hosts-file.net - WRZ (Liberal)'
+list[src12]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
+list[file12]='wrz.txt'
+list[target12]='wrz.txt'
+list[flag12]='raw'
 list[ip12]='0'
 
 list[status13]='+'
-list[info13]='Mitchell Krog (Liberal: Blocks spam bot hosts)'
-list[src13]='https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts'
-list[file13]='hosts.txt'
-list[target13]='hosts.txt'
-list[flag13]='direct'
+list[info13]='mvps.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
+list[src13]='http://winhelp2002.mvps.org'
+list[file13]='hosts.zip'
+list[target13]='HOSTS'
+list[flag13]='unzip'
 list[ip13]='0'
 
 list[status14]='+'
-list[info14]='CoinBlockerLists (Liberal: Blocks cryptominers)'
-list[src14]='https://zerodot1.gitlab.io/CoinBlockerLists/hosts_browser'
-list[file14]='hosts.txt'
-list[target14]='hosts.txt'
-list[flag14]='direct'
+list[info14]='free.fr-Trackers (Moderate: Blocks trackers)'
+list[src14]='http://rlwpx.free.fr/WPFF'
+list[file14]='htrc.7z'
+list[target14]='Hosts.trc'
+list[flag14]='p7zip'
 list[ip14]='0'
 
 list[status15]='+'
-list[info15]='Lightswitch05 (Liberal: Blocks ads and trackers)'
-list[src15]='https://raw.githubusercontent.com/lightswitch05/hosts/master'
-list[file15]='ads-and-tracking-extended.txt'
-list[target15]='hosts.txt'
-list[flag15]='raw'
+list[info15]='free.fr-Ad-Servers (Moderate: Blocks ad servers)'
+list[src15]='http://rlwpx.free.fr/WPFF'
+list[file15]='hpub.7z'
+list[target15]='Hosts.pub'
+list[flag15]='p7zip'
 list[ip15]='0'
 
 list[status16]='+'
-list[info16]='AdAway (Liberal: Blocks ad networks)'
-list[src16]='https://adaway.org'
-list[file16]='hosts.txt'
-list[target16]='hosts.txt'
-list[flag16]='raw'
+list[info16]='free.fr-Malware (Moderate: Blocks malware domains)'
+list[src16]='http://rlwpx.free.fr/WPFF'
+list[file16]='hrsk.7z'
+list[target16]='Hosts.rsk'
+list[flag16]='p7zip'
 list[ip16]='0'
 
 list[status17]='+'
-list[info17]='hostsfile.org (Very Strict: Regular blocks + porn, gambling and gaming sites)\n'
-list[src17]='http://www.hostsfile.org/Downloads'
-list[file17]='hosts.txt'
-list[target17]='hosts.txt'
-list[flag17]='raw'
+list[info17]='free.fr-Adult (Moderate: Blocks adult domains. Coincidentally blocks forums and some social sites)'
+list[src17]='http://rlwpx.free.fr/WPFF'
+list[file17]='hsex.7z'
+list[target17]='Hosts.sex'
+list[flag17]='p7zip'
 list[ip17]='0'
 
-# Others
-
 list[status18]='+'
-list[info18]='Community Whitelist (Host Flash™ whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
-list[src18]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw'
-list[file18]='whitelist.txt'
-list[target18]='whitelist.txt'
-list[flag18]='direct'
+list[info18]='free.fr-Misc (Moderate: Blocks miscellaneous domains)'
+list[src18]='http://rlwpx.free.fr/WPFF'
+list[file18]='hmis.7z'
+list[target18]='Hosts.mis'
+list[flag18]='p7zip'
 list[ip18]='0'
 
 list[status19]='+'
-list[info19]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
-list[src19]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
-list[file19]='whitelist-wild.txt'
-list[target19]='whitelist-wild.txt'
-list[flag19]='direct'
+list[info19]='someonewhocares.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Small list)'
+list[src19]='http://someonewhocares.org/hosts'
+list[file19]='hosts'
+list[target19]='hosts.txt'
+list[flag19]='raw'
 list[ip19]='0'
 
 list[status20]='+'
-list[info20]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
-list[src20]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
-list[file20]='blocklist.txt'
+list[info20]='malwaredomainlist.com (Liberal: Blocks mostly malware. Small list)'
+list[src20]='http://www.malwaredomainlist.com/hostslist'
+list[file20]='hosts.txt'
 list[target20]='hosts.txt'
-list[flag20]='direct'
-list[ip20]='1'
+list[flag20]='raw'
+list[ip20]='0'
 
 list[status21]='+'
-list[info21]='Local Whitelist (Your own custom whitelist)'
-list[src21]='localhost'
-list[file21]="${file[confwl]}"
-list[target21]='whitelist.txt'
+list[info21]='KADhosts (Liberal: Blocks malware hosts)'
+list[src21]='https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.txt'
+list[file21]='hosts.txt'
+list[target21]='hosts.txt'
 list[flag21]='direct'
 list[ip21]='0'
 
 list[status22]='+'
-list[info22]='Local Whitelist Wild (Your own custom wild whitelist)'
-list[src22]='localhost'
-list[file22]="${file[confwlw]}"
-list[target22]='whitelist-wild.txt'
+list[info22]='yoyo.org (Liberal: Blocks adservers)'
+list[src22]='https://pgl.yoyo.org/as/serverlist.php?showintro=0;hostformat=hosts'
+list[file22]='hosts.txt'
+list[target22]='hosts.txt'
 list[flag22]='direct'
 list[ip22]='0'
 
 list[status23]='+'
-list[info23]='Local blacklist (Your own custom blacklist)'
-list[src23]='localhost'
-list[file23]="${file[confbl]}"
+list[info23]='Mitchell Krog (Liberal: Blocks spam bot hosts)'
+list[src23]='https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts'
+list[file23]='hosts.txt'
 list[target23]='hosts.txt'
 list[flag23]='direct'
-list[ip23]='1'
+list[ip23]='0'
 
+list[status24]='+'
+list[info24]='CoinBlockerLists (Liberal: Blocks cryptominers)'
+list[src24]='https://zerodot1.gitlab.io/CoinBlockerLists/hosts_browser'
+list[file24]='hosts.txt'
+list[target24]='hosts.txt'
+list[flag24]='direct'
+list[ip24]='0'
 
+list[status25]='+'
+list[info25]='Lightswitch05 (Liberal: Blocks ads and trackers)'
+list[src25]='https://raw.githubusercontent.com/lightswitch05/hosts/master'
+list[file25]='ads-and-tracking-extended.txt'
+list[target25]='hosts.txt'
+list[flag25]='raw'
+list[ip25]='0'
+
+list[status26]='+'
+list[info26]='AdAway (Liberal: Blocks ad networks)'
+list[src26]='https://adaway.org'
+list[file26]='hosts.txt'
+list[target26]='hosts.txt'
+list[flag26]='raw'
+list[ip26]='0'
+
+list[status27]='+'
+list[info27]='hostsfile.org (Very Strict: Regular blocks + porn, gambling and gaming sites)\n'
+list[src27]='http://www.hostsfile.org/Downloads'
+list[file27]='hosts.txt'
+list[target27]='hosts.txt'
+list[flag27]='raw'
+list[ip27]='0'
+
+# Others
+
+list[status28]='+'
+list[info28]='Community Whitelist (Host Flash™ whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
+list[src28]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw'
+list[file28]='whitelist.txt'
+list[target28]='whitelist.txt'
+list[flag28]='direct'
+list[ip28]='0'
+
+list[status29]='+'
+list[info29]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
+list[src29]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
+list[file29]='whitelist-wild.txt'
+list[target29]='whitelist-wild.txt'
+list[flag29]='direct'
+list[ip29]='0'
+
+list[status30]='+'
+list[info30]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
+list[src30]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
+list[file30]='blocklist.txt'
+list[target30]='hosts.txt'
+list[flag30]='direct'
+list[ip30]='1'
+
+list[status31]='+'
+list[info31]='Local Whitelist (Your own custom whitelist)'
+list[src31]='localhost'
+list[file31]="${file[confwl]}"
+list[target31]='whitelist.txt'
+list[flag31]='direct'
+list[ip31]='0'
+
+list[status32]='+'
+list[info32]='Local Whitelist Wild (Your own custom wild whitelist)'
+list[src32]='localhost'
+list[file32]="${file[confwlw]}"
+list[target32]='whitelist-wild.txt'
+list[flag32]='direct'
+list[ip32]='0'
+
+list[status33]='+'
+list[info33]='Local blacklist (Your own custom blacklist)'
+list[src33]='localhost'
+list[file33]="${file[confbl]}"
+list[target33]='hosts.txt'
+list[flag33]='direct'
+list[ip33]='1'
 
 # GENERAL
 
@@ -484,7 +564,7 @@ conf[hosts]=$( ls -l "${file[hosts]}" | cut -d' ' -f5 ) # Hosts file size
 conf[hostt]=$( ls -l "${file[hosts]}" | cut -d' ' -f 6-9 ) # Hosts file timestamp
 conf[hostc]=$( wc -l "${file[hosts]}" | cut -d' ' -f1 ) # Hosts file line count
 
-conf[ip]='0.0.0.0' # Redirect IP address
+conf[ip]='127.0.0.1' # Redirect IP address
 conf[mode]='0' # Build Only or Build and Install 0 or 1
 
 # LOGS
@@ -854,11 +934,13 @@ function __build() {
 					if test "$flag" = 'direct' # $file is the target
 					then
 						curl -e "$src" "$src" -o "${dir[tmp]}/$target.$n"
+						mv "${dir[tmp]}/$target.$n" "${dir[tmp]}/hosts.txt.$n" # Rename target file. Helps with debugging
 					fi
 
 					if test "$flag" = 'raw'
 					then
 						curl -e "$src" "$src/$file" -o "${dir[tmp]}/$target.$n"
+						mv "${dir[tmp]}/$target.$n" "${dir[tmp]}/hosts.txt.$n" # Rename target file. Helps with debugging
 					fi
 
 					if test "$flag" = 'unzip' || test "$flag" = 'p7zip'
