@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.1.4
+Host Flash™ v3.1.5
 
 Lead Author: Lee Hodson
 
@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 14th Apr 2018
+This Release: 25th Apr 2020
 
 First Written: 18th Oct 2015
 
@@ -45,15 +45,12 @@ Use Host Flash™ to manage the Linux hosts file
 
 Host Flash™ works at the OS level. This means requests from any program or app sent to any flagged external host is blocked.
 
-# New Features
-- Rebuilt from the ground up
+# Features
 - Better hosts file management
-- Much improved performance
-- Much faster processing time
-- More host blacklist repositories to choose from (17 built in, 3 Host Flash community lists and 3 user customizable lists)
-- Returned to text mode only terminal GUI. Dialog, whiptale and other terminal GUIs were overkill for this app
-- New menu system (will be improved once core app is finalised)
-- Custom settings are now stored in $HOME/.config/hostflash/.hf* files (.hfrc, .hfwlrc, .hfwlwrc and .hfblrc, .hfremoved,  .debug, and log)
+- Great performance with faster processing time
+- More host blacklist repositories to choose from (27 built in, 3 Host Flash community lists and 3 user customizable lists)
+- Text mode terminal GUI. Dialog, whiptale and other terminal GUIs were overkill for this app so were removed some time ago.
+- Custom settings are stored in $HOME/.config/hostflash/.hf* files (.hfrc, .hfwlrc, .hfwlwrc and .hfblrc, .hfremoved,  .debug, and log)
 - Update local custom whitelist or blacklist through the GUI
 - Update hosts file with local custom rules without rebuilding the whole hosts file
 - Apply rule change updates without complete hosts file rebuild
@@ -63,7 +60,6 @@ Host Flash™ works at the OS level. This means requests from any program or app
 - Better config reset management.
 - Use basic Grep regexes in whitelists.
 - Hosts removed through whitelist rules are logged to $HOME/.config/hostflash/.hfremoved so you can review and update whitelist rules.
-- Various tweaks and fixes
 - More to come...
 
 # What Host Flash™ Does
