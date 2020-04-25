@@ -24,7 +24,7 @@ Use of this program is at your own risk
 
 FILE TO DOWNLOAD:
 
-You only need to download the file `hostsflash`.
+You only need to download the file `hostflash`.
 
 All the other files in this repository are for reference or emergency only.
 
