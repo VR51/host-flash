@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.1.5
+Host Flash™ v3.1.6
 
 Lead Author: Lee Hodson
 
@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 25th Apr 2020
+This Release: 26th Apr 2020
 
 First Written: 18th Oct 2015
 
@@ -30,7 +30,7 @@ All the other files in this repository are for reference or emergency only.
 
 TO RUN:
 
-- Ensure the `hostsflash` file is executable:
+- Ensure the `hostflash` file is executable:
 -	`Right-click > properties > Executable`
 -	OR
 -	`chmod u+x hostflash`
@@ -39,11 +39,15 @@ TO RUN:
 -	OR
 -	File browser: just click `hostflash`
 
+Use the Host Flash™ program menu to install Essential Software dependencies needed by Host Flash™. Essential software is installed with the apt package manager. The software is fetched from your distro's own repositories i.e they are safe to install, or should be if you use a reputable dist.
+
 Use Host Flash™ to block computer requests to (and access to) websites (hosts), ad servers, malicious websites and time wasting websites.
 
 Use Host Flash™ to manage the Linux hosts file
 
-Host Flash™ works at the OS level. This means requests from any program or app sent to any flagged external host is blocked.
+Host Flash™ works at the OS level. This means any request from any program or app sent to any flagged external host is blocked.
+
+Host Flash™ does not block requests sent to IP addresses. Use iptables to manage IP address access rules.
 
 # Features
 - Better hosts file management
