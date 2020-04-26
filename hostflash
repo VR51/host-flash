@@ -3,7 +3,7 @@ clear
 # set -x
 ###
 #
-# Host Flash™ 3.1.5
+# Host Flash™ 3.1.6
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -15,7 +15,7 @@ clear
 # Lead Author: Lee Hodson
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 25th April 2020
+# This Release: 26th April 2020
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -51,10 +51,10 @@ clear
 ##
 #
 # TO DO / DEV NOTES
+#		YOU. Yes, you. Ignore the dev notes. These are for me to read ;)
 #
 ##
 # versions: add deb installer
-#  installed has desktop icon (like ServUp)
 #
 #  En/disable Automatic list update
 #  En/disable Automatic script update
@@ -62,7 +62,7 @@ clear
 # CLI: disable HF, enable HF, add rule, remove rule, update lists, set options
 #
 #
-# Build Options
+# List Build Options
 #  Build pure list. No whitelisting
 #   Check whitelists (extracted, found, not found)
 #    Rebuild whitelists after check
@@ -94,17 +94,7 @@ clear
 #  Add more useful info
 #  Include link to host-flash.com
 #
-# Info table
-#  Details about the live hosts file
-#   size
-#   lines
-#   timestamp
 #  View all HF configs
-#
-#  Details about the built hosts file
-#   size
-#   lines
-#   timestamp
 #
 #  Info about each list
 #   Last update time
@@ -115,9 +105,6 @@ clear
 #  ${log#[lines]}
 #
 # Add hosts file backup option
-#
-#
-# Integrate with SaLi (?)
 #
 # Go through functions to state the output format
 #
@@ -152,7 +139,7 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.1.5 - 25th April 2020'
+version='3.1.6 - 26th April 2020'
 debug='0'
 
 # Clear arrays
@@ -193,18 +180,24 @@ dir[conf]="$HOME/.config/hostflash" # Location of custom configuration files.
 # file[hosts]='/system/etc/hosts' # Android
 # file[hosts]='%SystemRoot%\System32\drivers\etc\hosts' # Windows NT, 2000, XP,[5] 2003, Vista, 2008, 7, 2012, 8, 10
 
-if test -f "/system/etc/hosts"; then
-	file[hosts]='/system/etc/hosts'
-elif test -f "/private/etc/hosts"; then
-	file[hosts]='/private/etc/hosts'
-elif test -f "/etc/hosts"; then
-	file[hosts]='/etc/hosts'
-else
-	echo "Unable to detect the location of this system's hosts file."
-	echo "Please edit the hostflash program at section around line 187 to set the value of ${bold}file[hosts]${normal} to point to your hosts file."
-	echo "Press any key to exit $package"
-	read a
-	exit 1
+# Custom Hosts File location
+# file[hosts]='/enter/path/to/file/called/hosts' # Add the path to your system's hosts file then uncomment (remove the #) and save to activate.
+
+if test ! "${file[hosts]}"; then
+	if test -f "/system/etc/hosts"; then
+		file[hosts]='/system/etc/hosts'
+	elif test -f "/private/etc/hosts"; then
+		file[hosts]='/private/etc/hosts'
+	elif test -f "/etc/hosts"; then
+		file[hosts]='/etc/hosts'
+	else
+		echo "Unable to detect the location of this system's hosts file."
+		echo "Please edit the hostflash program at around line 184 to set a custom value for ${bold}file[hosts]${normal} to point to your system's hosts file."
+		echo "Remember to uncomment the line edited and visit ${bold}${rem[gith]}${normal} if you want us to add your host file's location to automatic detection list."
+		echo "Press any key to exit $package"
+		read a
+		exit 1
+	fi
 fi
 
 # HF Config Files
@@ -559,13 +552,13 @@ conf[upv]=0 # Update Host Flash™ program.
 #conf[locv]=$($binary -v) # Installed package version
 conf[inst]=$( ls -l "$0" | cut -d' ' -f 6-8) # $package installation date
 conf[locv]="$version installed ${conf[inst]}"
-conf[gitv]=$(curl -v --silent "${rem[gith]}/commit/master" --stderr - | grep '<relative-time datetime' | sed -E 's#<relative-time datetime="(.+)">.+$#\1#g' | tr -d '[:space:]' | tr '[:alpha:]' ' ')
+conf[gitv]=$(curl -v --silent "${rem[gith]}/commit/master" --stderr - | grep '<relative-time datetime' | sed -E 's#.+">(.+)<.+#\1#')
 conf[hosts]=$( ls -l "${file[hosts]}" | cut -d' ' -f5 ) # Hosts file size
-conf[hostt]=$( ls -l "${file[hosts]}" | cut -d' ' -f 6-9 ) # Hosts file timestamp
+conf[hostt]=$( ls -l "${file[hosts]}" | cut -d' ' -f 6-8 ) # Hosts file timestamp
 conf[hostc]=$( wc -l "${file[hosts]}" | cut -d' ' -f1 ) # Hosts file line count
 
 conf[ip]='0.0.0.0' # Redirect IP address
-conf[mode]='0' # Build Only or Build and Install 0 or 1
+conf[mode]='1' # Build Only or Build and Install 0 or 1
 
 # LOGS
 # Not yet used
@@ -1278,7 +1271,6 @@ function __menu_main() {
 			printf $normal
 
 			printf "MENU\n\n"
-			# printf "INSTRUCTIONS: a) Select lists to install with option 1, b) optionally add custom domains to blacklist or whitelist, c) build the hosts file firewall with option 5, before you d) Enable the newly built hosts file firewall with option 6. Change MODE to Build and Install to set $package to automatically install the hosts file after it is built.\n\n"
 
 			n=1
 			for i in "${menu[@]}"; do
@@ -1294,6 +1286,10 @@ function __menu_main() {
 			printf "\nR) Restart $package\n"
 			printf "\n0) Exit\n\n"
 
+			# Instructions
+			
+			printf "INSTRUCTIONS: a) Select lists to install with option 1, b) optionally add custom domains to blacklist or whitelist, c) build the hosts file firewall with option 5, before you d) Enable the newly built hosts file firewall with option 6. Change MODE to 'Build and Install' to set $package to automatically install the hosts file after it is built. $package will only work if the Essential Software is installed.\n\n"
+			
 			# Notices
 
 			printf $bold
