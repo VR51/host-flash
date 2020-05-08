@@ -1715,10 +1715,13 @@ function __menu_custom_list_management() {
 		unset menu
 		menu[1]="Add a host to custom whitelist"
 		menu[2]="Add a host to custom wild whitelist"
-		menu[3]="Add a host to custom blacklist"
+		menu[3]="Add a host to custom blacklist\n"
 		menu[4]="Remove a host from custom whitelist"
 		menu[5]="Remove a host from custom wild whitelist"
-		menu[6]="Remove a host from custom blacklist"
+		menu[6]="Remove a host from custom blacklist\n"
+		menu[7]="Display custom whitelist"
+		menu[8]="Display custom wild whitelist"
+		menu[9]="Display custom blacklist"
 
 		n=1
 		for i in "${menu[@]}" ; do
@@ -1846,6 +1849,51 @@ function __menu_custom_list_management() {
 					
 					*)
 						__conf_update 'rem' "$a" "${file[confbl]}"
+						__repaint '__menu_custom_list_management' # Effectively 'Return here'
+					;;
+				esac
+
+			;;
+
+			7) # Display custom whitelist
+
+				printf "Custom whitelist is located at ${file[confwl]}\n\n"
+				cat "${file[confwl]}"
+				printf "\n\nPress Enter to return to previous menu:"
+				read a
+
+				case $a in
+					*)
+						__repaint '__menu_custom_list_management' # Effectively 'Return here'
+					;;
+				esac
+
+			;;
+
+			8) # Display custom wild whitelist
+
+				printf "Custom wild whitelist is located at ${file[confwlw]}\n\n"
+				cat "${file[confwlw]}"
+				printf "\n\nPress Enter to return to previous menu:"
+				read a
+
+				case $a in
+					*)
+						__repaint '__menu_custom_list_management' # Effectively 'Return here'
+					;;
+				esac
+
+			;;
+
+			9) # Display custom blacklist
+
+				printf "Custom blacklist is located at ${file[confbl]}\n\n"
+				cat "${file[confbl]}"
+				printf "\n\nPress Enter to return to previous menu:"
+				read a
+
+				case $a in
+					*)
 						__repaint '__menu_custom_list_management' # Effectively 'Return here'
 					;;
 				esac
