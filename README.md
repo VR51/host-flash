@@ -146,15 +146,17 @@ Whitelist
 
 	Notes
 
-		1) DO put each whitelisted domain onto a line of its own within whitelist.txt.
+		1) DO use hostflash (Option #2 on main menu) to interact with custom lists
 
-		2) Do add both www and non-www versions of the domain to whitelist.txt to ensure both versions are whitelisted.
+		2) DO put each whitelisted domain onto a line of its own
 
-		3) DO NOT include the HTTP or HTTPS part of the domain address i.e the protocol is not required.
+		3) Do add both www and non-www versions of the domain to ensure both versions are whitelisted.
 
-		4) DO NOT include anything after the TLD part of the domain.
+		4) DO NOT include the HTTP or HTTPS part of the domain address i.e the protocol is not required.
 
-		5) DO use basic Grep regexes to represent spelling variations of the whitelisted host
+		5) DO NOT include anything after the TLD part of the domain.
+
+		6) DO use basic Grep regexes to represent spelling variations of the whitelisted host
 
 		GOOD Examples
 
@@ -211,13 +213,15 @@ Blacklist
 
 	Notes
 
-		1) DO put each domain to block onto a line of its own within blocklist.txt.
+		1) DO use hostflash (Option #2 on main menu) to interact with custom lists
+		
+		2) DO put each domain to block onto a line of its own.
 
-		2) Do add both www and non-www versions of the domain to blocklist.txt to ensure both versions are blocked.
+		3) Do add both www and non-www versions of the domain to ensure both versions are blocked.
 
-		3) DO NOT include the HTTP or HTTPS part of the domain address.
+		4) DO NOT include the HTTP or HTTPS part of the domain address.
 
-		4) DO NOT include anything after the TLD part of the domain.
+		5) DO NOT include anything after the TLD part of the domain.
 
 		GOOD Examples
 
@@ -245,12 +249,12 @@ Your computer will no longer be able to receive data from any of the domains blo
 	4) Many web pages will load faster because your web browser will no longer need to wait for ad content to load. This makes web pages lighter so will save bandwidth too.
 
 # Linux Virtual Machine Hosts and Hypervisor Hosts that Host Windows Guests
-If the environment that Host Flash is being used within is a Virtual Machine host or is a Hypervisor Type 1 (bare-metal) host system then be aware that some source host name blacklists that can be used by Host Flash do block or might at times block Microsoft host names (domains). This may prevent or interfere with the proper functioning of Windows Updates. Remove the Microsoft host names from the blocklist if Windows updates fail or halt unexpectredly.
+If the environment that Host Flash is being used within is a Virtual Machine host or is a Hypervisor Type 1 (bare-metal) host system then be aware that some source host name blacklists that can be used by Host Flash do block or might at times block Microsoft host names (domains). This may prevent or interfere with the proper functioning of Windows Updates. Remove the Microsoft host names from the blacklist if Windows updates fail or halt unexpectredly.
 
 # Remember
-If you see a Document Not Found page when you try to visit a website, and you trust the website, add the website's domain to whitelist.txt and rerun host-flash.sh
+If you see a Document Not Found page when you try to visit a website, and you trust the website, add the website's domain to whitelist using Option #2 from the main menu and then use Option #5 to rebuild your hosts file
 
-If you want to block access to additional websites (like social media sites, search engines, adult sites or torrent sites etc...) add their domain names to blocklist.txt
+If you want to block access to additional websites (like social media sites, search engines, adult sites or torrent sites etc...) add their domain names to blacklist.
 
 # Quick Note About the IP Address Options
 
@@ -297,7 +301,7 @@ Your computer will not be able to access, send requests to, or recieve content f
 
 The domains Host Flash™ adds to your hosts file are mapped to either the local IP address (i.e. loopback address) of your computer or to an IP address you specify when Host Flash™ is run. Requests to visit the hosts listed in the hosts file will never get any further than your computer's own IP address.
 
-With the bad hosts blocklist installed you will see (usually) a Document Not Found error message issued by your web browser when you try to view content hosted at a blocked address. This is the normal and expeted behaviour.
+With the bad hosts blacklist installed you will see (usually) a Document Not Found error message issued by your web browser when you try to view content hosted at a blocked address. This is the normal and expeted behaviour.
 
 Host Flash™ offers you 4 IP address mapping options:
 
