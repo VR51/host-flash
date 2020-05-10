@@ -803,7 +803,7 @@ function __conf_update() {
 	# Add or remove a single host from the .hf*rc config files
 	# ! Considered merging this function with __hosts_update. Opted to keep the two separate. It simplifies input sanitization (to come later).
 
-	# @1 = type: add, rem or remw
+	# @1 = type: add, rem, remw, or remn (remove by line number)
 	# @2 = data to add/remove
 	# @3 = file to add/remove @1 to/from
 
@@ -828,6 +828,13 @@ function __conf_update() {
 		remw)
 			sed -r -i "s/.*?${d}.*?$//g" "${f}" # Remove any line with a match
 			sed -i '/^$/d' "${f}" # Remove empty lines
+		;;
+
+		remn)
+			if [ $d != '' ]; then
+				sed -i "${d}d" "${f}" # Remove the line number $d from the file
+				sed -i '/^$/d' "${f}" # Remove empty lines
+			fi
 		;;
 	esac
 	
@@ -887,6 +894,37 @@ function __conf_delete() {
 		esac
 	done
 
+}
+
+function __remove_custom_list_entry_menu() {
+	filename=$1
+	description=$2
+
+	printf "Custom $description is located at $filename\n\n"
+	__display_file $filename
+	printf "\nType the line number to remove then press Enter. Press 0 to exit:\n\n"
+	read a
+
+	case $a in
+		0)
+			__repaint '__menu_custom_list_management' # Effectively 'Return here'
+		;;
+
+		*)
+			__conf_update 'remn' "$a" "$filename"
+			__repaint '__menu_custom_list_management' # Effectively 'Return here'
+		;;
+	esac
+}
+
+function __display_file() {
+	filename=$1
+
+	n=1
+	while read LINE; do
+		printf "$n) $LINE\n"
+		let n=n+1
+	done < $filename
 }
 
 function __status() {
@@ -1809,58 +1847,19 @@ function __menu_custom_list_management() {
 
 			4) # Remove from custom whitelist
 
-				printf "Custom whitelist is located at ${file[confwl]}\n\n"
-				printf "Type in a host to add then press Enter. Press 0 to exit:\n\n"
-				read a
-
-				case $a in
-					0)
-						__repaint '__menu_custom_list_management' # Effectively 'Return here'
-					;;
-					
-					*)
-						__conf_update 'rem' "$a" "${file[confwl]}"
-						__repaint '__menu_custom_list_management' # Effectively 'Return here'
-					;;
-				esac
+				__remove_custom_list_entry_menu ${file[confwl]} "whitelist"
 
 			;;
 
 			5) # Remove from custom wild whitelist
 
-				printf "Custom wild whitelist is located at ${file[confwlw]}\n\n"
-				printf "Type in a host to add then press Enter. Press 0 to exit:\n\n"
-				read a
-
-				case $a in
-					0)
-						__repaint '__menu_custom_list_management' # Effectively 'Return here'
-					;;
-					
-					*)
-						__conf_update 'rem' "$a" "${file[confwlw]}"
-						__repaint '__menu_custom_list_management' # Effectively 'Return here'
-					;;
-				esac
+				__remove_custom_list_entry_menu ${file[confwlw]} "wild whitelist"
 
 			;;
 
 			6) # Remove from custom blacklist
 
-				printf "Custom blacklist is located at ${file[confbl]}\n\n"
-				printf "Type in a host to add then press Enter. Press 0 to exit:\n\n"
-				read a
-
-				case $a in
-					0)
-						__repaint '__menu_custom_list_management' # Effectively 'Return here'
-					;;
-					
-					*)
-						__conf_update 'rem' "$a" "${file[confbl]}"
-						__repaint '__menu_custom_list_management' # Effectively 'Return here'
-					;;
-				esac
+				__remove_custom_list_entry_menu ${file[confbl]} "blacklist"
 
 			;;
 
