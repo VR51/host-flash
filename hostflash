@@ -1,9 +1,11 @@
 #!/bin/bash
 clear
+# set -euo pipefail
 # set -x
+IFS=$'\n\t'
 ###
 #
-# Host Flash™ 3.1.6
+# Host Flash™ 3.1.7
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -12,10 +14,11 @@ clear
 # For OS: Linux (Debian)
 # Tested With: Ubuntu flavours
 #
-# Lead Author: Lee Hodson
+# Lead Author: Lee Hodson<https://github.com/vr51//>
+# Contributor: skeletonkey<https://github.com/skeletonkey/>
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 26th April 2020
+# This Release: 10th May 2020
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -52,6 +55,7 @@ clear
 #
 # TO DO / DEV NOTES
 #		YOU. Yes, you. Ignore the dev notes. These are for me to read ;)
+#		Please feel free to work through this list if you wish to do so.
 #
 ##
 # versions: add deb installer
@@ -64,7 +68,7 @@ clear
 #
 # List Build Options
 #  Build pure list. No whitelisting
-#   Check whitelists (extracted, found, not found)
+#   Check whitelists (extracted, found, not found) # To be integrated from standalone file.
 #    Rebuild whitelists after check
 #  Build filtered list. Whitelisting done
 #   Install after build
@@ -139,7 +143,7 @@ clear
 # Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.1.6 - 26th April 2020'
+version='3.1.7 - 10th May 2020'
 debug='0'
 
 # Clear arrays
@@ -174,6 +178,7 @@ dir[conf]="$HOME/.config/hostflash" # Location of custom configuration files.
 
 # Files
 
+file[hosts]=''
 # System hosts file location. Where it is copied from and where it is installed to.
 # file[hosts]='/etc/hosts' # Location of system hosts file in Unix, Unix-like and POSIX systems.
 # file[hosts]='/private/etc/hosts' # iOS, Apple Mac
@@ -192,7 +197,7 @@ if test ! "${file[hosts]}"; then
 		file[hosts]='/etc/hosts'
 	else
 		echo "Unable to detect the location of this system's hosts file."
-		echo "Please edit the hostflash program at around line 184 to set a custom value for ${bold}file[hosts]${normal} to point to your system's hosts file."
+		echo "Please edit the hostflash program at around line 189 to set a custom value for ${bold}file[hosts]${normal} to point to your system's hosts file."
 		echo "Remember to uncomment the line edited and visit ${bold}${rem[gith]}${normal} if you want us to add your host file's location to automatic detection list."
 		echo "Press any key to exit $package"
 		read a
@@ -705,7 +710,7 @@ function __run() {
 	if test "$?" -ne 0 ; then
 		__launch
 	else
-		__menu_main "$1" # This will be changed when CLI added
+		__menu_main "${1:-}" # This will be changed when CLI added
 	fi
 
 }
@@ -842,7 +847,6 @@ function __conf_delete() {
 	m=1
 	while [ $m -le ${#menu[@]} ] ; do
 		printf "$m) ${menu[$m]}\n"
-		print
 		let m=m+1
 	done
 	
@@ -1566,7 +1570,6 @@ function __menu_list_management() {
 			status="${list[status${n}]}"
 			info="${list[info${n}]}"
 			printf "$n) [$status] - $info\n"
-			print
 			let n=n+1
 		done
 		
@@ -1616,7 +1619,6 @@ function __menu_remote_list_management() {
 			status="${list[status${n}]}"
 			info="${list[info${n}]}"
 			printf "$n) [$status] - $info\n"
-			print
 			let n=n+1
 		done
 
@@ -1933,7 +1935,6 @@ function __menu_reset_confs() {
 		m=1
 		while [ $m -le ${#menu[@]} ] ; do
 			printf "$m) ${menu[$m]}\n"
-			print
 			let m=m+1
 		done
 		
