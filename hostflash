@@ -1,5 +1,4 @@
 #!/bin/bash
-clear
 # set -euo pipefail
 # set -x
 IFS=$'\n\t'
@@ -187,6 +186,14 @@ file[hosts]=''
 
 # Custom Hosts File location
 # file[hosts]='/enter/path/to/file/called/hosts' # Add the path to your system's hosts file then uncomment (remove the #) and save to activate.
+
+function __clear() {
+	if [ $debug == '0' ]; then
+		clear
+	fi
+}
+
+__clear
 
 if test ! "${file[hosts]}"; then
 	if test -f "/system/etc/hosts"; then
@@ -638,7 +645,7 @@ function __repaint() {
 	#
 	# We use $in instead of $@
 	
-	clear
+	__clear
 	
 	in=( $@ )
 	
@@ -1411,7 +1418,7 @@ function __menu_main() {
 
 		8) # Update hosts file with new custom rules
 
-			clear
+			__clear
 
 			printf "This next part could take some time.\nLook in ${dir[tmp]} to view activity in realtime.\n\nProcessing...\n"
 
@@ -1446,7 +1453,7 @@ function __menu_main() {
 		;;
 		
 		9)
-			clear
+			__clear
 			__cleandns
 			printf "\nPress any key"
 			read a
@@ -1637,7 +1644,7 @@ function __menu_remote_list_management() {
 
 			[Aa])
 
-				clear
+				__clear
 
 				printf "\nEnter details for new resource list ${n}.\n\n"
 				
