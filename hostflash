@@ -1265,7 +1265,7 @@ function __menu_main() {
 
 			unset menu
 			menu[1]='List Management (enable or disable repositories)'
-			menu[2]='Custom List Management (add or remove rules)\n'
+			menu[2]='Custom List Management (add or remove whitelist/blacklist rules)\n'
 
 			menu[3]="[${conf[ip]}] - Change redirect IP address\n"
 
