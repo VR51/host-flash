@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.1.7
+Host Flash™ v3.1.8
 
 Lead Author: Lee Hodson
 
@@ -134,7 +134,7 @@ Ensure the script is executable then click to run:
 
 Note: You may need to restart your computer and clear your browser cache(s) for the new hosts file rules to be observed by your OS.
 
-# Host Flash™ is being rewritten (we are on version 3.1.7 now). Information below this point may be slightly out of date.
+# Host Flash™ is being rewritten (we are on version 3.1.8 now). Information below this point may be slightly out of date.
 
 # Advanced Usage
 Whitelist
