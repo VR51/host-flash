@@ -3,8 +3,7 @@
 # set -x
 IFS=$'\n\t'
 ###
-#
-# Host Flash™ 3.1.7
+# Host Flash™ 3.1.8
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -17,7 +16,7 @@ IFS=$'\n\t'
 # Contributor: skeletonkey<https://github.com/skeletonkey/>
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 10th May 2020
+# This Release: 11th May 2020
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -47,15 +46,12 @@ IFS=$'\n\t'
 #
 # Host Flash™ will attempt to preserve existing host rules.
 #
-#
 ###
 
 ##
-#
 # TO DO / DEV NOTES
-#		YOU. Yes, you. Ignore the dev notes. These are for me to read ;)
-#		Please feel free to work through this list if you wish to do so.
-#
+#	YOU. Yes, you. Ignore the dev notes. These are for me to read :p
+#	Please feel free to work through this list if you wish to do so.
 ##
 # versions: add deb installer
 #
@@ -63,7 +59,6 @@ IFS=$'\n\t'
 #  En/disable Automatic script update
 #
 # CLI: disable HF, enable HF, add rule, remove rule, update lists, set options
-#
 #
 # List Build Options
 #  Build pure list. No whitelisting
@@ -74,7 +69,6 @@ IFS=$'\n\t'
 #   Do not install after build
 # Compact local whitelists and local blacklists (all lower, sort -u)
 # View/Edit local lists (nano, pico, cat)
-#
 #
 # Switchlist
 #  Temporarily disable and enable whitelist hosts
@@ -110,13 +104,12 @@ IFS=$'\n\t'
 # Add hosts file backup option
 #
 # Go through functions to state the output format
-#
 ###
 
 ##
 # NOTES
 #
-# Build Process
+# Hosts File Build Process
 #
 #  The host file work is done in $HOME/src/hostflash/tmp. This eventually builds hosts.txt
 #  The final build of hosts.txt is moved to $HOME/src/hostflash/
@@ -128,31 +121,28 @@ IFS=$'\n\t'
 #   As a normal whitelist
 #   As a wild whitelist
 #  A period is added before the first character of the host name
-#
 ##
 
 ##
-#
-# CONFIGS - should be no reason to manually change these
+# CONFIGS ARE BELOW HERE - should be no reason to manually change these
 #
 # Any of these can be overruled by adding each variable along with its new value into $HOME/.config/hostflash/.hfrc
-#
+# Adding config changes to $HOME/.config/hostflash/.hfrc will protect changes from script version updates.
 ##
 
-# Do not Use trailing slashes in URLs, URIs or directory paths
+# IMPORTANT: Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.1.7 - 10th May 2020'
+version='3.1.8 - 11th May 2020'
 debug='0'
 
 # Clear arrays
-
 unset app conf dir file log list message rem menu select mode essentialpackages credits flush listc listcc listsc
 
-# Declare arrays and types
-
+# Declare associative arrays
 declare -A app conf dir file list log message rem
 
+# Declare regular arrays and types
 declare -a menu # Menu options are set within __menu_main()
 declare -a select # Menu options count
 declare -a mode # Used for notices
@@ -162,21 +152,18 @@ declare -a flush # DNS cache flush commands
 declare -i listc listcc listsc # For list repository counts
 
 # Remote Hosts
-
 rem[gith]='https://github.com/VR51/host-flash' # Github home URL for this package.
 rem[gitp]='https://github.com/VR51/host-flash.git' # Software source package git address
 rem[tld]='https://data.iana.org/TLD/tlds-alpha-by-domain.txt' # Official list of valid TLDs
 
 # Directories
 #  These are created by dir[@] dump. Be careful when adding directories to this list
-
 dir[src]="$HOME/src/hostflash" # Directory where the source code will be stored locally
 dir[tmp]="${dir[src]}/tmp" # Directory where temporary files will be stored locally
 dir[docs]="${dir[src]}/DOC" # Location of program documents. # To be written
 dir[conf]="$HOME/.config/hostflash" # Location of custom configuration files.
 
 # Files
-
 file[hosts]=''
 # System hosts file location. Where it is copied from and where it is installed to.
 # file[hosts]='/etc/hosts' # Location of system hosts file in Unix, Unix-like and POSIX systems.
@@ -204,8 +191,10 @@ if test ! "${file[hosts]}"; then
 		file[hosts]='/etc/hosts'
 	else
 		echo "Unable to detect the location of this system's hosts file."
-		echo "Please edit the hostflash program at around line 189 to set a custom value for ${bold}file[hosts]${normal} to point to your system's hosts file."
-		echo "Remember to uncomment the line edited and visit ${bold}${rem[gith]}${normal} if you want us to add your host file's location to automatic detection list."
+		echo "Please edit the hostflash program at around line 175 to set a custom value for ${bold}file[hosts]${normal} to point to your system's hosts file"
+		echo "and uncomment the line edited."
+		echo "Alternatively, add ${bold}file[hosts]='/path/to/your/hosts'${normal} to ${bold}$HOME/.config/hostflash/.hfrc${normal} if the change should survive script updates."
+		echo "Visit ${bold}${rem[gith]}${normal} if you want us to add your host file's location to the automatic detection list."
 		echo "Press any key to exit $package"
 		read a
 		exit 1
@@ -214,7 +203,6 @@ fi
 
 # HF Config Files
 #  These are created by file[@] dump. Be careful when adding files to this list
-
 file[conf]="${dir[conf]}/.hfrc" # Location of user's custom settings for Host Flash™.
 file[confwl]="${dir[conf]}/.hfwlrc" # Location of the user's custom whitelist.
 file[confwlw]="${dir[conf]}/.hfwlwrc" # Location of the user's custom whitelist-wild.
@@ -231,7 +219,6 @@ file[log]="${dir[conf]}/.log" # Location of the log file.
 
 # App Launcher Settings
 # These are specific to the application/task manager installer (yet to be implemented)
-
 app[icon]="${dir[src]}/data" # Directory where the application icon will be located.
 app[bin]='/usr/bin' # Binary installation path. Where should the compiled binary be installed to? Exact path. # Not required for this installer.
 app[icon]="hostflash.svg" # Icon name
@@ -240,15 +227,11 @@ app[cats]='Utilities' # Application launcher categories
 app[binary]="hostflash" # Name of the binary file that is this program.
 
 # Detected settings
-
 user=$(whoami) # Current User
 group=$(id -g -n $user) # Current user's primary group
 
-
 ###
-#
 # DECLARE LIST ARRAYS
-# 
 ###
 
 # Declare custom list associative arrays. If they are not declared we cannot use them.
@@ -263,13 +246,10 @@ else
 fi
 let listsc=listc+listcc
 
-
 ##
-#
 # LISTS
 #
-#
-# These are...
+# These are set with
 #
 # list[status]='Enabled / Disabled' # + or - for TRUE or FALSE
 # list[info]='List Domain' # The name of the list
@@ -282,13 +262,12 @@ let listsc=listc+listcc
 # Changes to list[status] are stored in .hfrc
 # Custom lists will be added to .hfclrc
 #		Framework in place: conf etc... Needs menu section to be added.
-#
 ##
 
 # TO DO: Change to list[NUM TYPE]
-# https://hosts-file.net/?s=Download <-- DEAD. This is now a Malwarebytes browser addon.
-# Files from here now mirrored and updated at https://github.com/fredprod/host-file.net-backup
-# & https://github.com/blackskye-sx/host-file.net-backup
+#  https://hosts-file.net/?s=Download <-- DEAD. This is now a Malwarebytes browser addon.
+#  Files from here now mirrored and updated at https://github.com/fredprod/host-file.net-backup
+#  & https://github.com/blackskye-sx/host-file.net-backup
 list[status1]='+'
 list[info1]='hosts-file.net - Ad Servers (Liberal)'
 list[src1]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
@@ -585,9 +564,9 @@ function __log() {
 	# ${file[log]}
 }
 
-## END SETTINGS
+## END CONFIGS
 
-## BEGIN 
+## BEGIN
 
 # Other settings
 bold=$(tput bold)
@@ -615,7 +594,6 @@ function __download_tlds() {
 }
 __download_tlds # Get TLD list # Not yet used.
 
-
 case "${debug}" in
 	0)
 		if test -d "${dir[tmp]}"; then
@@ -626,7 +604,6 @@ esac
 
 mkdir -p "${dir[@]}" # Make directories
 touch -a "${file[@]}" # Make config files
-
 
 # INSTALL RC SETTINGS
 
@@ -703,12 +680,9 @@ function __repaint() {
 
 __repaint conf "${file[confcl]}"
 
-
-
 ##
 # Actions
 ##
-
 
 function __run() {
 	# Check for terminal then run else just run program
@@ -944,7 +918,6 @@ function __status() {
 	
 }
 
-
 function __build() {
 	# Build the hosts file: download lists, clean them, merge them, create new hosts file
 
@@ -1123,10 +1096,10 @@ function __build() {
 		rm "${dir[tmp]}/hosts.txt"
 	fi
 
-	#	Get head of the existing hosts file stored at /etc/hosts
-	#	Remove old Host Flash™ blacklist from existing hosts file, assuming blacklist exists
-	#	Remove empty lines from the end of the header
-	#	This creates file hosts.head which is used a few lines down from here
+	# Get head of the existing hosts file stored at /etc/hosts
+	# Remove old Host Flash™ blacklist from existing hosts file, assuming blacklist exists
+	# Remove empty lines from the end of the header
+	# This creates file hosts.head which is used a few lines down from here
 
 	if grep -zPo '# Host.? Flash' "${file[hosts]}"
 	then
@@ -1233,7 +1206,6 @@ function __cleandns() {
 # MENUS
 ##
 
-
 # Main Menu
 
 function __menu_main() {
@@ -1249,15 +1221,15 @@ function __menu_main() {
 
 			case "${conf[mode]}" in
 
-					0)
-						mode[0]='MODE: Build Hosts Firewall Only\n'
+				0)
+					mode[0]='MODE: Build Hosts Firewall Only\n'
 
-					;;
+				;;
 
-					1)
-						mode[0]='MODE: Build and Install Hosts Firewall\n'
+				1)
+					mode[0]='MODE: Build and Install Hosts Firewall\n'
 
-					;;
+				;;
 
 			esac
 
@@ -1747,7 +1719,6 @@ function __menu_remote_list_management() {
 	done
 }
 
-
 function __menu_custom_list_management() {
 	# Show and manage host lists
 	
@@ -1986,7 +1957,7 @@ function __menu_reset_confs() {
 			;;
 
 			7)
-			__conf_delete "${file[log]}" "removed hosts log"
+				__conf_delete "${file[log]}" "removed hosts log"
 
 			;;
 
@@ -2005,7 +1976,6 @@ function __menu_reset_confs() {
 	__repaint conf "${file[confcl]}"
 
 }
-
 
 ## Launch
 
