@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.1.8
+Host Flash™ v3.1.9
 
 Lead Author: Lee Hodson
 
@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 10th May 2020
+This Release: 30th May 2020
 
 First Written: 18th Oct 2015
 
@@ -49,6 +49,12 @@ Use Host Flash™ to manage the Linux hosts file
 Host Flash™ works at the OS level. This means any request from any program or app sent to any flagged external host is blocked.
 
 Host Flash™ does not block requests sent to IP addresses. Use iptables to manage IP address access rules.
+
+# New in 3.1.9
+- Updated hosts file source URLs from HTTP to HTTPS where available.
+- Changed some hosts file source URLs to reflect organisational changes in their host websites.
+- Added Developer Dan's Ads and Trackers Aggressive hosts list - See https://www.github.developerdan.com/hosts/
+- Minor bug fixes.
 
 # Features
 - Better hosts file management
