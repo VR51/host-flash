@@ -1,14 +1,16 @@
 # Ready Made Hosts File
 
-The hosts.zip file is here for use by anyone not able to compile their own hosts blacklist.
+The hosts-[DATE].zip file is here for use by anyone not able to compile their own hosts blacklist. [DATE] is the date of compilation.
 
-Build credits for the hosts file repositories used to build the provided hosts file are near the top of the file.
+Build credits for the hosts file repositories used to build the provided prebuilt hosts files are near the top of the hosts file.
 
-1. Download hosts.zip
-1. Unzip hosts.zip
-1. Install the premade hosts file to wherever your OS looks for it
+1. Download hosts-[DATE].zip
+1. Unzip hosts-[DATE].zip to reveal the file called 'hosts'
+1. Compare your system's hosts file (see location notes below) with the newly unzipped hosts file
+1. Replace the head of the new hosts file with the head of your system's installed hosts file
+1. Replace the old hosts file with the new hosts file.
 
-# Typical Places for hosts to be Installed
+# Typical place to find your system's installed hosts file
 
 Unix, Unix-like and POSIX: `/etc/hosts`
 iOS, Apple Mac: `/private/etc/hosts`
