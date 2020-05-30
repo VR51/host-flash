@@ -3,7 +3,7 @@
 # set -x
 IFS=$'\n\t'
 ###
-# Host Flash™ 3.1.8
+# Host Flash™ 3.1.9
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -16,7 +16,7 @@ IFS=$'\n\t'
 # Contributor: skeletonkey<https://github.com/skeletonkey/>
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 11th May 2020
+# This Release: 30th May 2020
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -133,7 +133,7 @@ IFS=$'\n\t'
 # IMPORTANT: Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.1.8 - 11th May 2020'
+version='3.1.9 - 30th May 2020'
 debug='0'
 
 # Clear arrays
@@ -366,7 +366,7 @@ list[ip12]='0'
 
 list[status13]='+'
 list[info13]='mvps.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Big list)'
-list[src13]='http://winhelp2002.mvps.org'
+list[src13]='https://winhelp2002.mvps.org'
 list[file13]='hosts.zip'
 list[target13]='HOSTS'
 list[flag13]='unzip'
@@ -414,7 +414,7 @@ list[ip18]='0'
 
 list[status19]='+'
 list[info19]='someonewhocares.org (Liberal: Blocks mostly adware, spyware, malware and trackers. Small list)'
-list[src19]='http://someonewhocares.org/hosts'
+list[src19]='https://someonewhocares.org/hosts'
 list[file19]='hosts'
 list[target19]='hosts.txt'
 list[flag19]='raw'
@@ -422,7 +422,7 @@ list[ip19]='0'
 
 list[status20]='+'
 list[info20]='malwaredomainlist.com (Liberal: Blocks mostly malware. Small list)'
-list[src20]='http://www.malwaredomainlist.com/hostslist'
+list[src20]='https://www.malwaredomainlist.com/hostslist'
 list[file20]='hosts.txt'
 list[target20]='hosts.txt'
 list[flag20]='raw'
@@ -461,78 +461,87 @@ list[flag24]='direct'
 list[ip24]='0'
 
 list[status25]='+'
-list[info25]='Lightswitch05 (Liberal: Blocks ads and trackers)'
-list[src25]='https://raw.githubusercontent.com/lightswitch05/hosts/master'
+list[info25]='Developer Dan Ads and Trackers Safe List (Liberal: Blocks ads and trackers)'
+list[src25]='https://www.github.developerdan.com/hosts/lists'
 list[file25]='ads-and-tracking-extended.txt'
 list[target25]='hosts.txt'
 list[flag25]='raw'
 list[ip25]='0'
 
 list[status26]='+'
-list[info26]='AdAway (Liberal: Blocks ad networks)'
-list[src26]='https://adaway.org'
-list[file26]='hosts.txt'
+list[info26]='Developer Dan Ads and Trackers Aggressive List (Moderate: Could cause browsing issues)'
+list[src26]='https://www.github.developerdan.com/hosts/lists'
+list[file26]='tracking-aggressive-extended.txt'
 list[target26]='hosts.txt'
 list[flag26]='raw'
 list[ip26]='0'
 
+# Alternative address: https://raw.githubusercontent.com/AdAway/adaway.github.io/master/hosts.txt
 list[status27]='+'
-list[info27]='hostsfile.org (Very Strict: Regular blocks + porn, gambling and gaming sites)\n'
-list[src27]='http://www.hostsfile.org/Downloads'
+list[info27]='AdAway (Liberal: Blocks ad networks)'
+list[src27]='https://adaway.org'
 list[file27]='hosts.txt'
 list[target27]='hosts.txt'
 list[flag27]='raw'
 list[ip27]='0'
 
-# Others
-
 list[status28]='+'
-list[info28]='Community Whitelist (Host Flash™ whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
-list[src28]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw'
-list[file28]='whitelist.txt'
-list[target28]='whitelist.txt'
-list[flag28]='direct'
+list[info28]='hostsfile.org (Very Strict: Regular blocks + porn, gambling and gaming sites)\n'
+list[src28]='https://www.hostsfile.org/Downloads'
+list[file28]='hosts.txt'
+list[target28]='hosts.txt'
+list[flag28]='raw'
 list[ip28]='0'
 
+# Others
+
 list[status29]='+'
-list[info29]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
-list[src29]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
-list[file29]='whitelist-wild.txt'
-list[target29]='whitelist-wild.txt'
+list[info29]='Community Whitelist (Host Flash™ whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
+list[src29]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw'
+list[file29]='whitelist.txt'
+list[target29]='whitelist.txt'
 list[flag29]='direct'
 list[ip29]='0'
 
 list[status30]='+'
-list[info30]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
-list[src30]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
-list[file30]='blocklist.txt'
-list[target30]='hosts.txt'
+list[info30]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
+list[src30]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
+list[file30]='whitelist-wild.txt'
+list[target30]='whitelist-wild.txt'
 list[flag30]='direct'
-list[ip30]='1'
+list[ip30]='0'
 
 list[status31]='+'
-list[info31]='Local Whitelist (Your own custom whitelist)'
-list[src31]='localhost'
-list[file31]="${file[confwl]}"
-list[target31]='whitelist.txt'
+list[info31]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
+list[src31]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
+list[file31]='blocklist.txt'
+list[target31]='hosts.txt'
 list[flag31]='direct'
-list[ip31]='0'
+list[ip31]='1'
 
 list[status32]='+'
-list[info32]='Local Whitelist Wild (Your own custom wild whitelist)'
+list[info32]='Local Whitelist (Your own custom whitelist)'
 list[src32]='localhost'
-list[file32]="${file[confwlw]}"
-list[target32]='whitelist-wild.txt'
+list[file32]="${file[confwl]}"
+list[target32]='whitelist.txt'
 list[flag32]='direct'
 list[ip32]='0'
 
 list[status33]='+'
-list[info33]='Local blacklist (Your own custom blacklist)'
+list[info33]='Local Whitelist Wild (Your own custom wild whitelist)'
 list[src33]='localhost'
-list[file33]="${file[confbl]}"
-list[target33]='hosts.txt'
+list[file33]="${file[confwlw]}"
+list[target33]='whitelist-wild.txt'
 list[flag33]='direct'
-list[ip33]='1'
+list[ip33]='0'
+
+list[status34]='+'
+list[info34]='Local blacklist (Your own custom blacklist)'
+list[src34]='localhost'
+list[file34]="${file[confbl]}"
+list[target34]='hosts.txt'
+list[flag34]='direct'
+list[ip34]='1'
 
 # GENERAL
 
@@ -624,12 +633,13 @@ function __repaint() {
 	
 	__clear
 	
-	in=( $@ )
+		in=( $@ )
 	
 	case ${in[0]} in
 	
 		soft) # Reset variables
-			tset
+			unset
+			__repaint
 	
 		;;
 		
