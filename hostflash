@@ -1071,16 +1071,16 @@ function __build() {
 
 	#	Format raw list data in hosts-temp.txt
 	sed -r -i 's/[[:blank:]]+/ /g' "${dir[tmp]}/hosts-temp-copy.txt" # Convert all spaces and tabs to a single space
-	grep -E '^[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?' "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt" # Extract and keep only lines that begin with an IP address
-	sed -r -i "s/^[012][\.01-9]{1,2}+[[:blank:]]/${conf[ip]} /g" "${dir[tmp]}/hosts-temp.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab in each line
+	grep -Ev "[[:blank:]](ip6-)?(localhost|loopback|localnet|mcastprefix|allnodes|allrouters)\s?\b" "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt" # Remove localhost lines - the computer's installed host file already has localhost defined the way it should be
+	grep -E '^[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?' "${dir[tmp]}/hosts-temp.txt" > "${dir[tmp]}/hosts-temp-copy.txt" # Extract and keep only lines that begin with an IP address
+	sed -r -i "s/^[012][\.01-9]{1,2}+[[:blank:]]/${conf[ip]} /g" "${dir[tmp]}/hosts-temp-copy.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab in each line
 
 	# Sort the lists
-	if test -f "${dir[tmp]}/hosts-temp.txt"
+	if test -f "${dir[tmp]}/hosts-temp-copy.txt"
 	then
-		sed -i 's/\r$//' "${dir[tmp]}/hosts-temp.txt" # Standardise line endings
-		sort -f -u "${dir[tmp]}/hosts-temp.txt" > "${dir[tmp]}/hosts-temp-copy.txt"
-		rm "${dir[tmp]}/hosts-temp.txt"
-		mv "${dir[tmp]}/hosts-temp-copy.txt" "${dir[tmp]}/hosts-temp.txt"
+		sed -i 's/\r$//' "${dir[tmp]}/hosts-temp-copy.txt" # Standardise line endings
+		sort -f -u "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt"
+		rm "${dir[tmp]}/hosts-temp-copy.txt"
 	fi
 
 	if test -f "${dir[tmp]}/whitelist-temp.txt"
