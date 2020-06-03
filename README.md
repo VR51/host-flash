@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.1.9
+Host Flash™ v3.2.0
 
 Lead Author: Lee Hodson
 
@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 30th May 2020
+This Release: 3rd June 2020
 
 First Written: 18th Oct 2015
 
@@ -49,6 +49,12 @@ Use Host Flash™ to manage the Linux hosts file
 Host Flash™ works at the OS level. This means any request from any program or app sent to any flagged external host is blocked.
 
 Host Flash™ does not block requests sent to IP addresses. Use iptables to manage IP address access rules.
+
+Note about changelogs. We only keep the last couple of changelog notes. This helps keep the readme short.
+
+# New in 3.2.0
+- Fixed legacy. The bug affected Host Flash users who had missed a couple years of HF script updates. The bug caused the HF hosts file to not disable when selected to do so through the user menu. Users who discovered HF at version 3.x and above were never affected by this bug.
+- Adjusted the way we extract hosts rules from source lists. New method is more direct to point and more efficient. HF now extracts from source files all lines that begin with an IP address. Previous method used a clean-and-merge process.
 
 # New in 3.1.9
 - Updated hosts file source URLs from HTTP to HTTPS where available.
