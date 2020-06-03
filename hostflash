@@ -3,7 +3,7 @@
 # set -x
 IFS=$'\n\t'
 ###
-# Host Flash™ 3.1.9
+# Host Flash™ 3.2.0
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -16,7 +16,7 @@ IFS=$'\n\t'
 # Contributor: skeletonkey<https://github.com/skeletonkey/>
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 30th May 2020
+# This Release: 3rd June 2020
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -50,9 +50,18 @@ IFS=$'\n\t'
 
 ##
 # TO DO / DEV NOTES
-#	YOU. Yes, you. Ignore the dev notes. These are for me to read :p
-#	Please feel free to work through this list if you wish to do so.
+#	Please feel free to work through this list if you wish to help the project.
 ##
+#
+# Modularisation
+#		Host Flash is meant to be a single file downloadable script. 
+#		I (Lee) might convert the script to an installer that chops itself up to extract modules.
+#		This would enable Host Flash to accept plugins and facilitate HF's future development.
+#		TBC...
+#
+#	Use one file per list.
+#	Auto-detect file type(?)
+#
 # versions: add deb installer
 #
 #  En/disable Automatic list update
@@ -77,31 +86,26 @@ IFS=$'\n\t'
 #   Move items from .hfremoved to post processing blacklist
 #   Move items from .hfremoved to Switch List
 #
-# Move even more actions into functions.
+# Move more actions into functions.
 # Tidy up
 # Add input checking
-# Refine/add messages
-#
-# Improve menu system
-#  What do you want to do? Manage Lists, Update hosts, Manage Custom Files, See Info
-#   Do it
-#  Clearer messages
+# Add new/Add clearer messages
+# Menu + View all HF configs
 #
 # Summary info on main screen / maybe footer for all screens
 #  Add more useful info
 #  Include link to host-flash.com
 #
-#  View all HF configs
-#
 #  Info about each list
 #   Last update time
 #
-# Add last 7 updates log
+# Add last X# updates log
 #  ${log#[time]}
 #  ${log#[size]}
 #  ${log#[lines]}
 #
-# Add hosts file backup option
+# Add hosts file backup and restore option
+#		Store backups in .config/hostflash
 #
 # Go through functions to state the output format
 ###
@@ -133,7 +137,7 @@ IFS=$'\n\t'
 # IMPORTANT: Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.1.9 - 30th May 2020'
+version='3.2.0 - 3rd June 2020'
 debug='0'
 
 # Clear arrays
@@ -1050,8 +1054,9 @@ function __build() {
 
 	printf "This next part could take some time.\nLook in ${dir[tmp]} to view activity in realtime.\n\nProcessing...\n"
 
-	# Convert non-UTF8 characters to UTF8. Fix characters in French lists.
-	# And remove empty lines from whitelists
+	# Convert non-UTF8 characters to UTF8 to fix characters in French lists.
+	# Throw away anything that does not begin with an IP4 address.
+	# We alternate file name between hosts-temp.txt and hosts-temp-copy.txt as we work on them.
 
 	iconv -c -t UTF-8//TRANSLIT < "${dir[tmp]}/whitelist-temp.txt" > "${dir[tmp]}/whitelist-temp-copy.txt"
 	sed '/^$/d' "${dir[tmp]}/whitelist-temp-copy.txt" > "${dir[tmp]}/whitelist-temp.txt"
@@ -1065,19 +1070,17 @@ function __build() {
 	rm "${dir[tmp]}/hosts-temp.txt"
 
 	#	Format raw list data in hosts-temp.txt
-
-	grep -v '^#' "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt" # Remove all lines that begin with a comment
-	sed -r -i 's/[[:blank:]]+/ /g' "${dir[tmp]}/hosts-temp-copy.txt" # Convert spaces and tabs each to a single space
-	grep -Ev "[[:blank:]](ip6-)?(localhost|loopback|localnet|mcastprefix|allnodes|allrouters)\s?\b" "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt" # Remove localhost lines - the computer's installed host file already has localhost defined the way it should be
-	grep -E '^[012][\.01-9]{1,2}' "${dir[tmp]}/hosts-temp.txt" > "${dir[tmp]}/hosts-temp-copy.txt" # Remove any line that does not begin with 0,1 or 2
-	sed -r -i "s/^[012][\.01-9]{1,2}+[[:blank:]]/${conf[ip]} /g" "${dir[tmp]}/hosts-temp-copy.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab in each line
+	sed -r -i 's/[[:blank:]]+/ /g' "${dir[tmp]}/hosts-temp-copy.txt" # Convert all spaces and tabs to a single space
+	grep -E '^[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?' "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt" # Extract and keep only lines that begin with an IP address
+	sed -r -i "s/^[012][\.01-9]{1,2}+[[:blank:]]/${conf[ip]} /g" "${dir[tmp]}/hosts-temp.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab in each line
 
 	# Sort the lists
-	if test -f "${dir[tmp]}/hosts-temp-copy.txt"
+	if test -f "${dir[tmp]}/hosts-temp.txt"
 	then
-		sed -i 's/\r$//' "${dir[tmp]}/hosts-temp-copy.txt" # Standardise line endings
-		sort -f -u "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt"
-		rm "${dir[tmp]}/hosts-temp-copy.txt"
+		sed -i 's/\r$//' "${dir[tmp]}/hosts-temp.txt" # Standardise line endings
+		sort -f -u "${dir[tmp]}/hosts-temp.txt" > "${dir[tmp]}/hosts-temp-copy.txt"
+		rm "${dir[tmp]}/hosts-temp.txt"
+		mv "${dir[tmp]}/hosts-temp-copy.txt" "${dir[tmp]}/hosts-temp.txt"
 	fi
 
 	if test -f "${dir[tmp]}/whitelist-temp.txt"
@@ -1167,10 +1170,10 @@ function __disable() {
 	sudo -v
 	
 	cp "${file[hosts]}" "${dir[tmp]}/hosts.copy"
-	if grep -zPo '# Host.? Flash.? Bad Hosts Block' "${dir[tmp]}/hosts.copy"
+	if grep -zPo '# Host.? Flash' "${dir[tmp]}/hosts.copy"
 	then
 		# Remove old HF data, remove HF header remove empty lines.
-		grep -zPo '(?s).*# Host.? Flash.? Bad Hosts Block' "${dir[tmp]}/hosts.copy" | head -n -1 | grep -Ev '^[[:space:]]$' > "${dir[tmp]}/hosts.head"
+		grep -zPo '(?s).*# Host.? Flash' "${dir[tmp]}/hosts.copy" | head -n -1 | grep -v '^[[:space:]]$' > "${dir[tmp]}/hosts.head"
 		sudo mv -f "${dir[tmp]}/hosts.head" "${file[hosts]}"
 	else
 		message[disable]="$package not installed. Nothing to do."
