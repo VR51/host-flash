@@ -53,7 +53,7 @@ Host Flash™ does not block requests sent to IP addresses. Use iptables to mana
 Note about changelogs. We only keep the last couple of changelog notes. This helps keep the readme short.
 
 # New in 3.2.0
-- Fixed legacy. The bug affected Host Flash users who had missed a couple years of HF script updates. The bug caused the HF hosts file to not disable when selected to do so through the user menu. Users who discovered HF at version 3.x and above were never affected by this bug.
+- Fixed legacy bug. The bug affected Host Flash users who had missed a couple years of HF script updates. The bug caused the HF hosts file to not disable when selected to do so through the user menu. Users who discovered HF at version 3.x and above were never affected by this bug.
 - Adjusted the way we extract hosts rules from source lists. New method is more direct to point and more efficient. HF now extracts from source files all lines that begin with an IP address. Previous method used a clean-and-merge process.
 
 # New in 3.1.9
