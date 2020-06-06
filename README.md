@@ -8,6 +8,8 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
+## Version 4 release imminent. Final tests underway.
+
 This Release: 3rd June 2020
 
 First Written: 18th Oct 2015
