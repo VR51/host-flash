@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v3.2.0
+Host Flash™ v4.0.0
 
 Lead Author: Lee Hodson
 
@@ -8,9 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-## Version 4 release imminent. Final tests underway.
-
-This Release: 3rd June 2020
+This Release: 3rd July 2020
 
 First Written: 18th Oct 2015
 
@@ -53,6 +51,30 @@ Host Flash™ works at the OS level. This means any request from any program or 
 Host Flash™ does not block requests sent to IP addresses. Use iptables to manage IP address access rules.
 
 Note about changelogs. We only keep the last couple of changelog notes. This helps keep the readme short.
+
+# New in 4.0.0
+
+Version 4.0.0 heralds a change in the way HostFlash functions. From the enduser viewpoint there is no change to the way HostFlash is used - it works in the same way as version 3.x. From a developers point of view there will soon be a way to create modular plugins for HostFlash. If you paid attention to that last sentence you will be smiling happy that the future of HostFlash is modular.
+
+- Auto-detection of source host list file type. No need to flag the file type in custom lists. The now obsolete flags were: zip, p7, raw and direct. Currently, errors show when source files are initially processed. These errors can be ignored; they are caused because we try to unzip/unpackage every downloaded file type, which is quicker than mime type tests to findg the right archive program before unzip, untar etc... May as well just go for it instead of messing around.
+- New directory structure
+	-	Permanent Directories
+		~/hostflash/backups
+		~/hostflash/DOCS
+		~/hostflash/logs
+	-	Temp. Directories. These are deleted when a new hosts file is built (unless DEBUG is set to '1', in which case they are left in place)
+		~/src/tmp/download
+		~/src/tmp/unprocessed
+		~/src/tmp/processed
+	- Config Directory restructure
+		~/.configs/.hostflash
+		~/.configs/hostflash/.lists # To be used later
+		~/.configs/hostflash/.menus # To be used later
+		~/.configs/hostflash/.plugins # To be used later
+- Replaced hosts files are now zipped to the backup directory. Preview and Restore options to be added later.
+- Hosts file summary info is now written to the history log when a host file is built.
+- Function __log now logs three message types: log, hist and debug. The __debug will eventually be rolled into __log.
+- Function __log with 'debug' flag causes cURL to log the head fetched with source file downloads to the debug file.
 
 # New in 3.2.0
 - Fixed legacy bug. The bug affected Host Flash users who had missed a couple years of HF script updates. The bug caused the HF hosts file to not disable when selected to do so through the user menu. Users who discovered HF at version 3.x and above were never affected by this bug.
