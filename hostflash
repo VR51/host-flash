@@ -3,7 +3,7 @@
 # set -x
 IFS=$'\n\t'
 ###
-# Host Flash™ 3.2.0
+# Host Flash™ 4.0.0
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -42,25 +42,62 @@ IFS=$'\n\t'
 #
 #  chmod u+x hostflash
 #
-# Launch by clicking the script file or by typing `bash hostflash` at the command line.
+# Launch by clicking the script file or by typing `bash ./hostflash` at the command line.
 #
 # Host Flash™ will attempt to preserve existing host rules.
 #
 ###
 
 ##
+#	NEW in 4
+#		Auto-detect source file type. No need to flag the file type in custom lists. The now obsolete flags were: zip, p7, raw and direct.
+#		New directory structure
+#			Permanent Directories
+#				~/hostflash/backups
+#				~/hostflash/DOCS
+#				~/hostflash/logs
+#			Temp. Directories. These are deleted when a new hosts file is built (unless DEBUG is set to '1', in which case they are left in place)
+#				~/src/tmp/download
+#				~/src/tmp/unprocessed
+#				~/src/tmp/processed
+#			Config Directory restructure
+#				~/.configs/hostflash
+#					Files are no longer dot files.
+#				~/.configs/hostflash/lists # To be used later
+#				~/.configs/hostflash/menus # To be used later
+#				~/.configs/hostflash/plugins # To be used later
+#
+#		Replaced hosts files are now zipped to the backup directory. Restore option to be added later.
+#		Hosts file summary info is now written to the history log when a host file is built.
+#		__log now logs three message types: log, hist and debug. The __debug will eventually be rolled into __log.
+#		__log with 'debug' flag causes cURL to log to the debug file the head fetched with source file downloads.
+#
+##
+
+##
 # TO DO / DEV NOTES
 #	Please feel free to work through this list if you wish to help the project.
+#
+#
+#
+#
+# line 1583 fix restore. should point to backup directory and unzip into tmp directory then test for hosts before moving it to /etc/hosts
 ##
 #
 # Modularisation
 #		Host Flash is meant to be a single file downloadable script. 
 #		I (Lee) might convert the script to an installer that chops itself up to extract modules.
-#		This would enable Host Flash to accept plugins and facilitate HF's future development.
+#		This would enable Host Flash to accept plugins, facilitate user customizations and facilitate HF's future development.
 #		TBC...
 #
 #	Use one file per list.
-#	Auto-detect file type(?)
+#	Download Free Mode. Place source files into directory. HF builds from source files.
+#	Rebuild source file process method
+#
+#	If internet is available (Check exit status of latest Git commit check: $networked should = 0 if the net is available)
+#		Download DOCs
+#		Offer HF script updates
+#	Show error if internet is unavailable
 #
 # versions: add deb installer
 #
@@ -79,6 +116,10 @@ IFS=$'\n\t'
 # Compact local whitelists and local blacklists (all lower, sort -u)
 # View/Edit local lists (nano, pico, cat)
 #
+# Feature: search hosts file for a domain or list of domains (grep without regex)
+#  Offer to disable if found
+#  Offer to add to custom whitelist
+#
 # Switchlist
 #  Temporarily disable and enable whitelist hosts
 # Options
@@ -88,8 +129,8 @@ IFS=$'\n\t'
 #
 # Move more actions into functions.
 # Tidy up
-# Add input checking
-# Add new/Add clearer messages
+# Add input checking/sanitisation
+# Make messages and menus clearer
 # Menu + View all HF configs
 #
 # Summary info on main screen / maybe footer for all screens
@@ -99,15 +140,9 @@ IFS=$'\n\t'
 #  Info about each list
 #   Last update time
 #
-# Add last X# updates log
-#  ${log#[time]}
-#  ${log#[size]}
-#  ${log#[lines]}
-#
-# Add hosts file backup and restore option
-#		Store backups in .config/hostflash
-#
 # Go through functions to state the output format
+# 
+# Rebuild menu system based on SaLi text mode only
 ###
 
 ##
@@ -124,7 +159,7 @@ IFS=$'\n\t'
 #  Whitelist wild is processed twice:
 #   As a normal whitelist
 #   As a wild whitelist
-#  A period is added before the first character of the host name
+#   A period is added before the first character of each host name processed
 ##
 
 ##
@@ -137,11 +172,34 @@ IFS=$'\n\t'
 # IMPORTANT: Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='3.2.0 - 3rd June 2020'
+version='4.0.0 - 3rd June 2020'
 debug='0'
 
+## Clear screen
+function __clear() {
+	if test $debug -eq '0' ; then
+		clear
+	fi
+}
+
+## Source loader
+# Load source files
+# This facilitates modularisation
+function __flying_sourcer() {
+
+	SourcerSection="$1"
+	
+	if source "${SourcerSection}"
+	then
+		source "${SourcerSection}"
+	else
+		. "${SourcerSection}"
+	fi
+
+}
+
 # Clear arrays
-unset app conf dir file log list message rem menu select mode essentialpackages credits flush listc listcc listsc
+unset app conf dir file in list log message rem menu select mode essentialpackages credits flush listc listcc listsc
 
 # Declare associative arrays
 declare -A app conf dir file list log message rem
@@ -161,11 +219,26 @@ rem[gitp]='https://github.com/VR51/host-flash.git' # Software source package git
 rem[tld]='https://data.iana.org/TLD/tlds-alpha-by-domain.txt' # Official list of valid TLDs
 
 # Directories
-#  These are created by dir[@] dump. Be careful when adding directories to this list
-dir[src]="$HOME/src/hostflash" # Directory where the source code will be stored locally
-dir[tmp]="${dir[src]}/tmp" # Directory where temporary files will be stored locally
-dir[docs]="${dir[src]}/DOC" # Location of program documents. # To be written
+#  These directories are created by dir[@] dump. Be careful when adding directories to this list
+#
+# Top level directories
+dir[hfh]="$HOME/hostflash" # Host Flash Home directory
+dir[src]="$HOME/src/hostflash" # Directory where source hosts files are stored locally
 dir[conf]="$HOME/.config/hostflash" # Location of custom configuration files.
+# Sub level directories
+## These are permanent doc and log directories
+dir[docs]="${dir[hfh]}/DOC" # Location of program documents. # To be written
+dir[logs]="${dir[hfh]}/logs" # Location of host file logs.
+dir[bck]="${dir[hfh]}/backups" # Location of host file backups.
+## These are config directories
+dir[lists]="${dir[conf]}/lists" # Modular lists
+dir[menus]="${dir[conf]}/menus" # Modular menus
+dir[plugs]="${dir[conf]}/plugins" # Modular plugins
+## These are wiped each time a hosts file is built unless DEBUG is set to '1'.
+dir[tmp]="${dir[src]}/tmp" # Directory where temporary files are stored locally
+dir[tmpd]="${dir[tmp]}/downloads" # Directory where source hosts files downloaded and unpacked before being moved
+dir[tmpu]="${dir[tmp]}/unprocessed" # Directory where unprocessed source hosts files are stored
+dir[tmpp]="${dir[tmp]}/processed" # Directory where processed source hosts files are stored. This allows us to check events.
 
 # Files
 file[hosts]=''
@@ -177,12 +250,6 @@ file[hosts]=''
 
 # Custom Hosts File location
 # file[hosts]='/enter/path/to/file/called/hosts' # Add the path to your system's hosts file then uncomment (remove the #) and save to activate.
-
-function __clear() {
-	if [ $debug == '0' ]; then
-		clear
-	fi
-}
 
 __clear
 
@@ -214,12 +281,13 @@ file[confbl]="${dir[conf]}/.hfblrc" # Location of the user's custom blacklist.
 file[confcl]="${dir[conf]}/.hfclrc" # Location of the user's custom hosts lists.
 file[confr]="${dir[conf]}/.hfremoved" # Hosts removed from hosts list during hosts build/update.
 file[conftld]="${dir[conf]}/.hftld" # Location of valid TLD list.
-file[debug]="${dir[conf]}/.debug.txt" # Location of debug logging file.
-
-# to be used in a later version
+# Log files
+file[hist]="${dir[logs]}/history.txt" # Location of update history.
+file[log]="${dir[logs]}/log.txt" # Location of the general process log file. # Not yet used
+file[debug]="${dir[logs]}/debug.txt" # Location of debug logging file.
+# Next files to be used in a later version of HF
 file[confpost]="${dir[conf]}/.hfpost" # Location of the post processing blacklist (block hosts that are wild needlessly whitelisted)
 file[confsl]="${dir[conf]}/.hfslrc" # Location of the user's hosts switch list.
-file[log]="${dir[conf]}/.log" # Location of the log file.
 
 # App Launcher Settings
 # These are specific to the application/task manager installer (yet to be implemented)
@@ -260,8 +328,7 @@ let listsc=listc+listcc
 # list[src]='Download URL' # From where the package will be retrieved
 # list[file]='Download Package' # Name of package retrieved
 # list[target]='Package Target' # Name of usable file in a retrieved zip package / Name of file created on retrieval if FLAG is raw
-# list[flag]='package Type' # direct (the URL leads to the file), raw (URL + File name are used to get the file), unzip (URL + file name, unzip is used), p7zip (URL + File name, p7zip is used).
-# list[ip]='0' # 0 or 1 for false or true. Add loopback IP address to downloaded list. This is required of a hosts list consists of domain names with no IP prefix. Not required for whitelists, in fact should never be set to '1' for whitelists.
+# list[ip]='0' # 0 or 1 for false or true. Add loopback IP address to downloaded list. This is required when a hosts list consists of domain names with no IP prefix. Not required for whitelists, in fact should never be set to '1' for whitelists.
 #
 # Changes to list[status] are stored in .hfrc
 # Custom lists will be added to .hfclrc
@@ -277,7 +344,6 @@ list[info1]='hosts-file.net - Ad Servers (Liberal)'
 list[src1]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file1]='ad_servers.txt'
 list[target1]='ad_servers.txt'
-list[flag1]='raw'
 list[ip1]='0'
 
 list[status2]='+'
@@ -285,7 +351,6 @@ list[info2]='hosts-file.net - EMD (Liberal)'
 list[src2]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file2]='emd.txt'
 list[target2]='emd.txt'
-list[flag2]='raw'
 list[ip2]='0'
 
 list[status3]='+'
@@ -293,7 +358,6 @@ list[info3]='hosts-file.net - EXP (Liberal)'
 list[src3]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file3]='exp.txt'
 list[target3]='exp.txt'
-list[flag3]='raw'
 list[ip3]='0'
 
 list[status4]='+'
@@ -301,7 +365,6 @@ list[info4]='hosts-file.net - FSA (Liberal)'
 list[src4]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file4]='fsa.txt'
 list[target4]='fsa.txt'
-list[flag4]='raw'
 list[ip4]='0'
 
 list[status5]='+'
@@ -309,7 +372,6 @@ list[info5]='hosts-file.net - GRM (Liberal)'
 list[src5]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file5]='grm.txt'
 list[target5]='grm.txt'
-list[flag5]='raw'
 list[ip5]='0'
 
 list[status6]='+'
@@ -317,7 +379,6 @@ list[info6]='hosts-file.net - HFS (Liberal)'
 list[src6]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file6]='hfs.txt'
 list[target6]='hfs.txt'
-list[flag6]='raw'
 list[ip6]='0'
 
 list[status7]='+'
@@ -325,7 +386,6 @@ list[info7]='hosts-file.net - HJK (Liberal)'
 list[src7]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file7]='hjk.txt'
 list[target7]='hjk.txt'
-list[flag7]='raw'
 list[ip7]='0'
 
 list[status8]='+'
@@ -333,7 +393,6 @@ list[info8]='hosts-file.net - MMT (Liberal)'
 list[src8]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file8]='mmt.txt'
 list[target8]='mmt.txt'
-list[flag8]='raw'
 list[ip8]='0'
 
 list[status9]='+'
@@ -341,7 +400,6 @@ list[info9]='hosts-file.net - PHA (Liberal)'
 list[src9]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file9]='pha.txt'
 list[target9]='pha.txt'
-list[flag9]='raw'
 list[ip9]='0'
 
 list[status10]='+'
@@ -349,7 +407,6 @@ list[info10]='hosts-file.net - PSH (Liberal)'
 list[src10]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file10]='psh.txt'
 list[target10]='psh.txt'
-list[flag10]='raw'
 list[ip10]='0'
 
 list[status11]='+'
@@ -357,7 +414,6 @@ list[info11]='hosts-file.net - PUP (Liberal)'
 list[src11]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file11]='pup.txt'
 list[target11]='pup.txt'
-list[flag11]='raw'
 list[ip11]='0'
 
 list[status12]='+'
@@ -365,7 +421,6 @@ list[info12]='hosts-file.net - WRZ (Liberal)'
 list[src12]='https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master'
 list[file12]='wrz.txt'
 list[target12]='wrz.txt'
-list[flag12]='raw'
 list[ip12]='0'
 
 list[status13]='+'
@@ -373,7 +428,6 @@ list[info13]='mvps.org (Liberal: Blocks mostly adware, spyware, malware and trac
 list[src13]='https://winhelp2002.mvps.org'
 list[file13]='hosts.zip'
 list[target13]='HOSTS'
-list[flag13]='unzip'
 list[ip13]='0'
 
 list[status14]='+'
@@ -381,7 +435,6 @@ list[info14]='free.fr-Trackers (Moderate: Blocks trackers)'
 list[src14]='http://rlwpx.free.fr/WPFF'
 list[file14]='htrc.7z'
 list[target14]='Hosts.trc'
-list[flag14]='p7zip'
 list[ip14]='0'
 
 list[status15]='+'
@@ -389,7 +442,6 @@ list[info15]='free.fr-Ad-Servers (Moderate: Blocks ad servers)'
 list[src15]='http://rlwpx.free.fr/WPFF'
 list[file15]='hpub.7z'
 list[target15]='Hosts.pub'
-list[flag15]='p7zip'
 list[ip15]='0'
 
 list[status16]='+'
@@ -397,7 +449,6 @@ list[info16]='free.fr-Malware (Moderate: Blocks malware domains)'
 list[src16]='http://rlwpx.free.fr/WPFF'
 list[file16]='hrsk.7z'
 list[target16]='Hosts.rsk'
-list[flag16]='p7zip'
 list[ip16]='0'
 
 list[status17]='+'
@@ -405,7 +456,6 @@ list[info17]='free.fr-Adult (Moderate: Blocks adult domains. Coincidentally bloc
 list[src17]='http://rlwpx.free.fr/WPFF'
 list[file17]='hsex.7z'
 list[target17]='Hosts.sex'
-list[flag17]='p7zip'
 list[ip17]='0'
 
 list[status18]='+'
@@ -413,7 +463,6 @@ list[info18]='free.fr-Misc (Moderate: Blocks miscellaneous domains)'
 list[src18]='http://rlwpx.free.fr/WPFF'
 list[file18]='hmis.7z'
 list[target18]='Hosts.mis'
-list[flag18]='p7zip'
 list[ip18]='0'
 
 list[status19]='+'
@@ -421,7 +470,6 @@ list[info19]='someonewhocares.org (Liberal: Blocks mostly adware, spyware, malwa
 list[src19]='https://someonewhocares.org/hosts'
 list[file19]='hosts'
 list[target19]='hosts.txt'
-list[flag19]='raw'
 list[ip19]='0'
 
 list[status20]='+'
@@ -429,39 +477,34 @@ list[info20]='malwaredomainlist.com (Liberal: Blocks mostly malware. Small list)
 list[src20]='https://www.malwaredomainlist.com/hostslist'
 list[file20]='hosts.txt'
 list[target20]='hosts.txt'
-list[flag20]='raw'
 list[ip20]='0'
 
 list[status21]='+'
 list[info21]='KADhosts (Liberal: Blocks malware hosts)'
 list[src21]='https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.txt'
-list[file21]='hosts.txt'
+list[file21]=''
 list[target21]='hosts.txt'
-list[flag21]='direct'
 list[ip21]='0'
 
 list[status22]='+'
 list[info22]='yoyo.org (Liberal: Blocks adservers)'
 list[src22]='https://pgl.yoyo.org/as/serverlist.php?showintro=0;hostformat=hosts'
-list[file22]='hosts.txt'
+list[file22]=''
 list[target22]='hosts.txt'
-list[flag22]='direct'
 list[ip22]='0'
 
 list[status23]='+'
 list[info23]='Mitchell Krog (Liberal: Blocks spam bot hosts)'
 list[src23]='https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts'
-list[file23]='hosts.txt'
+list[file23]=''
 list[target23]='hosts.txt'
-list[flag23]='direct'
 list[ip23]='0'
 
 list[status24]='+'
 list[info24]='CoinBlockerLists (Liberal: Blocks cryptominers)'
 list[src24]='https://zerodot1.gitlab.io/CoinBlockerLists/hosts_browser'
-list[file24]='hosts.txt'
+list[file24]=''
 list[target24]='hosts.txt'
-list[flag24]='direct'
 list[ip24]='0'
 
 list[status25]='+'
@@ -469,7 +512,6 @@ list[info25]='Developer Dan Ads and Trackers Safe List (Liberal: Blocks ads and 
 list[src25]='https://www.github.developerdan.com/hosts/lists'
 list[file25]='ads-and-tracking-extended.txt'
 list[target25]='hosts.txt'
-list[flag25]='raw'
 list[ip25]='0'
 
 list[status26]='+'
@@ -477,7 +519,6 @@ list[info26]='Developer Dan Ads and Trackers Aggressive List (Moderate: Could ca
 list[src26]='https://www.github.developerdan.com/hosts/lists'
 list[file26]='tracking-aggressive-extended.txt'
 list[target26]='hosts.txt'
-list[flag26]='raw'
 list[ip26]='0'
 
 # Alternative address: https://raw.githubusercontent.com/AdAway/adaway.github.io/master/hosts.txt
@@ -486,7 +527,6 @@ list[info27]='AdAway (Liberal: Blocks ad networks)'
 list[src27]='https://adaway.org'
 list[file27]='hosts.txt'
 list[target27]='hosts.txt'
-list[flag27]='raw'
 list[ip27]='0'
 
 list[status28]='+'
@@ -494,7 +534,6 @@ list[info28]='hostsfile.org (Very Strict: Regular blocks + porn, gambling and ga
 list[src28]='https://www.hostsfile.org/Downloads'
 list[file28]='hosts.txt'
 list[target28]='hosts.txt'
-list[flag28]='raw'
 list[ip28]='0'
 
 # Others
@@ -502,25 +541,22 @@ list[ip28]='0'
 list[status29]='+'
 list[info29]='Community Whitelist (Host Flash™ whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
 list[src29]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw'
-list[file29]='whitelist.txt'
+list[file29]=''
 list[target29]='whitelist.txt'
-list[flag29]='direct'
 list[ip29]='0'
 
 list[status30]='+'
 list[info30]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
 list[src30]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
-list[file30]='whitelist-wild.txt'
+list[file30]=''
 list[target30]='whitelist-wild.txt'
-list[flag30]='direct'
 list[ip30]='0'
 
 list[status31]='+'
 list[info31]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
 list[src31]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
-list[file31]='blocklist.txt'
+list[file31]=''
 list[target31]='hosts.txt'
-list[flag31]='direct'
 list[ip31]='1'
 
 list[status32]='+'
@@ -528,7 +564,6 @@ list[info32]='Local Whitelist (Your own custom whitelist)'
 list[src32]='localhost'
 list[file32]="${file[confwl]}"
 list[target32]='whitelist.txt'
-list[flag32]='direct'
 list[ip32]='0'
 
 list[status33]='+'
@@ -536,7 +571,6 @@ list[info33]='Local Whitelist Wild (Your own custom wild whitelist)'
 list[src33]='localhost'
 list[file33]="${file[confwlw]}"
 list[target33]='whitelist-wild.txt'
-list[flag33]='direct'
 list[ip33]='0'
 
 list[status34]='+'
@@ -544,7 +578,6 @@ list[info34]='Local blacklist (Your own custom blacklist)'
 list[src34]='localhost'
 list[file34]="${file[confbl]}"
 list[target34]='hosts.txt'
-list[flag34]='direct'
 list[ip34]='1'
 
 # GENERAL
@@ -557,6 +590,7 @@ conf[upv]=0 # Update Host Flash™ program.
 conf[inst]=$( ls -l "$0" | cut -d' ' -f 6-8) # $package installation date
 conf[locv]="$version installed ${conf[inst]}"
 conf[gitv]=$(curl -v --silent "${rem[gith]}/commit/master" --stderr - | grep '<relative-time datetime' | sed -E 's#.+">(.+)<.+#\1#')
+	networked="$?" # Are we connected to the net? We are if $networked = 0.
 conf[hosts]=$( ls -l "${file[hosts]}" | cut -d' ' -f5 ) # Hosts file size
 conf[hostt]=$( ls -l "${file[hosts]}" | cut -d' ' -f 6-8 ) # Hosts file timestamp
 conf[hostc]=$( wc -l "${file[hosts]}" | cut -d' ' -f1 ) # Hosts file line count
@@ -564,17 +598,33 @@ conf[hostc]=$( wc -l "${file[hosts]}" | cut -d' ' -f1 ) # Hosts file line count
 conf[ip]='0.0.0.0' # Redirect IP address
 conf[mode]='1' # Build Only or Build and Install 0 or 1
 
+timestamp="$(date +"%Y-%m-%d-%H-%M-%S")"
+
 # LOGS
-# Not yet used
+# Partially utilised. Usage to be expanded
+# Log host file history, general log messages and debug messages
 function __log() {
-	# @1 = Message
+	# @1 = File to store log
+	# @2 = Message to store with log
 	
-	message=$1
+	file=$1
+	message=$2
 	
 	now="$(date +"%Y-%m-%d %H:%M:%S")"
-	log[$now]="$now: $message"
 	
-	# ${file[log]}
+	case "$file" in
+		hist)
+			if test "$message" ; then echo "$message" >> "${file[hist]}"; fi
+			echo "$now: Line Count: ${conf[hostc]} | Bytes: ${conf[hosts]} | Timestamp: ${conf[hostt]} | Location: ${file[hosts]}" >> "${file[hist]}"
+		;;
+		log)
+			echo "$now: $message" >> "${file[log]}"
+		;;
+		debug)
+			echo "$now: $message" >> "${file[debug]}"
+		;;
+	esac
+
 }
 
 ## END CONFIGS
@@ -596,7 +646,7 @@ cd "$filepath"
 function __download_tlds() {
 	if test $(find "${file[conftld]}" -mmin +1440) || test ! -f "${file[conftld]}" # If exists but is older than 1440 minutes
 	then
-		curl -e "${rem[tld]}" "${rem[tld]}" -o "${file[conftld]}"
+		curl -e -L "${rem[tld]}" "${rem[tld]}" -o "${file[conftld]}"
 		sed -e 's/\(.*\)/\L\1/' "${file[conftld]}" > "${file[conftld]}tmp"
 		grep -vE '^#' "${file[conftld]}tmp" > "${file[conftld]}"
 		# Next lines allow the file to be passed to Grep as a string of ORs
@@ -605,7 +655,7 @@ function __download_tlds() {
 		#rm "${file[conftld]}tmp"
 	fi
 }
-__download_tlds # Get TLD list # Not yet used.
+# __download_tlds # Get TLD list # Not yet used.
 
 case "${debug}" in
 	0)
@@ -615,6 +665,7 @@ case "${debug}" in
 	;;
 esac
 
+# Make directories and files that do not yet exist
 mkdir -p "${dir[@]}" # Make directories
 touch -a "${file[@]}" # Make config files
 
@@ -654,18 +705,10 @@ function __repaint() {
 
 		conf) # Include basic conf and any extras listed in $@
 
-		if source "${in[1]}"
-		then
-				for i in ${in[@]:1}; do
-					source "$i"
-				done
-				source "${file[conf]}"
-		else
-				for i in ${in[@]:1}; do
-					. "$i"
-				done
-				. "${file[conf]}"
-		fi
+			for i in ${in[@]:1}; do
+				__flying_sourcer "$i"
+			done
+			__flying_sourcer "${file[conf]}"
 		
 		;;
 		
@@ -676,12 +719,7 @@ function __repaint() {
 
 		*) # Include basic conf only
 
-		if source "${file[conf]}"
-		then
-				source "${file[conf]}"
-		else
-				. "${file[conf]}"
-		fi
+		__flying_sourcer "${file[conf]}"
 		
 		;;
 	
@@ -944,7 +982,6 @@ function __build() {
 		src="${list[src${n}]}"
 		file="${list[file${n}]}"
 		target="${list[target${n}]}"
-		flag="${list[flag${n}]}"
 		ip="${list[ip${n}]}"
 
 		if test "$status" = '+' # The list is enabled
@@ -954,40 +991,80 @@ function __build() {
 
 				localhost)
 
-					cat "$file" >> "${dir[tmp]}/$target.$n"
-
+					case "$target" in
+						whitelist-wild.txt)
+							cat "$file" >> "${dir[tmpu]}/whitelist-wild.txt"
+						;;
+						
+						whitelist.txt)
+							cat "$file" >> "${dir[tmpu]}/whitelist.txt"
+						;;
+						
+						*) # Is a hosts.txt file
+							cat "$file" >> "${dir[tmpu]}/hosts.txt.$n"
+						;;
+					esac
+					
 				;;
 
 				*)
-					# Download remote repo lists
-					if test "$flag" = 'direct' # $file is the target
+
+					# Grab source hosts file from its remote location
+					if test "${file}"
 					then
-						curl -e "$src" "$src" -o "${dir[tmp]}/$target.$n"
-						mv "${dir[tmp]}/$target.$n" "${dir[tmp]}/hosts.txt.$n" # Rename target file. Helps with debugging
+						# log
+						if test $debug -ne '0' ; then
+							result=$(curl -LI --silent -e "$src" "$src/$file")
+							__log debug "$result"
+						fi
+						# download
+						curl -L -e "$src" "$src/$file" -o "${dir[tmpd]}/$file"
+					else
+						# log
+						if test $debug -ne '0' ; then
+							result=$(curl -LI --silent -e "$src" "$src")
+							__log debug "$result"
+						fi
+						# download
+						file="nofile.txt.$n"
+						curl -L -e "$src" "$src" -o "${dir[tmpd]}/$file"
 					fi
 
-					if test "$flag" = 'raw'
-					then
-						curl -e "$src" "$src/$file" -o "${dir[tmp]}/$target.$n"
-						mv "${dir[tmp]}/$target.$n" "${dir[tmp]}/hosts.txt.$n" # Rename target file. Helps with debugging
-					fi
+					# Filter by type
+					case "$target" in
 
-					if test "$flag" = 'unzip' || test "$flag" = 'p7zip'
-					then
-						curl -e "$src" "$src/$file" -o "${dir[tmp]}/$file"
-						# Extract package content
-						if test "$flag" = 'unzip'; then unzip -o "${dir[tmp]}/$file" -d "${dir[tmp]}"; fi
-						if test "$flag" = 'p7zip'; then 7z e -y "${dir[tmp]}/$file" -o"${dir[tmp]}" ; fi
-						# Rename target file. Helps with debugging
-						mv "${dir[tmp]}/$target" "${dir[tmp]}/hosts.txt.$n"
-					fi
-
-					# Clean up retrieved files but keep the $target.$n
-
-					if test -f "${dir[tmp]}/$file"
-					then
-						rm "${dir[tmp]}/$file"
-					fi
+						whitelist-wild.txt)
+							cat "${dir[tmpd]}/$target" >> "${dir[tmpu]}/whitelist-wild.txt"
+							rm "${dir[tmpd]}/$target"
+						;;
+						
+						whitelist.txt)
+							cat "${dir[tmpd]}/$target" >> "${dir[tmpu]}/whitelist.txt"
+							rm "${dir[tmpd]}/$target"
+						;;
+						
+						*) # $target is a source hosts file
+							# Doing this back-to-front so we do not need to test text mime types
+							# Attempt to extract package content
+							# If a package is found it contains the target file
+							unzip -o "${dir[tmpd]}/$file" -d "${dir[tmpd]}" > /dev/null 2>&1 # Try unzip. Suppress errors
+							if test $? -eq 0
+							then
+								mv "${dir[tmpd]}/$target" "${dir[tmpu]}/hosts.txt.$n"
+								rm "${dir[tmpd]}/$file"
+							else # If unzip failed try 7z
+								7z e -y "${dir[tmpd]}/$file" -o"${dir[tmpd]}" # Try 7z. Suppress errors
+								if test $? -eq 0
+								then
+									mv "${dir[tmpd]}/$target" "${dir[tmpu]}/hosts.txt.$n"
+									rm "${dir[tmpd]}/$file"
+								else # It's not a package file so treat as a txt file: just move and rename
+									mv "${dir[tmpd]}/$file" "${dir[tmpu]}/hosts.txt.$n"
+								fi
+							fi
+						;;
+					
+					esac
 
 				;;
 
@@ -997,7 +1074,7 @@ function __build() {
 			case "${ip}" in
 
 				1)
-					sed -r -i "s/^/${conf[ip]} /g" "${dir[tmp]}/$target.$n" # Loopback IP
+					sed -r -i "s/^/${conf[ip]} /g" "${dir[tmpu]}/$target.$n" # Loopback IP
 				;;
 
 			esac
@@ -1020,29 +1097,39 @@ function __build() {
 	# Merge files. We do it this way to simplify debugging
 	until [ $c -eq 0 ]; do
 
-		echo "c: $c" >> "${dir[tmp]}/merge-counter.txt"
+		echo "File: $c" >> "${dir[tmp]}/merge-counter.txt"
 
-		if test -f "${dir[tmp]}/hosts.txt.$c"
+		if test -f "${dir[tmpu]}/hosts.txt.$c"
 		then
-			cat "${dir[tmp]}/hosts.txt.$c" >> "${dir[tmp]}/hosts-temp.txt"
+			cat "${dir[tmpu]}/hosts.txt.$c" >> "${dir[tmpu]}/hosts-temp.txt"
 			if test $? -eq 0; then
-				echo "${dir[tmp]}/hosts.txt.$c" >> "${dir[tmp]}/merge-counter.txt"
+				echo "Success: ${dir[tmpu]}/hosts.txt.$c" >> "${dir[tmp]}/merge-counter.txt" # Log the merge
+				mv -f "${dir[tmpu]}/hosts.txt.$c" "${dir[tmpp]}/hosts.txt.$c" # Move the merged file from unprocessed to processed
+			else
+				echo "Fail: ${dir[tmpu]}/hosts.txt.$c" >> "${dir[tmp]}/merge-counter.txt" # Log the merge
 			fi
 		fi
 
-		if test -f "${dir[tmp]}/whitelist.txt.$c"
+		# No need to number whitelist files. We know what we are dealing with here so we use the same file throughout.
+		if test -f "${dir[tmpu]}/whitelist.txt"
 		then
-			cat "${dir[tmp]}/whitelist.txt.$c" >> "${dir[tmp]}/whitelist-temp.txt"
+			cat "${dir[tmpu]}/whitelist.txt" >> "${dir[tmpu]}/whitelist-temp.txt"
 			if test $? -eq 0; then
-				echo "${dir[tmp]}/whitelist.txt.$c" >> "${dir[tmp]}/merge-counter.txt"
+				echo "Success: ${dir[tmpu]}/whitelist.txt" >> "${dir[tmp]}/merge-counter.txt"
+				cp "${dir[tmpu]}/whitelist.txt" "${dir[tmpp]}/whitelist.txt" # Move the merged file from unprocessed to processed
+			else
+				echo "Fail: ${dir[tmpu]}/whitelist.txt" >> "${dir[tmp]}/merge-counter.txt"
 			fi
 		fi
 
-		if test -f "${dir[tmp]}/whitelist-wild.txt.$c"
+		if test -f "${dir[tmpu]}/whitelist-wild.txt"
 		then
-			cat "${dir[tmp]}/whitelist-wild.txt.$c" >> "${dir[tmp]}/whitelist-wild-temp.txt"
+			cat "${dir[tmpu]}/whitelist-wild.txt" >> "${dir[tmpu]}/whitelist-wild-temp.txt"
 			if test $? -eq 0; then
-				echo "${dir[tmp]}/whitelist-wild.txt.$c" >> "${dir[tmp]}/merge-counter.txt"
+				echo "Success: ${dir[tmpu]}/whitelist-wild.txt" >> "${dir[tmp]}/merge-counter.txt"
+				cp "${dir[tmpu]}/whitelist-wild.txt" "${dir[tmpp]}/whitelist-wild.txt" # Move the merged file from unprocessed to processed
+			else
+				echo "Fail: ${dir[tmpu]}/whitelist-wild.txt" >> "${dir[tmp]}/merge-counter.txt"
 			fi
 		fi
 		
@@ -1052,61 +1139,61 @@ function __build() {
 
 	__repaint
 
-	printf "This next part could take some time.\nLook in ${dir[tmp]} to view activity in realtime.\n\nProcessing...\n"
+	printf "This next part could take some time.\nLook in ${dir[tmpu]} to view activity in realtime.\n\nProcessing...\n"
 
 	# Convert non-UTF8 characters to UTF8 to fix characters in French lists.
 	# Throw away anything that does not begin with an IP4 address.
 	# We alternate file name between hosts-temp.txt and hosts-temp-copy.txt as we work on them.
 
-	iconv -c -t UTF-8//TRANSLIT < "${dir[tmp]}/whitelist-temp.txt" > "${dir[tmp]}/whitelist-temp-copy.txt"
-	sed '/^$/d' "${dir[tmp]}/whitelist-temp-copy.txt" > "${dir[tmp]}/whitelist-temp.txt"
-	rm "${dir[tmp]}/whitelist-temp-copy.txt"
+	iconv -c -t UTF-8//TRANSLIT < "${dir[tmpu]}/whitelist-temp.txt" > "${dir[tmpu]}/whitelist-temp-copy.txt"
+	sed '/^$/d' "${dir[tmpu]}/whitelist-temp-copy.txt" > "${dir[tmpu]}/whitelist-temp.txt"
+	rm "${dir[tmpu]}/whitelist-temp-copy.txt"
 
-	iconv -c -t UTF-8//TRANSLIT < "${dir[tmp]}/whitelist-wild-temp.txt" > "${dir[tmp]}/whitelist-wild-temp-copy.txt"
-	sed '/^$/d' "${dir[tmp]}/whitelist-wild-temp-copy.txt" > "${dir[tmp]}/whitelist-wild-temp.txt"
-	rm "${dir[tmp]}/whitelist-wild-temp-copy.txt"
+	iconv -c -t UTF-8//TRANSLIT < "${dir[tmpu]}/whitelist-wild-temp.txt" > "${dir[tmpu]}/whitelist-wild-temp-copy.txt"
+	sed '/^$/d' "${dir[tmpu]}/whitelist-wild-temp-copy.txt" > "${dir[tmpu]}/whitelist-wild-temp.txt"
+	rm "${dir[tmpu]}/whitelist-wild-temp-copy.txt"
 
-	iconv -c -t UTF-8//TRANSLIT < "${dir[tmp]}/hosts-temp.txt" > "${dir[tmp]}/hosts-temp-copy.txt"
-	rm "${dir[tmp]}/hosts-temp.txt"
+	iconv -c -t UTF-8//TRANSLIT < "${dir[tmpu]}/hosts-temp.txt" > "${dir[tmpu]}/hosts-temp-copy.txt"
+	rm "${dir[tmpu]}/hosts-temp.txt"
 
 	#	Format raw list data in hosts-temp.txt
-	sed -r -i 's/[[:blank:]]+/ /g' "${dir[tmp]}/hosts-temp-copy.txt" # Convert all spaces and tabs to a single space
-	grep -Ev "[[:blank:]](ip6-)?(localhost|loopback|localnet|mcastprefix|allnodes|allrouters)\s?\b" "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt" # Remove localhost lines - the computer's installed host file already has localhost defined the way it should be
-	grep -E '^[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?' "${dir[tmp]}/hosts-temp.txt" > "${dir[tmp]}/hosts-temp-copy.txt" # Extract and keep only lines that begin with an IP address
-	sed -r -i "s/^[012][\.01-9]{1,2}+[[:blank:]]/${conf[ip]} /g" "${dir[tmp]}/hosts-temp-copy.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab in each line
+	sed -r -i 's/[[:blank:]]+/ /g' "${dir[tmpu]}/hosts-temp-copy.txt" # Convert all spaces and tabs to a single space
+	grep -Ev "[[:blank:]](ip6-)?(localhost|loopback|localnet|mcastprefix|allnodes|allrouters)\s?\b" "${dir[tmpu]}/hosts-temp-copy.txt" > "${dir[tmpu]}/hosts-temp.txt" # Remove localhost lines - the computer's installed host file already has localhost defined the way it should be
+	grep -E '^[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?\.[012][01-9]?[01-9]?' "${dir[tmpu]}/hosts-temp.txt" > "${dir[tmpu]}/hosts-temp-copy.txt" # Extract and keep only lines that begin with an IP address
+	sed -r -i "s/^[012][\.01-9]{1,2}+[[:blank:]]/${conf[ip]} /g" "${dir[tmpu]}/hosts-temp-copy.txt" # Replace with a single space and the new IP address everything up to, and including, the first tab in each line
 
 	# Sort the lists
-	if test -f "${dir[tmp]}/hosts-temp-copy.txt"
+	if test -f "${dir[tmpu]}/hosts-temp-copy.txt"
 	then
-		sed -i 's/\r$//' "${dir[tmp]}/hosts-temp-copy.txt" # Standardise line endings
-		sort -f -u "${dir[tmp]}/hosts-temp-copy.txt" > "${dir[tmp]}/hosts-temp.txt"
-		rm "${dir[tmp]}/hosts-temp-copy.txt"
+		sed -i 's/\r$//' "${dir[tmpu]}/hosts-temp-copy.txt" # Standardise line endings
+		sort -f -u "${dir[tmpu]}/hosts-temp-copy.txt" > "${dir[tmpu]}/hosts-temp.txt"
+		rm "${dir[tmpu]}/hosts-temp-copy.txt"
 	fi
 
-	if test -f "${dir[tmp]}/whitelist-temp.txt"
+	if test -f "${dir[tmpu]}/whitelist-temp.txt"
 	then
-		sed -i 's/\r$//' "${dir[tmp]}/whitelist-temp.txt" # Fix line endings
-		sort -f -u "${dir[tmp]}/whitelist-temp.txt" > "${dir[tmp]}/whitelist.txt"
-		rm "${dir[tmp]}/whitelist-temp.txt"
+		sed -i 's/\r$//' "${dir[tmpu]}/whitelist-temp.txt" # Fix line endings
+		sort -f -u "${dir[tmpu]}/whitelist-temp.txt" > "${dir[tmpu]}/whitelist.txt"
+		rm "${dir[tmpu]}/whitelist-temp.txt"
 	fi
 
-	if test -f "${dir[tmp]}/whitelist-wild-temp.txt"
+	if test -f "${dir[tmpu]}/whitelist-wild-temp.txt"
 	then
-		sed -i 's/\r$//' "${dir[tmp]}/whitelist-wild-temp.txt" # Fix line endings
-		sort -f -u "${dir[tmp]}/whitelist-wild-temp.txt" > "${dir[tmp]}/whitelist-wild.txt"
-		rm "${dir[tmp]}/whitelist-wild-temp.txt"
+		sed -i 's/\r$//' "${dir[tmpu]}/whitelist-wild-temp.txt" # Fix line endings
+		sort -f -u "${dir[tmpu]}/whitelist-wild-temp.txt" > "${dir[tmpu]}/whitelist-wild.txt"
+		rm "${dir[tmpu]}/whitelist-wild-temp.txt"
 	fi
 
 	# Process whitelist -- remove whitelisted domains from hosts-temp.txt
 	# Always pass wild through norm too
-	__hosts_update "norm" "${dir[tmp]}/hosts-temp.txt" "${dir[tmp]}/whitelist.txt"
-	__hosts_update "norm" "${dir[tmp]}/hosts-temp.txt" "${dir[tmp]}/whitelist-wild.txt"
-	__hosts_update "wild" "${dir[tmp]}/hosts-temp.txt" "${dir[tmp]}/whitelist-wild.txt"
+	__hosts_update "norm" "${dir[tmpu]}/hosts-temp.txt" "${dir[tmpu]}/whitelist.txt"
+	__hosts_update "norm" "${dir[tmpu]}/hosts-temp.txt" "${dir[tmpu]}/whitelist-wild.txt"
+	__hosts_update "wild" "${dir[tmpu]}/hosts-temp.txt" "${dir[tmpu]}/whitelist-wild.txt"
 	
 	# hosts.txt should not exist at this point
-	if test -f "${dir[tmp]}/hosts.txt"
+	if test -f "${dir[tmpu]}/hosts.txt"
 	then
-		rm "${dir[tmp]}/hosts.txt"
+		rm "${dir[tmpu]}/hosts.txt"
 	fi
 
 	# Get head of the existing hosts file stored at /etc/hosts
@@ -1116,20 +1203,20 @@ function __build() {
 
 	if grep -zPo '# Host.? Flash' "${file[hosts]}"
 	then
-		grep -zPo '(?s).*# Host.? Flash' "${file[hosts]}" | head -n -1 | grep -v '^[[:space:]]$' > "${dir[tmp]}/hosts.head" # Remove old HF data, remove HF header remove empty lines.
+		grep -zPo '(?s).*# Host.? Flash' "${file[hosts]}" | head -n -1 | grep -v '^[[:space:]]$' > "${dir[tmpu]}/hosts.head" # Remove old HF data, remove HF header remove empty lines.
 	else
-		cp "${file[hosts]}" "${dir[tmp]}/hosts.head" # No existing hostsfile so just copy hosts to hosts.head
+		cp "${file[hosts]}" "${dir[tmpu]}/hosts.head" # No existing hostsfile so just copy hosts to hosts.head
 	fi
 
-	printf '\n\n# Host Flash™ Firewall\n\n# Credits\n\n' >> "${dir[tmp]}/hosts.head" # Add HF heading
+	printf '\n\n# Host Flash™ Firewall\n\n# Credits\n\n' >> "${dir[tmpu]}/hosts.head" # Add HF heading
 
 	for i in "${credits[@]}" ; do
-		printf "$i" >> "${dir[tmp]}/hosts.head" # Add HF list provider credits
+		printf "$i" >> "${dir[tmpu]}/hosts.head" # Add HF list provider credits
 	done
 
-	printf "\n\n# Installed with $package\n\n# Visit host-flash.com to learn more\n\n" >> "${dir[tmp]}/hosts.head" # Add HF credit
+	printf "\n\n# Installed with $package\n\n# Visit host-flash.com to learn more\n\n" >> "${dir[tmpu]}/hosts.head" # Add HF credit
 
-	cat "${dir[tmp]}/hosts.head" "${dir[tmp]}/hosts-temp.txt" > "${dir[src]}/hosts.txt" # Merge the old head with the new hosts blacklist
+	cat "${dir[tmpu]}/hosts.head" "${dir[tmpu]}/hosts-temp.txt" > "${dir[src]}/hosts.txt" # Merge the old head with the new hosts blacklist
 
 }
 
@@ -1141,16 +1228,30 @@ function __enable() {
 	sudo -v
 
 	# Backup original hosts file before first ever use of Host Flash™ in this system.
-	# Only happens if it does not yet exist.
+	# Only happens if the backup does not yet exist.
+	# Copies the file to dir[bck] and the system's defaults hosts file directory. This makes the file more obvious to locate.
 	if test ! -f "${file[hosts]}.hf.original"
 	then
 		sudo cp "${file[hosts]}" "${file[hosts]}.hf.original"
+		zip "${dir[bck]}/hosts.original" "${file[hosts]}.hf.original"
+		__log hist # Add hosts file information to file[hist]
+	fi
+	# Legacy. For versions of HF < 4
+	if test ! -f "${dir[bck]}/hosts.original.zip"
+	then
+		if test -f "${file[hosts]}.hf.original"
+		then
+			cp "${file[hosts]}.hf.original" "${dir[bck]}/hosts.original"
+			__log hist # Add hosts file information to file[hist]
+		fi
 	fi
 
+	# Install. Backup the current file then install the new one.
 	if test -f "${dir[src]}/hosts.txt"
 	then
-		sudo cp "${file[hosts]}" "${file[hosts]}.hf.backup" # General restore file
+		zip "${dir[bck]}/hosts-$timestamp" "${file[hosts]}" # General restore file
 		sudo mv -f "${dir[src]}/hosts.txt" "${file[hosts]}" # New hosts file
+		__log hist # Add hosts file information to file[hist]
 	else
 		message[enable]="$package hosts file not found. Have you built it yet?"
 	fi
@@ -1335,7 +1436,7 @@ function __menu_main() {
 			printf "\n System $package: ${conf[locv]}"
 			printf "\n Latest git commit: ${conf[gitv]}\n"
 			printf "\n Hosts File Info: Line Count: ${conf[hostc]} | Bytes: ${conf[hosts]} | Timestamp: ${conf[hostt]} | Location: ${bold}${file[hosts]}${normal}\n"
-
+			
 			printf "\nIf the computer crashes during installation lower the number of lists processed or cool your computer then try again.\n"
 
 			printf $bold
@@ -2009,11 +2110,10 @@ function __launch() {
 }
 
 ## Debug Flags
-
+# To be moved to __log() (see near top of file)
 case "${debug}" in
 
 	1)
-
 		#exec 3>&1 4>&2
 		#trap 'exec 2>&4 1>&3' 0 1 2 3
 		#exec 2>&1 >> "${file[log]}"
