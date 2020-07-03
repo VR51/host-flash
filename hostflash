@@ -16,7 +16,7 @@ IFS=$'\n\t'
 # Contributor: skeletonkey<https://github.com/skeletonkey/>
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 3rd June 2020
+# This Release: 3rd July 2020
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -61,11 +61,10 @@ IFS=$'\n\t'
 #				~/src/tmp/unprocessed
 #				~/src/tmp/processed
 #			Config Directory restructure
-#				~/.configs/hostflash
-#					Files are no longer dot files.
-#				~/.configs/hostflash/lists # To be used later
-#				~/.configs/hostflash/menus # To be used later
-#				~/.configs/hostflash/plugins # To be used later
+#				~/.configs/.hostflash
+#				~/.configs/hostflash/.lists # To be used later
+#				~/.configs/hostflash/.menus # To be used later
+#				~/.configs/hostflash/.plugins # To be used later
 #
 #		Replaced hosts files are now zipped to the backup directory. Restore option to be added later.
 #		Hosts file summary info is now written to the history log when a host file is built.
