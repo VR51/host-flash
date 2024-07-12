@@ -3,7 +3,7 @@
 # set -x
 IFS=$'\n\t'
 ###
-# Host Flash™ 4.0.0
+# Host Flash™ 4.0.1
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -16,7 +16,7 @@ IFS=$'\n\t'
 # Contributor: skeletonkey<https://github.com/skeletonkey/>
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 3rd July 2020
+# This Release: 9th Oct 2022
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -61,10 +61,11 @@ IFS=$'\n\t'
 #				~/src/tmp/unprocessed
 #				~/src/tmp/processed
 #			Config Directory restructure
-#				~/.configs/.hostflash
-#				~/.configs/hostflash/.lists # To be used later
-#				~/.configs/hostflash/.menus # To be used later
-#				~/.configs/hostflash/.plugins # To be used later
+#				~/.configs/hostflash
+#					Files are no longer dot files.
+#				~/.configs/hostflash/lists # To be used later
+#				~/.configs/hostflash/menus # To be used later
+#				~/.configs/hostflash/plugins # To be used later
 #
 #		Replaced hosts files are now zipped to the backup directory. Restore option to be added later.
 #		Hosts file summary info is now written to the history log when a host file is built.
@@ -171,8 +172,8 @@ IFS=$'\n\t'
 # IMPORTANT: Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='4.0.0 - 3rd June 2020'
-debug='0'
+version='4.0.1 - 9th Oct 2022'
+debug='1'
 
 ## Clear screen
 function __clear() {
@@ -242,6 +243,8 @@ dir[tmpp]="${dir[tmp]}/processed" # Directory where processed source hosts files
 # Files
 file[hosts]=''
 # System hosts file location. Where it is copied from and where it is installed to.
+# See next code block, it replaces this current section. This section is here for reference or in case there is need to manually set the path.
+#
 # file[hosts]='/etc/hosts' # Location of system hosts file in Unix, Unix-like and POSIX systems.
 # file[hosts]='/private/etc/hosts' # iOS, Apple Mac
 # file[hosts]='/system/etc/hosts' # Android
@@ -282,7 +285,7 @@ file[confr]="${dir[conf]}/.hfremoved" # Hosts removed from hosts list during hos
 file[conftld]="${dir[conf]}/.hftld" # Location of valid TLD list.
 # Log files
 file[hist]="${dir[logs]}/history.txt" # Location of update history.
-file[log]="${dir[logs]}/log.txt" # Location of the general process log file. # Not yet used
+file[log]="${dir[logs]}/log.txt" # Location of the general process log file.
 file[debug]="${dir[logs]}/debug.txt" # Location of debug logging file.
 # Next files to be used in a later version of HF
 file[confpost]="${dir[conf]}/.hfpost" # Location of the post processing blacklist (block hosts that are wild needlessly whitelisted)
@@ -539,22 +542,22 @@ list[ip28]='0'
 
 list[status29]='+'
 list[info29]='Community Whitelist (Host Flash™ whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
-list[src29]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw'
-list[file29]=''
+list[src29]='https://gist.githubusercontent.com/VR51/7eaace2b6778ea508996/raw/'
+list[file29]='remw'
 list[target29]='whitelist.txt'
 list[ip29]='0'
 
 list[status30]='+'
 list[info30]='Community Whitelist Wild (Host Flash™ wild whitelist. Unblocks a limited set of sites blocked by the other blacklists)'
 list[src30]='https://gist.githubusercontent.com/VR51/9798c78337fe2f7ad589/raw/'
-list[file30]=''
+list[file30]='remww'
 list[target30]='whitelist-wild.txt'
 list[ip30]='0'
 
 list[status31]='+'
 list[info31]='Community Blacklist (Host Flash™ blacklist. Blocks a limited set of sites not blocked by other lists)'
 list[src31]='https://gist.githubusercontent.com/VR51/ef3b90b1be2693a44f27/raw/'
-list[file31]=''
+list[file31]='remb'
 list[target31]='hosts.txt'
 list[ip31]='1'
 
@@ -1009,25 +1012,23 @@ function __build() {
 				*)
 
 					# Grab source hosts file from its remote location
-					if test "${file}"
-					then
-						# log
-						if test $debug -ne '0' ; then
-							result=$(curl -LI --silent -e "$src" "$src/$file")
-							__log debug "$result"
-						fi
-						# download
-						curl -L -e "$src" "$src/$file" -o "${dir[tmpd]}/$file"
-					else
-						# log
-						if test $debug -ne '0' ; then
-							result=$(curl -LI --silent -e "$src" "$src")
-							__log debug "$result"
-						fi
-						# download
-						file="nofile.txt.$n"
-						curl -L -e "$src" "$src" -o "${dir[tmpd]}/$file"
-					fi
+					case "$file" in
+						remw)
+							file="whitelist.txt.$n"
+							curl -L -e "$src" "$src" -o "${dir[tmpd]}/$file"
+						;;
+						remww)
+							file="whitelist-wild.txt.$n"
+							curl -L -e "$src" "$src" -o "${dir[tmpd]}/$file"
+						;;
+						remb)
+							file="hosts.txt.$n"
+							curl -L -e "$src" "$src" -o "${dir[tmpd]}/$file"
+						;;
+						*)
+							curl -L -e "$src" "$src/$file" -o "${dir[tmpd]}/$file"
+						;;
+					esac
 
 					# Filter by type
 					case "$target" in
@@ -1291,24 +1292,39 @@ function __cleandns() {
 
 	flush=(
 	'systemd-resolve --flush-caches' # General
-	'service network-manager restart' # Debian
+	'rndc restart' # General
+	'pdnsd-ctl empty-cache' # General
+	'systemctl restart systemd-resolved' # Systemd
 	'systemctl restart network.service' # Systemd
 	'systemctl restart wicd.service' #  Systemd for WICD
 	'systemctl restart NetworkManager.service' # Fedora, Manjaro, Arch using Network Manager
-	'service nscd restart' # FreeBSD
-	'/etc/init.d/network restart' # RHEL/Centos'
-	'/etc/init.d/dns-clean restart' # Mint'
-	'/etc/init.d/nscd restart' # other
-	'/etc/init.d/networking force-reload' # Other
+	'service network-manager restart' # Debian
+	'service nscd restart' # Other
+	'service dnsmasq restart' # Other
+	'service dns-clean restart' # Other
+	'service network restart' # RHEL/Centos
+	'service named restart' # Other
+	'service networking force-reload' # Other
+	'/etc/init.d/network-manager restart' # Other
+	'/etc/init.d/nscd restart' # Other
 	'/etc/init.d/dnsmasq restart' # Other
+	'/etc/init.d/dns-clean restart' # Mint
+	'/etc/init.d/network restart' # RHEL/Centos
+	'/etc/init.d/named restart' # Other
+	'/etc/init.d/networking force-reload' # Other
 	)
-	
+
 	sudo -v
 
 	for i in "${flush[@]}"; do
 		printf "${bold}Attempting to flush DNS cache ${normal} using command: $i\n"
-		sudo $i
-		printf "Do not worry if the above says 'fail'. We only need one success.\n\n"
+		sudo "$i"
+		if test "$?" -eq 0
+		then
+			printf "Success\n\n"
+		else
+			printf "Do not worry if the above says 'fail'. We only need one success.\n\n"
+		fi
 	done
 	
 	sudo -k
@@ -1838,6 +1854,10 @@ function __menu_custom_list_management() {
 	__repaint conf "${file[confcl]}"
 	
 	while true; do
+	
+		if test $debug -ne '0' ; then
+			tmux capture-pane -pJ -S - >> ${file[debug]}
+		fi
 
 		printf "${bold}CUSTOM LIST MANAGEMENT${normal}"
 		printf "\n\nUpdate list status\n\n"
