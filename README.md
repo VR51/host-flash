@@ -1,6 +1,6 @@
 # Host Flash™
 
-Host Flash™ v4.0.0
+Host Flash™ v4.0.3
 
 Lead Author: Lee Hodson
 
@@ -8,7 +8,7 @@ Website: https://host-flash.com
 
 Donate: paypal.me/vr51
 
-This Release: 3rd July 2020
+This Release: 24th April 2025
 
 First Written: 18th Oct 2015
 
@@ -51,6 +51,10 @@ Host Flash™ works at the OS level. This means any request from any program or 
 Host Flash™ does not block requests sent to IP addresses. Use iptables to manage IP address access rules.
 
 Note about changelogs. We only keep the last couple of changelog notes. This helps keep the readme short.
+
+# New in 4.0.3
+
+Code optimization and modernization.
 
 # New in 4.0.0
 
