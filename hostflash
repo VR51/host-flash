@@ -3,7 +3,7 @@
 # set -x
 IFS=$'\n\t'
 ###
-# Host Flash™ 4.0.1
+# Host Flash™ 4.0.3
 #
 # Downloads hosts file rules from various sources.
 # Installs hosts file rules into /etc/hosts
@@ -16,7 +16,7 @@ IFS=$'\n\t'
 # Contributor: skeletonkey<https://github.com/skeletonkey/>
 # Donate: https://paypal.me/vr51
 # Website: https://host-flash.com<https://host-flash.com>
-# This Release: 9th Oct 2022
+# This Release: 23rd April 2025
 # First Written: 18th Oct. 2015
 # First Release: 2nd Nov. 2015
 #
@@ -47,32 +47,6 @@ IFS=$'\n\t'
 # Host Flash™ will attempt to preserve existing host rules.
 #
 ###
-
-##
-#	NEW in 4
-#		Auto-detect source file type. No need to flag the file type in custom lists. The now obsolete flags were: zip, p7, raw and direct.
-#		New directory structure
-#			Permanent Directories
-#				~/hostflash/backups
-#				~/hostflash/DOCS
-#				~/hostflash/logs
-#			Temp. Directories. These are deleted when a new hosts file is built (unless DEBUG is set to '1', in which case they are left in place)
-#				~/src/tmp/download
-#				~/src/tmp/unprocessed
-#				~/src/tmp/processed
-#			Config Directory restructure
-#				~/.configs/hostflash
-#					Files are no longer dot files.
-#				~/.configs/hostflash/lists # To be used later
-#				~/.configs/hostflash/menus # To be used later
-#				~/.configs/hostflash/plugins # To be used later
-#
-#		Replaced hosts files are now zipped to the backup directory. Restore option to be added later.
-#		Hosts file summary info is now written to the history log when a host file is built.
-#		__log now logs three message types: log, hist and debug. The __debug will eventually be rolled into __log.
-#		__log with 'debug' flag causes cURL to log to the debug file the head fetched with source file downloads.
-#
-##
 
 ##
 # TO DO / DEV NOTES
@@ -169,15 +143,48 @@ IFS=$'\n\t'
 # Adding config changes to $HOME/.config/hostflash/.hfrc will protect changes from script version updates.
 ##
 
+##
+# Raw URLs for those who want them
+# wget https://raw.githubusercontent.com/AdAway/adaway.github.io/master/hosts.txt
+# wget https://adaway.org/hosts.txt
+# wget https://pgl.yoyo.org/as/serverlist.php?showintro=0;hostformat=hosts
+# wget https://raw.githubusercontent.com/azet12/KADhosts/master/KADhosts.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/ad_servers.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/emd.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/exp.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/fsa.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/grm.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/hfs.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/hjk.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/mmt.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/pha.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/psh.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/pup.txt
+# wget https://raw.githubusercontent.com/blackskye-sx/host-file.net-backup/master/wrz.txt
+# wget https://www.github.developerdan.com/hosts/lists/ads-and-tracking-extended.txt
+# wget https://www.github.developerdan.com/hosts/lists/tracking-aggressive-extended.txt
+# wget https://www.hostsfile.org/Downloads/hosts.txt
+# wget https://www.malwaredomainlist.com/hostslist/hosts.txt
+#
+# wget http://rlwpx.free.fr/WPFF/hmis.7z
+# wget http://rlwpx.free.fr/WPFF/hpub.7z
+# wget http://rlwpx.free.fr/WPFF/hrsk.7z
+# wget http://rlwpx.free.fr/WPFF/hsex.7z
+# wget http://rlwpx.free.fr/WPFF/htrc.7z
+# wget https://winhelp2002.mvps.org/hosts.zip
+#
+# wget https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts
+# wget https://someonewhocares.org/hosts/hosts
+
 # IMPORTANT: Do not Use trailing slashes in URLs, URIs or directory paths
 
 package='Host Flash™' # Name of software installed by this installer
-version='4.0.1 - 9th Oct 2022'
-debug='1'
+version='4.0.3 - 23rd April 2025' # Updated version with optimizations and fixes
+debug='0'
 
 ## Clear screen
-function __clear() {
-	if test $debug -eq '0' ; then
+__clear() {
+	if [ "$debug" -eq 0 ]; then
 		clear
 	fi
 }
@@ -185,17 +192,14 @@ function __clear() {
 ## Source loader
 # Load source files
 # This facilitates modularisation
-function __flying_sourcer() {
-
-	SourcerSection="$1"
+__flying_sourcer() {
+	local SourcerSection="$1"
 	
-	if source "${SourcerSection}"
-	then
-		source "${SourcerSection}"
-	else
+	# Try to source the file using 'source' command, fallback to '.' if it fails
+	# Note: The duplicate source command was removed as it was redundant
+	if ! source "${SourcerSection}" 2>/dev/null; then
 		. "${SourcerSection}"
 	fi
-
 }
 
 # Clear arrays
@@ -255,12 +259,12 @@ file[hosts]=''
 
 __clear
 
-if test ! "${file[hosts]}"; then
-	if test -f "/system/etc/hosts"; then
+if [ -z "${file[hosts]}" ]; then
+	if [ -f "/system/etc/hosts" ]; then
 		file[hosts]='/system/etc/hosts'
-	elif test -f "/private/etc/hosts"; then
+	elif [ -f "/private/etc/hosts" ]; then
 		file[hosts]='/private/etc/hosts'
-	elif test -f "/etc/hosts"; then
+	elif [ -f "/etc/hosts" ]; then
 		file[hosts]='/etc/hosts'
 	else
 		echo "Unable to detect the location of this system's hosts file."
@@ -301,8 +305,8 @@ app[cats]='Utilities' # Application launcher categories
 app[binary]="hostflash" # Name of the binary file that is this program.
 
 # Detected settings
-user=$(whoami) # Current User
-group=$(id -g -n $user) # Current user's primary group
+user="$(whoami)" # Current User
+group="$(id -g -n "$user")" # Current user's primary group
 
 ###
 # DECLARE LIST ARRAYS
@@ -312,13 +316,12 @@ group=$(id -g -n $user) # Current user's primary group
 
 # Count Lists
 listc=$(grep -E '\[status[[:digit:]]+]=' "$0" | wc -l) # Count lists in hostflash script
-if test $(grep -En '\[status[[:digit:]]+]=' "${file[confcl]}")
-then
+if grep -Eq '\[status[[:digit:]]+]=' "${file[confcl]}" 2>/dev/null; then
 	listcc=$(grep -E '\[status[[:digit:]]+]=' "${file[confcl]}" | wc -l) # Count custom lists in .hfclrc
 else
 	listcc=0
 fi
-let listsc=listc+listcc
+listsc=$((listc + listcc)) # Use arithmetic expansion instead of let
 
 ##
 # LISTS
@@ -474,11 +477,11 @@ list[file19]='hosts'
 list[target19]='hosts.txt'
 list[ip19]='0'
 
-list[status20]='+'
-list[info20]='malwaredomainlist.com (Liberal: Blocks mostly malware. Small list)'
-list[src20]='https://www.malwaredomainlist.com/hostslist'
-list[file20]='hosts.txt'
-list[target20]='hosts.txt'
+list[status20]='-'
+list[info20]='Removed - No longer accessible'
+list[src20]=''
+list[file20]=''
+list[target20]=''
 list[ip20]='0'
 
 list[status21]='+'
@@ -502,11 +505,11 @@ list[file23]=''
 list[target23]='hosts.txt'
 list[ip23]='0'
 
-list[status24]='+'
-list[info24]='CoinBlockerLists (Liberal: Blocks cryptominers)'
-list[src24]='https://zerodot1.gitlab.io/CoinBlockerLists/hosts_browser'
+list[status24]='-'
+list[info24]='Removed - No longer accessible'
+list[src24]=''
 list[file24]=''
-list[target24]='hosts.txt'
+list[target24]=''
 list[ip24]='0'
 
 list[status25]='+'
@@ -591,8 +594,9 @@ conf[upv]=0 # Update Host Flash™ program.
 #conf[locv]=$($binary -v) # Installed package version
 conf[inst]=$( ls -l "$0" | cut -d' ' -f 6-8) # $package installation date
 conf[locv]="$version installed ${conf[inst]}"
-conf[gitv]=$(curl -v --silent "${rem[gith]}/commit/master" --stderr - | grep '<relative-time datetime' | sed -E 's#.+">(.+)<.+#\1#')
-	networked="$?" # Are we connected to the net? We are if $networked = 0.
+# Use a timeout to prevent hanging if network is unavailable
+conf[gitv]=$(curl -v --silent "${rem[gith]}/commit/master" --stderr - --connect-timeout 5 | grep '<relative-time datetime' | sed -E 's#.+">(.+)<.+#\1#')
+networked=$? # Are we connected to the net? We are if $networked = 0
 conf[hosts]=$( ls -l "${file[hosts]}" | cut -d' ' -f5 ) # Hosts file size
 conf[hostt]=$( ls -l "${file[hosts]}" | cut -d' ' -f 6-8 ) # Hosts file timestamp
 conf[hostc]=$( wc -l "${file[hosts]}" | cut -d' ' -f1 ) # Hosts file line count
@@ -603,20 +607,22 @@ conf[mode]='1' # Build Only or Build and Install 0 or 1
 timestamp="$(date +"%Y-%m-%d-%H-%M-%S")"
 
 # LOGS
-# Partially utilised. Usage to be expanded
 # Log host file history, general log messages and debug messages
-function __log() {
-	# @1 = File to store log
+__log() {
+	# @1 = File to store log (hist, log, or debug)
 	# @2 = Message to store with log
 	
-	file=$1
-	message=$2
+	local log_file=$1
+	local message=$2
+	local now
 	
+	# Get current timestamp
 	now="$(date +"%Y-%m-%d %H:%M:%S")"
 	
-	case "$file" in
+	case "$log_file" in
 		hist)
-			if test "$message" ; then echo "$message" >> "${file[hist]}"; fi
+			# Only append message if it's not empty
+			[ -n "$message" ] && echo "$message" >> "${file[hist]}"
 			echo "$now: Line Count: ${conf[hostc]} | Bytes: ${conf[hosts]} | Timestamp: ${conf[hostt]} | Location: ${file[hosts]}" >> "${file[hist]}"
 		;;
 		log)
@@ -626,7 +632,6 @@ function __log() {
 			echo "$now: $message" >> "${file[debug]}"
 		;;
 	esac
-
 }
 
 ## END CONFIGS
@@ -645,16 +650,18 @@ cd "$filepath"
 
 # Make/Remove directories and files
 
-function __download_tlds() {
-	if test $(find "${file[conftld]}" -mmin +1440) || test ! -f "${file[conftld]}" # If exists but is older than 1440 minutes
-	then
-		curl -e -L "${rem[tld]}" "${rem[tld]}" -o "${file[conftld]}"
-		sed -e 's/\(.*\)/\L\1/' "${file[conftld]}" > "${file[conftld]}tmp"
-		grep -vE '^#' "${file[conftld]}tmp" > "${file[conftld]}"
-		# Next lines allow the file to be passed to Grep as a string of ORs
-		#grep -vE '^#' "${file[conftld]}tmp" | tr '[:space:]' '|' > "${file[conftld]}"
-		#sed -i 's/[|]$//' "${file[conftld]}" # Remove superfluous | from end of file
-		#rm "${file[conftld]}tmp"
+__download_tlds() {
+	# Download TLD list if it doesn't exist or is older than 24 hours (1440 minutes)
+	if [ ! -f "${file[conftld]}" ] || [ -n "$(find "${file[conftld]}" -mmin +1440 2>/dev/null)" ]; then
+		# Download TLD list, convert to lowercase, and remove comments
+		curl -s -L "${rem[tld]}" -o "${file[conftld]}.tmp"
+		if [ $? -eq 0 ]; then
+			# Convert to lowercase and remove comments
+			sed -e 's/\(.*\)/\L\1/' "${file[conftld]}.tmp" | grep -vE '^#' > "${file[conftld]}"
+			rm -f "${file[conftld]}.tmp"
+		else
+			__log "log" "Failed to download TLD list from ${rem[tld]}"
+		fi
 	fi
 }
 # __download_tlds # Get TLD list # Not yet used.
@@ -673,9 +680,9 @@ touch -a "${file[@]}" # Make config files
 
 # INSTALL RC SETTINGS
 
-function __repaint() {
-# Loads configs then clears the screen
-# Whatever calls this should reload the screen for the new configs to be reflected on the screen
+__repaint() {
+	# Loads configs then clears the screen
+	# Whatever calls this should reload the screen for the new configs to be reflected on the screen
 
 	# @1 = type: soft, hard, conf, ret
 	#  soft just refreshes the screen
@@ -685,48 +692,42 @@ function __repaint() {
 	# @2..@n = config file(s) to reload
 	#
 	# ret executes the function stated in $2
-	#
-	# We use $in instead of $@
-	
+
 	__clear
 	
-		in=( $@ )
-	
-	case ${in[0]} in
-	
+	# Create array from arguments with proper quoting
+	local in=( "$@" )
+
+	case "${in[0]}" in
 		soft) # Reset variables
 			unset
 			__repaint
-	
 		;;
 		
 		hard) # Restart this script
 			exec bash "$0"
-		
 		;;
 
 		conf) # Include basic conf and any extras listed in $@
-
-			for i in ${in[@]:1}; do
-				__flying_sourcer "$i"
+			# Process additional config files
+			for i in "${in[@]:1}"; do
+				[ -f "$i" ] && __flying_sourcer "$i"
 			done
-			__flying_sourcer "${file[conf]}"
-		
+			# Always load the main config file
+			[ -f "${file[conf]}" ] && __flying_sourcer "${file[conf]}"
 		;;
 		
-		ret)
-			$2
-		
+		ret) # Execute a function
+			# Only execute if the function exists
+			if [ -n "${in[1]}" ] && declare -F "${in[1]}" >/dev/null; then
+				"${in[1]}"
+			fi
 		;;
 
 		*) # Include basic conf only
-
-		__flying_sourcer "${file[conf]}"
-		
+			[ -f "${file[conf]}" ] && __flying_sourcer "${file[conf]}"
 		;;
-	
 	esac
-
 }
 
 
@@ -738,176 +739,266 @@ __repaint conf "${file[confcl]}"
 # Actions
 ##
 
-function __run() {
-	# Check for terminal then run else just run program
+__run() {
+	# Check if running in a terminal, if not launch terminal
+	# Otherwise run the main menu
 	
-	tty -s
-	if test "$?" -ne 0 ; then
+	if ! tty -s; then
 		__launch
 	else
 		__menu_main "${1:-}" # This will be changed when CLI added
 	fi
-
 }
 
-function __hosts_update() {
+__hosts_update() {
 	# Read the file of hosts and remove any line listed in the input whitelist file
 	# The results are logged in a file in the config directory.
 
-	# @1 = type: (file) norm or wild, or (string) rem or remw
+	# @1 = type: (file) norm or wild, or (string) linen or linew
 	# @2 = file to remove data from
 	# @3 = file containing lines of data to remove from @2 or single line of text to remove from @2
 	
-	f2="$2"
-	f3="$3"
-
-	ip=$(echo "${conf[ip]}" | sed 's/\./[.]/g') # Convert periods to character group (just commenting out sometimes failed)
+	# Validate inputs
+	if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
+		__log "log" "Error: Missing parameters in __hosts_update"
+		return 1
+	fi
 	
-	case $1 in
+	# Use local variables for clarity and safety
+	local input_type="$1"
+	local target_file="$2"
+	local filter_source="$3"
+	local temp_file
+	local line
+	local escaped_ip
+	
+	# Check if target file exists
+	if [ ! -f "$target_file" ]; then
+		__log "log" "Error: Target file '$target_file' not found"
+		return 1
+	fi
+
+	# Escape IP for grep pattern (convert periods to character classes)
+	escaped_ip=$(echo "${conf[ip]}" | sed 's/\./[.]/g')
+	
+	# Process according to input type
+	case "$input_type" in
 		norm)
-			# We tried a method that removed the while loop. It was overzealous so reverted back to while loop.
+			# Log header for non-wild whitelist processing
 			echo -ne "\n###\n# NON-WILD WHITELIST\n###\n\n" >> "${file[confr]}"
 
-			while read LINE ; do
-				LINE=$(echo $LINE | sed 's/\./[.]/g')
-				echo -ne  "\n# $LINE\n\n" >> "${file[confr]}"
-				grep -i "^${ip}[[:blank:]]${LINE}"'$' "${f2}" >> "${file[confr]}" # List of hosts removed during whitelisting
-				grep -vi "^${ip}[[:blank:]]${LINE}"'$' "${f2}" > "${f2}.tmp" # This method removes whitelisted hostnames
-				mv -f "${f2}.tmp" "${f2}"
-			done < "${f3}"
-
+			# Process each line in the filter file
+			while IFS= read -r line || [ -n "$line" ]; do
+				# Skip empty lines and comments
+				[ -z "$line" ] || [[ "$line" =~ ^[[:space:]]*# ]] && continue
+				
+				# Escape dots in the line for grep pattern
+				escaped_line=$(echo "$line" | sed 's/\./[.]/g')
+				
+				# Log the line being processed
+				echo -ne "\n# $line\n\n" >> "${file[confr]}"
+				
+				# Log removed entries
+				grep -i "^${escaped_ip}[[:blank:]]${escaped_line}$" "$target_file" >> "${file[confr]}" || true
+				
+				# Remove entries from target file
+				temp_file="$(mktemp)"
+				grep -vi "^${escaped_ip}[[:blank:]]${escaped_line}$" "$target_file" > "$temp_file" || true
+				mv -f "$temp_file" "$target_file"
+			done < "$filter_source"
 		;;
 
 		wild)
-
-			# Process wild whitelist to replace .TLD with all possible TLD values
-			# Testing - will eventually allow for .TLD in wild whitelist to represent any valid TLD.
-			# Disabled for now because it causes grep to crash while whitelisting -- too many arguments.
-			#while read LINE ; do
-			#	sed -r "s/^(.*)[.]TLD/\1.${LINE}/g" "$3" >> "${dir[tmp]}/wlwtmp" # Replace 'TLD' with list of possible TLDs
-			#	echo '' >> "${dir[tmp]}/wlwtmp"
-			#done < "${file[conftld]}"
-
-			#grep -v "[.]TLD" "$3" >> "${dir[tmp]}/wlwtmp" # Add none .TLD$ lines back into the wild list
-
+			# Log header for wild whitelist processing
 			echo -ne "\n###\n# WILD WHITELIST PASS 2 - WILD\n###\n\n" >> "${file[confr]}"
 
-			while read LINE ; do
-				LINE=$(echo $LINE | sed 's/\./[.]/g') # Replace periods with character group match to prevent periods being interpreted as 'any character'
-				echo -ne  "\n# $LINE\n\n" >> "${file[confr]}"
-				grep -i "^${ip}[[:blank:]].*[.]${LINE}" "${f2}" >> "${file[confr]}" # List of hosts removed during whitelisting
-				grep -vi "^${ip}[[:blank:]].*[.]${LINE}" "${f2}" > "${f2}.tmp" # This method removes whitelisted hostnames
-				mv -f "${f2}.tmp" "${f2}"
-			done < "${f3}"
-
+			# Process each line in the filter file
+			while IFS= read -r line || [ -n "$line" ]; do
+				# Skip empty lines and comments
+				[ -z "$line" ] || [[ "$line" =~ ^[[:space:]]*# ]] && continue
+				
+				# Escape dots in the line for grep pattern
+				escaped_line=$(echo "$line" | sed 's/\./[.]/g')
+				
+				# Log the line being processed
+				echo -ne "\n# $line\n\n" >> "${file[confr]}"
+				
+				# Log removed entries
+				grep -i "^${escaped_ip}[[:blank:]].*[.]${escaped_line}" "$target_file" >> "${file[confr]}" || true
+				
+				# Remove entries from target file
+				temp_file="$(mktemp)"
+				grep -vi "^${escaped_ip}[[:blank:]].*[.]${escaped_line}" "$target_file" > "$temp_file" || true
+				mv -f "$temp_file" "$target_file"
+			done < "$filter_source"
 		;;
 
-		linen) # Not yet used
-		
-			data=$3
-			data=$(echo $data | sed 's/\./[.]/g') # Replace periods with character group to prevent them being interpreted as 'any character'
-			# sed -r -i "s/${ip}[[:blank:]]$3.*?$//g" "$2" # Remove exact match
-			grep -i "^${ip}[[:blank:]]${data}"'$' "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
-			grep -vi "^${ip}[[:blank:]]${data}"'$' "$2" > "$2.tmp" # This method removes whitelisted hostnames
-			mv -f "$2.tmp" "$2"
-
+		linen) # Single line exact match
+			# Escape dots in the data for grep pattern
+			local data=$(echo "$filter_source" | sed 's/\./[.]/g')
+			
+			# Log removed entries
+			grep -i "^${escaped_ip}[[:blank:]]${data}$" "$target_file" >> "${file[confr]}" || true
+			
+			# Remove entries from target file
+			temp_file="$(mktemp)"
+			grep -vi "^${escaped_ip}[[:blank:]]${data}$" "$target_file" > "$temp_file" || true
+			mv -f "$temp_file" "$target_file"
 		;;
 
-		linew) # Not yet used
-			data=$3
-			data=$(echo $data | sed 's/\./[.]/g') # Replace periods with character group to prevent them being interpreted as 'any character'
-			# sed -r -i "s/${ip}[[:blank:]].*\.$3.*?$//g" "$2" # Remove any line with a match
-			grep -i "^${ip}[[:blank:]].*[.]${data}" "$2" >> "${file[confr]}" # List of hosts removed during whitelisting
-			grep -vi "^${ip}[[:blank:]].*[.]${data}" "$2" > "$2.tmp" # This method removes whitelisted hostnames
-			mv -f "$2.tmp" "$2"
-
+		linew) # Single line wildcard match
+			# Escape dots in the data for grep pattern
+			local data=$(echo "$filter_source" | sed 's/\./[.]/g')
+			
+			# Log removed entries
+			grep -i "^${escaped_ip}[[:blank:]].*[.]${data}" "$target_file" >> "${file[confr]}" || true
+			
+			# Remove entries from target file
+			temp_file="$(mktemp)"
+			grep -vi "^${escaped_ip}[[:blank:]].*[.]${data}" "$target_file" > "$temp_file" || true
+			mv -f "$temp_file" "$target_file"
 		;;
 
+		*)
+			__log "log" "Error: Unknown input type '$input_type' in __hosts_update"
+			return 1
+		;;
 	esac
 
+	return 0
 }
 
-function __conf_update() {
+__conf_update() {
 	# Add or remove a single host from the .hf*rc config files
-	# ! Considered merging this function with __hosts_update. Opted to keep the two separate. It simplifies input sanitization (to come later).
+	# ! Considered merging this function with __hosts_update. Opted to keep the two separate. It simplifies input sanitization.
 
 	# @1 = type: add, rem, remw, or remn (remove by line number)
 	# @2 = data to add/remove
 	# @3 = file to add/remove @1 to/from
 
-	d=$2
-	f=$3
+	# Validate inputs
+	if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
+		__log "log" "Error: Missing parameters in __conf_update"
+		return 1
+	fi
 
-	case $1 in
+	# Use local variables for clarity and safety
+	local action="$1"
+	local data="$2"
+	local target_file="$3"
+	local temp_file
 
+	# Check if target file exists
+	if [ ! -f "$target_file" ]; then
+		__log "log" "Warning: Target file '$target_file' not found in __conf_update"
+		touch "$target_file" # Create the file if it doesn't exist
+	fi
+
+	case "$action" in
 		add)
-			grep "${d}" "${f}"
-			if test $? -eq 1
-			then
-				echo "${d}" >> "${f}"
+			# Only add the entry if it doesn't already exist
+			if ! grep -qF "$data" "$target_file"; then
+				echo "$data" >> "$target_file"
+				__log "log" "Added entry '$data' to $target_file"
+			return 0
 			fi
 		;;
 
 		rem)
-			sed -r -i "s/${d}.*?$//g" "${f}" # Remove exact match
-			sed -i '/^$/d' "${f}" # Remove empty lines
+			# Use grep to safely remove exact matches
+			temp_file="$(mktemp)"
+			grep -v "^${data}$" "$target_file" > "$temp_file" || true
+			mv -f "$temp_file" "$target_file"
+			__log "log" "Removed exact match entries for '$data' from $target_file"
 		;;
 
 		remw)
-			sed -r -i "s/.*?${d}.*?$//g" "${f}" # Remove any line with a match
-			sed -i '/^$/d' "${f}" # Remove empty lines
+			# Use grep to safely remove wildcard matches
+			temp_file="$(mktemp)"
+			grep -v "${data}" "$target_file" > "$temp_file" || true
+			mv -f "$temp_file" "$target_file"
+			__log "log" "Removed wildcard match entries for '$data' from $target_file"
 		;;
 
 		remn)
-			if [ $d != '' ]; then
-				sed -i "${d}d" "${f}" # Remove the line number $d from the file
-				sed -i '/^$/d' "${f}" # Remove empty lines
+			# Remove by line number if data is a valid number
+			if [[ "$data" =~ ^[0-9]+$ ]]; then
+				temp_file="$(mktemp)"
+				sed "${data}d" "$target_file" > "$temp_file"
+				mv -f "$temp_file" "$target_file"
+				__log "log" "Removed line $data from $target_file"
+			else
+				__log "log" "Error: Invalid line number '$data' in __conf_update"
+				return 1
 			fi
 		;;
+
+		*)
+			__log "log" "Error: Unknown action '$action' in __conf_update"
+			return 1
+		;;
 	esac
-	
+
+	# Remove empty lines from the file
+	temp_file="$(mktemp)"
+	grep -v '^$' "$target_file" > "$temp_file" || true
+	mv -f "$temp_file" "$target_file"
+
+	return 0
 }
 
-function __conf_delete() {
+__conf_delete() {
 	__repaint conf "${file[confcl]}"
 	
 	# Delete specified file
 	# @1 = File to delete
 	# @2 = File's friendly name
 
-	f[1]=${1}
-	f[2]=${2}
+	# Validate inputs
+	if [ -z "$1" ] || [ -z "$2" ]; then
+		__log "log" "Error: Missing parameters in __conf_delete"
+		return 1
+	fi
+
+	# Use local variables for clarity and safety
+	local target_file="$1"
+	local friendly_name="$2"
+	local choice
 
 	printf "${bold}DELETE CONFIG FILES${normal}"
 	printf "\n\nReset chosen configuration file\n\n"
 
 	# Display menu
 	unset menu
-	menu[1]="Proceed: Reset ${f[2]} by deleting file ${f[1]}"
-	menu[2]="Return: Do not reset ${f[2]}"
+	menu[1]="Proceed: Reset ${friendly_name} by deleting file ${target_file}"
+	menu[2]="Return: Do not reset ${friendly_name}"
 
-	m=1
-	while [ $m -le ${#menu[@]} ] ; do
-		printf "$m) ${menu[$m]}\n"
-		let m=m+1
+	local m=1
+	while [ $m -le ${#menu[@]} ]; do
+		printf "%d) %s\n" "$m" "${menu[$m]}"
+		((m++))
 	done
 	
 	printf "\nChoose an option then press Enter:\n"
-	read a
+	read -r choice
 	
-	while true ; do
-		case $a in
+	while true; do
+		case "$choice" in
 			1)
-				if test -f "${f[1]}"; then
-					rm "${f[1]}"
-					printf "${f[2]} reset.\n"
+				if [ -f "$target_file" ]; then
+					rm -f "$target_file"
+					__log "log" "Deleted configuration file: $target_file"
+					printf "%s reset.\n" "$friendly_name"
 					printf "\nPress any key to continue\n"
-					touch "${f[1]}"
-					read something
+					touch "$target_file"
+					read -r something
+					__repaint conf "${file[confcl]}"
+					__menu_reset_confs
 				else
-					printf "${f[2]} custom settings not yet created. Nothing to do. Nothing done.\n"
+					printf "%s not found.\n" "$friendly_name"
+					printf "Custom settings not yet created. Nothing to do. Nothing done.\n"
 					printf "\nPress any key to continue\n"
-					read something
+					read -r something
 				fi
 				__menu_reset_confs
 			;;
@@ -1220,114 +1311,185 @@ function __build() {
 
 }
 
-function __enable() {
+__enable() {
 	# Install Host Flash™ hosts list to /etc/hosts
 
-	echo
+	echo "Enabling Host Flash hosts file..."
+	
+	# Check if we have the hosts file to install
+	if [ ! -f "${dir[src]}/hosts.txt" ]; then
+		message[enable]="$package hosts file not found. Have you built it yet?"
+		__log "log" "Error: hosts.txt not found when trying to enable Host Flash"
+		return 1
+	fi
+
 	# Get su authority
-	sudo -v
+	if ! sudo -v; then
+		__log "log" "Error: Failed to obtain sudo privileges for hosts file installation"
+		message[enable]="Failed to obtain necessary permissions. Please run as a user with sudo privileges."
+		return 1
+	fi
 
 	# Backup original hosts file before first ever use of Host Flash™ in this system.
 	# Only happens if the backup does not yet exist.
-	# Copies the file to dir[bck] and the system's defaults hosts file directory. This makes the file more obvious to locate.
-	if test ! -f "${file[hosts]}.hf.original"
-	then
-		sudo cp "${file[hosts]}" "${file[hosts]}.hf.original"
-		zip "${dir[bck]}/hosts.original" "${file[hosts]}.hf.original"
-		__log hist # Add hosts file information to file[hist]
-	fi
-	# Legacy. For versions of HF < 4
-	if test ! -f "${dir[bck]}/hosts.original.zip"
-	then
-		if test -f "${file[hosts]}.hf.original"
-		then
-			cp "${file[hosts]}.hf.original" "${dir[bck]}/hosts.original"
-			__log hist # Add hosts file information to file[hist]
+	if [ ! -f "${file[hosts]}.hf.original" ]; then
+		echo "Creating original hosts file backup..."
+		if sudo cp "${file[hosts]}" "${file[hosts]}.hf.original"; then
+			# Create a zip backup in the backup directory
+			zip -q "${dir[bck]}/hosts.original.zip" "${file[hosts]}.hf.original"
+			__log "hist" "Created original hosts file backup"
+		else
+			__log "log" "Error: Failed to create original hosts file backup"
+			message[enable]="Failed to create original hosts file backup."
+			sudo -k
+			return 1
 		fi
 	fi
 
-	# Install. Backup the current file then install the new one.
-	if test -f "${dir[src]}/hosts.txt"
-	then
-		zip "${dir[bck]}/hosts-$timestamp" "${file[hosts]}" # General restore file
-		sudo mv -f "${dir[src]}/hosts.txt" "${file[hosts]}" # New hosts file
-		__log hist # Add hosts file information to file[hist]
-	else
-		message[enable]="$package hosts file not found. Have you built it yet?"
+	# Legacy support for versions of HF < 4
+	if [ ! -f "${dir[bck]}/hosts.original.zip" ] && [ -f "${file[hosts]}.hf.original" ]; then
+		cp "${file[hosts]}.hf.original" "${dir[bck]}/hosts.original"
+		__log "hist" "Created legacy backup for compatibility with HF < 4"
 	fi
 
-	# Help the new hosts file take effect.
-	__cleandns
-	
-	sudo -k
+	# Backup current hosts file before installing the new one
+	echo "Backing up current hosts file..."
+	zip -q "${dir[bck]}/hosts-$timestamp.zip" "${file[hosts]}" 
 
+	# Install the new hosts file
+	echo "Installing new hosts file..."
+	if sudo mv -f "${dir[src]}/hosts.txt" "${file[hosts]}"; then
+		__log "hist" "Successfully installed new hosts file"
+		echo "Successfully installed new hosts file."
+		
+		# Help the new hosts file take effect
+		__cleandns
+		message[enable]="Host Flash hosts file successfully installed."
+	else
+		__log "log" "Error: Failed to install new hosts file"
+		message[enable]="Failed to install new hosts file."
+		sudo -k
+		return 1
+	fi
+
+	# Drop sudo privileges
+	sudo -k
+	return 0
 }
 
-function __disable() {
+__disable() {
 	# Remove Host Flash™ hosts list from /etc/hosts
 
-	echo
-	# Get su authority
-	sudo -v
+	echo "Disabling Host Flash hosts file..."
 	
-	cp "${file[hosts]}" "${dir[tmp]}/hosts.copy"
-	if grep -zPo '# Host.? Flash' "${dir[tmp]}/hosts.copy"
-	then
-		# Remove old HF data, remove HF header remove empty lines.
-		grep -zPo '(?s).*# Host.? Flash' "${dir[tmp]}/hosts.copy" | head -n -1 | grep -v '^[[:space:]]$' > "${dir[tmp]}/hosts.head"
-		sudo mv -f "${dir[tmp]}/hosts.head" "${file[hosts]}"
+	# Get su authority
+	if ! sudo -v; then
+		__log "log" "Error: Failed to obtain sudo privileges for hosts file restoration"
+		message[disable]="Failed to obtain necessary permissions. Please run as a user with sudo privileges."
+		return 1
+	fi
+	
+	# Create a temporary copy of the hosts file
+	if ! cp "${file[hosts]}" "${dir[tmp]}/hosts.copy"; then
+		__log "log" "Error: Failed to create temporary copy of hosts file"
+		message[disable]="Failed to create temporary copy of hosts file."
+		sudo -k
+		return 1
+	fi
+
+	# Check if Host Flash is installed
+	if grep -q '# Host.* Flash' "${dir[tmp]}/hosts.copy"; then
+		echo "Removing Host Flash entries from hosts file..."
+		
+		# Create a backup before modifying
+		zip -q "${dir[bck]}/hosts-disabled-$timestamp.zip" "${file[hosts]}"
+		
+		# Remove Host Flash entries while preserving the original content
+		if grep -zPo '(?s).*# Host.? Flash' "${dir[tmp]}/hosts.copy" | \
+		   head -n -1 | grep -v '^[[:space:]]$' > "${dir[tmp]}/hosts.head" && \
+		   sudo mv -f "${dir[tmp]}/hosts.head" "${file[hosts]}"; then
+			
+			__log "hist" "Successfully disabled Host Flash hosts file"
+			echo "Successfully disabled Host Flash hosts file."
+			
+			# Help the new hosts file take effect
+			__cleandns
+			message[disable]="Host Flash hosts file successfully disabled."
+		else
+			__log "log" "Error: Failed to disable Host Flash hosts file"
+			message[disable]="Failed to disable Host Flash hosts file."
+			sudo -k
+			return 1
+		fi
 	else
+		__log "log" "Host Flash not found in hosts file"
 		message[disable]="$package not installed. Nothing to do."
 	fi
 
-	# Help the new hosts file take effect.
-	__cleandns
-	
+	# Drop sudo privileges
 	sudo -k
-
+	return 0
 }
 
-function __cleandns() {
-	# Clean the DNS local servers. We try them all.. just in case.
+__cleandns() {
+	# Clean the DNS local servers to help the new hosts file take effect
+	# We try multiple methods since different distributions use different services
 
-	flush=(
-	'systemd-resolve --flush-caches' # General
-	'rndc restart' # General
-	'pdnsd-ctl empty-cache' # General
-	'systemctl restart systemd-resolved' # Systemd
-	'systemctl restart network.service' # Systemd
-	'systemctl restart wicd.service' #  Systemd for WICD
-	'systemctl restart NetworkManager.service' # Fedora, Manjaro, Arch using Network Manager
-	'service network-manager restart' # Debian
-	'service nscd restart' # Other
-	'service dnsmasq restart' # Other
-	'service dns-clean restart' # Other
-	'service network restart' # RHEL/Centos
-	'service named restart' # Other
-	'service networking force-reload' # Other
-	'/etc/init.d/network-manager restart' # Other
-	'/etc/init.d/nscd restart' # Other
-	'/etc/init.d/dnsmasq restart' # Other
-	'/etc/init.d/dns-clean restart' # Mint
-	'/etc/init.d/network restart' # RHEL/Centos
-	'/etc/init.d/named restart' # Other
-	'/etc/init.d/networking force-reload' # Other
+	echo "Flushing DNS caches..."
+	__log "log" "Attempting to flush DNS caches"
+	
+	# Define an array of commands to try
+	local flush=(
+		'systemd-resolve --flush-caches'        # Modern systemd systems
+		'rndc restart'                           # BIND DNS server
+		'pdnsd-ctl empty-cache'                  # pdnsd caching DNS server
+		'systemctl restart systemd-resolved'     # systemd-resolved service
+		'systemctl restart network.service'      # Generic network service
+		'systemctl restart wicd.service'         # WICD network manager
+		'systemctl restart NetworkManager.service' # NetworkManager (Fedora, Manjaro, Arch)
+		'service network-manager restart'        # Debian network manager
+		'service nscd restart'                   # Name service cache daemon
+		'service dnsmasq restart'                # Lightweight DNS forwarder and DHCP server
+		'service dns-clean restart'              # Ubuntu/Debian DNS cache cleaner
+		'service network restart'                # RHEL/CentOS network service
+		'service named restart'                  # BIND DNS server (alternative method)
+		'service networking force-reload'        # Other networking service
+		'/etc/init.d/network-manager restart'    # Alternative network manager path
+		'/etc/init.d/nscd restart'              # Alternative nscd path
+		'/etc/init.d/dnsmasq restart'           # Alternative dnsmasq path
+		'/etc/init.d/dns-clean restart'         # Linux Mint DNS cleaner
+		'/etc/init.d/network restart'           # Alternative network service path
+		'/etc/init.d/named restart'             # Alternative named service path
+		'/etc/init.d/networking force-reload'   # Alternative networking reload
+		'ipconfig /flushdns'                     # Windows (unlikely to work in this context)
+		'killall -HUP mDNSResponder'             # macOS (unlikely to work in this context)
 	)
 
-	sudo -v
+	# Ensure we have sudo privileges
+	sudo -v || {
+		__log "log" "Error: Failed to obtain sudo privileges for DNS cache flushing"
+		return 1
+	}
 
-	for i in "${flush[@]}"; do
-		printf "${bold}Attempting to flush DNS cache ${normal} using command: $i\n"
-		sudo "$i"
-		if test "$?" -eq 0
-		then
-			printf "Success\n\n"
+	# Try each command and ignore errors
+	for cmd in "${flush[@]}"; do
+		printf "${bold}Attempting to flush DNS cache${normal} using command: %s\n" "$cmd"
+		# Execute the command but don't fail if it doesn't work
+		sudo bash -c "$cmd" > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			printf "${bold}Success${normal}\n\n"
+			__log "log" "Successfully flushed DNS cache using: $cmd"
 		else
-			printf "Do not worry if the above says 'fail'. We only need one success.\n\n"
+			printf "${normal}Command not available or failed (this is normal)\n\n"
 		fi
 	done
 	
+	printf "${bold}DNS cache flush attempts completed.${normal}\n"
+	__log "log" "DNS cache flush attempts completed"
+	
+	# Drop sudo privileges
 	sudo -k
+	return 0
 
 }
 
